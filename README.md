@@ -1,5 +1,3 @@
-# [DOCUMENTATION](https://sleeplessdevelopment.dev/interact)
-
 # sleepless_interact
 
 A FiveM library for creating 3D DUI world interactions
