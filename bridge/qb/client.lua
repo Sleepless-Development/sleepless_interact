@@ -9,7 +9,7 @@ RegisterNetEvent('QBCore:Client:OnJobUpdate', function(job)
     Groups[Player.job] = nil
     Groups[job.name] = job.grade.level
     Player.job = job.name
-    TriggerEvent('demi_interact:updateGroups', Groups)
+    TriggerEvent('sleepless_interact:updateGroups', Groups)
 end)
 
 RegisterNetEvent('QBCore:Client:OnGangUpdate', function(gang)
@@ -18,7 +18,7 @@ RegisterNetEvent('QBCore:Client:OnGangUpdate', function(gang)
     Groups[Player.gang] = nil
     Groups[gang.name] = gang.grade.level
     Player.gang = gang.name
-    TriggerEvent('demi_interact:updateGroups', Groups)
+    TriggerEvent('sleepless_interact:updateGroups', Groups)
 end)
 
 RegisterNetEvent('QBCore:Client:OnPlayerLoaded', function()
@@ -32,8 +32,8 @@ RegisterNetEvent('QBCore:Client:OnPlayerLoaded', function()
         job = PlayerData.job.name,
         gang = PlayerData.gang.name,
     }
-    TriggerEvent('demi_interact:updateGroups', Groups)
-    TriggerEvent('demi_interact:LoadDui')
+    TriggerEvent('sleepless_interact:updateGroups', Groups)
+    TriggerEvent('sleepless_interact:LoadDui')
     MainLoop()
 end)
 

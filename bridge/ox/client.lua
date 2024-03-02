@@ -8,13 +8,13 @@ local Groups = {}
 
 RegisterNetEvent('ox:setGroup', function(name, grade)
     Groups[name] = grade
-    TriggerEvent('demi_interact:updateGroups', Groups)
+    TriggerEvent('sleepless_interact:updateGroups', Groups)
 end)
 
 AddEventHandler('ox:playerLoaded', function()
     Groups = Ox.GetPlayerData().groups
-    TriggerEvent('demi_interact:updateGroups', Groups)
-    TriggerEvent('demi_interact:LoadDui')
+    TriggerEvent('sleepless_interact:updateGroups', Groups)
+    TriggerEvent('sleepless_interact:LoadDui')
     MainLoop()
 end)
 
@@ -26,7 +26,7 @@ AddEventHandler('onResourceStart', function(resource)
     if resource == GetCurrentResourceName() then
         Wait(500)
         Groups = Ox.GetPlayerData().groups
-        TriggerEvent('demi_interact:updateGroups', Groups)
+        TriggerEvent('sleepless_interact:updateGroups', Groups)
         MainLoop()
     end
 end)

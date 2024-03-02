@@ -2,7 +2,7 @@
 
 local sprites = {}
 
-sprites.spriteDictName = 'demi_interact_sprites'
+sprites.spriteDictName = 'sleepless_interact_sprites'
 local txd = CreateRuntimeTxd(sprites.spriteDictName)
 sprites.sprites = {
     indicator = 'indicator',
@@ -15,7 +15,7 @@ end
 
 RegisterNetEvent('onResourceStop', function(resourceName)
     if not resourceName == GetCurrentResourceName() then return end
-    SetStreamedTextureDictAsNoLongerNeeded('demi_interact_sprites')
+    SetStreamedTextureDictAsNoLongerNeeded('sleepless_interact_sprites')
 end)
 
 return sprites

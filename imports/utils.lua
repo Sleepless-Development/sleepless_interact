@@ -15,7 +15,7 @@ utils.sendReactMessage = function(action, data)
     }))
 end
 
-RegisterNetEvent('demi_interact:updateGroups', function(update)
+RegisterNetEvent('sleepless_interact:updateGroups', function(update)
     Groups = update
 end)
 

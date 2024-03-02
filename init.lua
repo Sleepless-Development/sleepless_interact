@@ -1,5 +1,5 @@
 ---Thanks linden https://github.com/overextended
-local export = exports.demi_interact
+local export = exports.sleepless_interact
 
 local function call(self, index, ...)
     local function method(...)
@@ -14,13 +14,13 @@ local function call(self, index, ...)
 end
 
 local interact = setmetatable({
-    name = 'demi_interact',
+    name = 'sleepless_interact',
 }, {
     __index = call,
     __newindex = function(self, key, fn)
         rawset(self, key, fn)
 
-        if debug.getinfo(2, 'S').short_src:find('@demi_interact/exports') then
+        if debug.getinfo(2, 'S').short_src:find('@sleepless_interact/exports') then
             exports(key, fn)
         end
     end

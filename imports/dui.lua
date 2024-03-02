@@ -12,12 +12,12 @@ RegisterNetEvent('onResourceStop', function(resourceName)
 end)
 
 RegisterNetEvent('onResourceStart', function(resourceName)
-    dui.DuiObject = CreateDui("https://cfx-nui-demi_interact/web/build/index.html", dui.screenW, dui.screenH)
+    dui.DuiObject = CreateDui("https://cfx-nui-sleepless_interact/web/build/index.html", dui.screenW, dui.screenH)
     CreateRuntimeTextureFromDuiHandle(dui.txd, dui.txtName, GetDuiHandle(dui.DuiObject))
 end)
 
-RegisterNetEvent('demi_interact:LoadDui', function()
-    dui.DuiObject = CreateDui("https://cfx-nui-demi_interact/web/build/index.html", dui.screenW, dui.screenH)
+RegisterNetEvent('sleepless_interact:LoadDui', function()
+    dui.DuiObject = CreateDui("https://cfx-nui-sleepless_interact/web/build/index.html", dui.screenW, dui.screenH)
     CreateRuntimeTextureFromDuiHandle(dui.txd, dui.txtName, GetDuiHandle(dui.DuiObject))
 end)
 

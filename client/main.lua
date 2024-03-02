@@ -7,7 +7,7 @@ local ClosestInteraction = nil
 local ActiveInteraction
 
 lib.addKeybind({
-    name = 'demi_interact',
+    name = 'sleepless_interact',
     description = 'Interact',
     defaultKey = 'E',
     onPressed = function(self)
