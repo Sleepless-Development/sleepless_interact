@@ -9,7 +9,7 @@ A FiveM library for creating 3D DUI world interactions
 ![](https://img.shields.io/github/contributors/Sleepless-Development/sleepless_interact?logo=github)
 ![](https://img.shields.io/github/v/release/Sleepless-Development/sleepless_interact?logo=github)
 
-## 📚 Documentation
+## 📃 Documentation
 
 https://sleeplessdevelopment.dev/interact
 
