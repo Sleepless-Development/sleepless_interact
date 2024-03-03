@@ -5,8 +5,25 @@ local color in config
 dui.txdName = "interaction_dui"
 dui.txtName = "interaction_dui_texture"
 dui.txd = CreateRuntimeTxd(dui.txdName)
-
 dui.screenW, dui.screenH = GetActiveScreenResolution()
+dui.loaded = false
+
+RegisterNuiCallback('loaded', function(_, cb)
+    cb(1)
+    dui.loaded = true
+end)
+
+local function loadDui()
+    dui.DuiObject = CreateDui("https://cfx-nui-sleepless_interact/web/build/index.html", dui.screenW, dui.screenH)
+    CreateRuntimeTextureFromDuiHandle(dui.txd, dui.txtName, GetDuiHandle(dui.DuiObject))
+    while not dui.loaded do
+        Wait(100)
+    end
+    SendDuiMessage(dui.DuiObject, json.encode({
+        action = 'setColor',
+        data = color
+    }))
+end
 
 RegisterNetEvent('onResourceStop', function(resourceName)
     if not resourceName == GetCurrentResourceName() then return end
@@ -14,18 +31,11 @@ RegisterNetEvent('onResourceStop', function(resourceName)
 end)
 
 RegisterNetEvent('onResourceStart', function(resourceName)
-    dui.DuiObject = CreateDui("https://cfx-nui-sleepless_interact/web/build/index.html", dui.screenW, dui.screenH)
-    CreateRuntimeTextureFromDuiHandle(dui.txd, dui.txtName, GetDuiHandle(dui.DuiObject))
-    SendDuiMessage(dui.DuiObject, json.encode({
-        action = 'setColor',
-        data = color
-    }))
+    if not resourceName == GetCurrentResourceName() then return end
+    loadDui()
 end)
 
-RegisterNetEvent('sleepless_interact:LoadDui', function()
-    dui.DuiObject = CreateDui("https://cfx-nui-sleepless_interact/web/build/index.html", dui.screenW, dui.screenH)
-    CreateRuntimeTextureFromDuiHandle(dui.txd, dui.txtName, GetDuiHandle(dui.DuiObject))
-end)
+RegisterNetEvent('sleepless_interact:LoadDui', loadDui)
 
 local lastScroll = 0
 dui.handleDuiControls = function()
