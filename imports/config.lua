@@ -3,10 +3,8 @@
 ---@field indicatorSprite {dict: string, txt: string} non-active sprite dictionary/texture
 local config = {}
 
-config.color = vec4(28, 126, 214, 255)
+config.color = vec4(28, 126, 214, 200)
 
-config.indicatorSprite = {dict = 'shared', txt = 'emptydot_32'}
-
-
+config.indicatorSprite = { dict = 'shared', txt = 'emptydot_32' }
 
 return config
