@@ -1,9 +1,10 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { debugData } from "./utils/debugData";
 import { useNuiEvent } from "./hooks/useNuiEvent";
 import { InteractionData } from "./components/Interact";
 
 import Interaction from "./components/Interact";
+import { fetchNui } from "./utils/fetchNui";
 
 {
   debugData([
@@ -30,6 +31,13 @@ import Interaction from "./components/Interact";
 const App: React.FC = () => {
   const [pause, setPause] = useState<boolean>(false);
   const [interaction, setInteraction] = useState<InteractionData>();
+  const [color, setColor] = useState('rgba(0,0,0,0)');
+
+  useNuiEvent<{ x: number; y: number; z: number; w: number }>("setColor",(color) => {
+    console.log('set color', `rgb(${color.x}, ${color.y}, ${color.z})`)
+      setColor(`rgba(${color.x}, ${color.y}, ${color.z}, ${color.w / 255})`);
+    }
+  );
 
   useNuiEvent<boolean>("pause", (paused) => {
     setPause(paused);
@@ -40,7 +48,11 @@ const App: React.FC = () => {
     setInteraction(newInteraction);
   });
 
-  return <>{interaction && <Interaction interaction={interaction} />}</>;
+  useEffect(() => {
+    fetchNui("loaded");
+  }, []);
+
+  return <>{interaction && <Interaction interaction={interaction} color={color} />}</>;
 };
 
 export default App;

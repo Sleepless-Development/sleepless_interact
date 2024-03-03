@@ -13,12 +13,11 @@ export interface InteractionData {
   options: Option[];
 }
 
-const Interaction: React.FC<{ interaction: InteractionData }> = ({
-  interaction,
+const Interaction: React.FC<{ interaction: InteractionData; color: string }> = ({
+  interaction, color
 }) => {
   const { id, options } = interaction;
   const [currentOption, setCurrentOption] = useState(0);
-  const [color, setColor] = useState("rgb(255,255,255)");
   const maxOptions = options.length;
 
   const updateOption = useCallback(
@@ -86,7 +85,7 @@ const Interaction: React.FC<{ interaction: InteractionData }> = ({
   }) => (
     <>
       <div
-        style={numberOfActiveOptions < 2 ? { translate: "-1.5rem" } : {}}
+        style={ {translate: numberOfActiveOptions < 2 ? "-1.5rem" : '', backgroundColor: color}}
         className={`${styles.button} ${isActive && styles.active}`}
       >
         {numberOfActiveOptions > 1 && (
@@ -115,11 +114,6 @@ const Interaction: React.FC<{ interaction: InteractionData }> = ({
         )
     );
   };
-
-  useNuiEvent<{ x: number; y: number; z: number; w: number }>("setColor",(color) => {
-      setColor(`rgb(${color.x}, ${color.y}, ${color.z})`);
-    }
-  );
 
   return (
     <>
