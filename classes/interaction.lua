@@ -40,7 +40,7 @@ local Interaction = lib.class('Interaction')
 
 function Interaction:super()
     lib.requestStreamedTextureDict(txdName)
-    lib.requestStreamedTextureDict('shared')
+    lib.requestStreamedTextureDict(indicatorSprite.dict)
     if interactionIds[self.id] then
         if not self.id:find('global') then
             lib.print.warn(string.format('duplicate interaction id added: %s', self.id))
@@ -133,7 +133,8 @@ function Interaction:drawSprite()
         distanceRatio = 0.5 + (0.25 * distanceRatio)
         local scale = 0.025 * (distanceRatio)
         local x,y,z,w in color
-        DrawInteractiveSprite('shared', 'emptydot_32', 0, 0, scale, scale * ratio, 0.0, x, y, z, w)
+        local dict, txt in indicatorSprite
+        DrawInteractiveSprite(dict, txt, 0, 0, scale, scale * ratio, 0.0, x, y, z, w)
     end
     ClearDrawOrigin()
 end
