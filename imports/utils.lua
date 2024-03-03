@@ -56,7 +56,7 @@ local function processEntity(entity, entType)
             globals.cachedPlayers[serverid] = true
             for i = 1, #playerInteractions do
                 local interaction = playerInteractions[i]
-                interaction.id = interaction.id .. serverid
+                interaction.id = string.format('%s:%s', interaction.id, serverid)
                 interaction.netId = NetworkGetNetworkIdFromEntity(entity)
                 interact.addEntity(interaction)
             end
@@ -74,7 +74,7 @@ local function processEntity(entity, entType)
             globals.cachedPeds[key] = true
             for i = 1, #pedInteractions do
                 local interaction = pedInteractions[i]
-                interaction.id = interaction.id .. key
+                interaction.id = string.format('%s:%s', interaction.id, key)
                 print(interaction.id)
                 if isNet then
                     interaction.netId = key
@@ -106,7 +106,7 @@ local function processEntity(entity, entType)
                     end
                 else
                     interaction.netId = netId
-                    interaction.id = interaction.id .. netId
+                    interaction.id = string.format('%s:%s', interaction.id, netId)
                     interact.addEntity(interaction)
                 end
             end
@@ -126,7 +126,7 @@ local function processEntity(entity, entType)
         for i = 1, #modelInteractions do
             local modelInteraction = modelInteractions[i]
             modelInteraction.model = model
-            modelInteraction.id = modelInteraction.id .. key
+            modelInteraction.id = string.format('%s:%s', model, key)
             if isNet then
                 modelInteraction.netId = key
                 interact.addEntity(modelInteraction)
