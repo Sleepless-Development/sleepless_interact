@@ -1,7 +1,9 @@
 ---@diagnostic disable: undefined-field
 local dui = require 'imports.dui'
 local globals = require 'imports.globals'
+local config = require 'imports.config'
 local txdName, txtName in dui
+local color, indicatorSprite in config
 local interactionIds = {}
 
 ---@todo: FUTURE: may need to merge options for entities based on bones.
@@ -130,7 +132,8 @@ function Interaction:drawSprite()
         local distanceRatio = self:getDistance() / self.renderDistance
         distanceRatio = 0.5 + (0.25 * distanceRatio)
         local scale = 0.025 * (distanceRatio)
-        DrawInteractiveSprite('shared', 'emptydot_32', 0, 0, scale, scale * ratio, 0.0, 28, 126, 214, 255)
+        local x,y,z,w in color
+        DrawInteractiveSprite('shared', 'emptydot_32', 0, 0, scale, scale * ratio, 0.0, x, y, z, w)
     end
     ClearDrawOrigin()
 end

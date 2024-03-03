@@ -5,6 +5,7 @@ import { TbSquareLetterE } from "react-icons/tb";
 import { fetchNui } from "../utils/fetchNui";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { IconProp } from "@fortawesome/fontawesome-svg-core";
+import { useNuiEvent } from "../hooks/useNuiEvent";
 
 type Option = { text: string; icon: IconProp; disable: boolean | null };
 export interface InteractionData {
@@ -17,6 +18,7 @@ const Interaction: React.FC<{ interaction: InteractionData }> = ({
 }) => {
   const { id, options } = interaction;
   const [currentOption, setCurrentOption] = useState(0);
+  const [color, setColor] = useState("rgb(255,255,255)");
   const maxOptions = options.length;
 
   const updateOption = useCallback(
@@ -68,7 +70,10 @@ const Interaction: React.FC<{ interaction: InteractionData }> = ({
     };
   }, [updateOption]);
 
-  const numberOfActiveOptions = useMemo(() => options.filter((option) => !option.disable).length, [options])
+  const numberOfActiveOptions = useMemo(
+    () => options.filter((option) => !option.disable).length,
+    [options]
+  );
 
   const OptionButton = ({
     text,
@@ -110,6 +115,11 @@ const Interaction: React.FC<{ interaction: InteractionData }> = ({
         )
     );
   };
+
+  useNuiEvent<{ x: number; y: number; z: number; w: number }>("setColor",(color) => {
+      setColor(`rgb(${color.x}, ${color.y}, ${color.z})`);
+    }
+  );
 
   return (
     <>

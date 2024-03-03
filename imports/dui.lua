@@ -1,4 +1,6 @@
 local dui = {}
+local config = require('imports.config')
+local color in config
 
 dui.txdName = "interaction_dui"
 dui.txtName = "interaction_dui_texture"
@@ -14,6 +16,10 @@ end)
 RegisterNetEvent('onResourceStart', function(resourceName)
     dui.DuiObject = CreateDui("https://cfx-nui-sleepless_interact/web/build/index.html", dui.screenW, dui.screenH)
     CreateRuntimeTextureFromDuiHandle(dui.txd, dui.txtName, GetDuiHandle(dui.DuiObject))
+    SendDuiMessage(dui.DuiObject, json.encode({
+        action = 'setColor',
+        data = color
+    }))
 end)
 
 RegisterNetEvent('sleepless_interact:LoadDui', function()

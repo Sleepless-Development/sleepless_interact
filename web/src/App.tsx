@@ -21,9 +21,6 @@ import Interaction from "./components/Interact";
         options: [
           { text: "do something", icon: "house", disable: true },
           { text: "world2", icon: "house" },
-          // { text: "world4", icon: "house", disable: true },
-          // { text: "hello5", icon: "house" },
-          // { text: "world6", icon: "house" },
         ],
       },
     },
