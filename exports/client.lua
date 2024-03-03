@@ -79,7 +79,6 @@ end
 ---@param model number
 ---@param data ModelData
 local function insertModelData(model, data)
-
     if type(model) == 'string' then
         model = joaat(model)
     end

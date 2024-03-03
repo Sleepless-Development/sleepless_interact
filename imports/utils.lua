@@ -75,7 +75,6 @@ local function processEntity(entity, entType)
             for i = 1, #pedInteractions do
                 local interaction = pedInteractions[i]
                 interaction.id = string.format('%s:%s', interaction.id, key)
-                print(interaction.id)
                 if isNet then
                     interaction.netId = key
                     interact.addEntity(interaction)
