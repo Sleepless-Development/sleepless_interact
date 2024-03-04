@@ -26,12 +26,12 @@ local function loadDui()
 end
 
 RegisterNetEvent('onResourceStop', function(resourceName)
-    if not resourceName == GetCurrentResourceName() then return end
+    if resourceName ~= GetCurrentResourceName() then return end
     SetStreamedTextureDictAsNoLongerNeeded("interaction_dui")
 end)
 
 RegisterNetEvent('onResourceStart', function(resourceName)
-    if not resourceName == GetCurrentResourceName() then return end
+    if resourceName ~= GetCurrentResourceName() then return end
     loadDui()
 end)
 
