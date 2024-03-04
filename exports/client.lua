@@ -16,8 +16,8 @@ function interact.addCoords(data)
         return
     end
 
-    local interactionData = utils.loadInteractionData(data)
-    table.insert(globals.Interactions, CoordsInteraction:new(interactionData))
+    data = utils.loadInteractionData(data)
+    table.insert(globals.Interactions, CoordsInteraction:new(data))
 
     return id
 end
@@ -35,12 +35,12 @@ function interact.addLocalEntity(data)
     end
 
     if NetworkGetEntityIsNetworked(entity) then
-        lib.print.error('addLocalEntity: entity is networked, use interact.addEntity instead')
+        lib.print.error('addLocalEntity: entity is networked, use addEntity instead')
         return
     end
 
-    local interactionData = utils.loadInteractionData(data)
-    table.insert(globals.Interactions, LocalEntityInteraction:new(interactionData))
+    data = utils.loadInteractionData(data)
+    table.insert(globals.Interactions, LocalEntityInteraction:new(data))
 
     return id
 end
@@ -67,9 +67,9 @@ function interact.addEntity(data)
         return
     end
 
-    local interactionData = utils.loadInteractionData(data)
+    data = utils.loadInteractionData(data)
 
-    table.insert(globals.Interactions, EntityInteraction:new(interactionData))
+    table.insert(globals.Interactions, EntityInteraction:new(data))
     return id
 end
 
@@ -79,6 +79,7 @@ end
 ---@param model number
 ---@param data ModelData
 local function insertModelData(model, data)
+
     if type(model) == 'string' then
         model = joaat(model)
     end
@@ -91,35 +92,36 @@ end
 ---add interaction for model(s)
 ---@param data ModelData
 function interact.addGlobalModel(data)
-    local interactionData = utils.loadInteractionData(data)
-    interactionData.models = nil
-    for i = 1,#data.models do
-        local model, offset, bone in data.models[i]
-        interactionData.offset = offset
-        interactionData.bone = bone
-        insertModelData(model, interactionData)
+    data = utils.loadInteractionData(data)
+    local models = data.models
+    data.models = nil
+    for i = 1,#models do
+        local model, offset, bone in models[i]
+        data.offset = offset
+        data.bone = bone
+        insertModelData(model, data)
     end
 end
 
 ---add global interaction for player
 ---@param data PedInteractionData
 function interact.addGlobalPlayer(data)
-    local interactionData = utils.loadInteractionData(data)
-    globals.playerInteractions[#globals.playerInteractions+1] = interactionData
+    data = utils.loadInteractionData(data)
+    globals.playerInteractions[#globals.playerInteractions+1] = data
 end
 
 ---add global interaction for non-player ped
 ---@param data PedInteractionData
 function interact.addGlobalPed(data)
-    local interactionData = utils.loadInteractionData(data)
-    globals.pedInteractions[#globals.pedInteractions+1] = interactionData
+    data = utils.loadInteractionData(data)
+    globals.pedInteractions[#globals.pedInteractions+1] = data
 end
 
 ---add global interaction for networked vehicle
 ---@param data VehicleInteractionData
 function interact.addGlobalVehicle(data)
-    local interactionData = utils.loadInteractionData(data)
-    globals.vehicleInteractions[#globals.vehicleInteractions+1] = interactionData
+    data = utils.loadInteractionData(data)
+    globals.vehicleInteractions[#globals.vehicleInteractions+1] = data
 end
 
 -- REMOVE INTERACTIONS
@@ -152,7 +154,6 @@ end
 function interact.removeId(id)
     removeByProperty('id', id)
 end
-
 
 ---@param model number
 local function handleRemoveModel(model)
