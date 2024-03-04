@@ -2,6 +2,8 @@
 
 # PRE-RELEASE
 
+## canInteract on global models (maybe other globals) not currently functioning properly
+
 A FiveM library for creating 3D DUI world interactions
 
 ![](https://img.shields.io/github/downloads/Sleepless-Development/sleepless_interact/total?logo=github)
