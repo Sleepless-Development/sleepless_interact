@@ -1,6 +1,7 @@
 local globals = require 'imports.globals'
-local dui = require 'imports.dui'
 local Vehicles = require '@ox_inventory.data.vehicles'
+local dui = require 'imports.dui'
+local DuiObject, updateMenu in dui
 local ox = GetResourceState('ox_inventory'):find('start')
 local Groups
 
@@ -8,8 +9,8 @@ local utils = {}
 ---@param action string
 ---@param data any
 utils.sendReactMessage = function(action, data)
-    while not dui.DuiObject do Wait(1) end
-    SendDuiMessage(dui.DuiObject, json.encode({
+    while not DuiObject do Wait(1) end
+    SendDuiMessage(DuiObject, json.encode({
         action = action,
         data = data
     }))
@@ -32,30 +33,23 @@ utils.checkGroups = function(interactionGroups)
 end
 
 utils.loadInteractionData = function(data)
-    local newData = {
-        renderDistance = 5.0,
-        activeDistance = 1.0,
-        cooldown = 1000,
-    }
-
-    for i, v in pairs(data) do
-        newData[i] = v
-    end
-
-    return newData
+    data.renderDistance = data.renderDistance or 5.0
+    data.activeDistance = data.activeDistance or 1.0
+    data.cooldown = data.cooldown or 1000
+    return data
 end
 
 local function processEntity(entity, entType)
     if entType == 'player' then
-        local playerInteractions = lib.table.deepclone(globals.playerInteractions)
-        if next(playerInteractions) then
+        if next(globals.playerInteractions) then
             local player = NetworkGetPlayerIndex(entity)
             local serverid = GetPlayerServerId(player)
             if globals.cachedPlayers[serverid] then return end
 
             globals.cachedPlayers[serverid] = true
-            for i = 1, #playerInteractions do
-                local interaction = playerInteractions[i]
+            for i = 1, #globals.playerInteractions do
+                local interaction = lib.table.deepclone(globals.playerInteractions[i])
+                interaction.options = globals.playerInteractions[i].options
                 interaction.id = string.format('%s:%s', interaction.id, serverid)
                 interaction.netId = NetworkGetNetworkIdFromEntity(entity)
                 interact.addEntity(interaction)
@@ -65,15 +59,15 @@ local function processEntity(entity, entType)
     end
 
     if entType == 'ped' then
-        local pedInteractions = lib.table.deepclone(globals.pedInteractions)
-        if next(pedInteractions) then
+        if next(globals.pedInteractions) then
             local isNet = NetworkGetEntityIsNetworked(entity)
             local key = isNet and PedToNet(entity) or entity
             if globals.cachedPeds[key] then return end
 
             globals.cachedPeds[key] = true
-            for i = 1, #pedInteractions do
-                local interaction = pedInteractions[i]
+            for i = 1, #globals.pedInteractions do
+                local interaction = lib.table.deepclone(globals.pedInteractions[i])
+                interaction.options = globals.pedInteractions[i].options
                 interaction.id = string.format('%s:%s', interaction.id, key)
                 if isNet then
                     interaction.netId = key
@@ -89,14 +83,14 @@ local function processEntity(entity, entType)
 
     if entType == 'vehicle' then
         local isVehicle = IsEntityAVehicle(entity)
-        local vehicleInteractions = lib.table.deepclone(globals.vehicleInteractions)
-        if isVehicle and next(vehicleInteractions) then
+        if isVehicle and next(globals.vehicleInteractions) then
             local netId = NetworkGetNetworkIdFromEntity(entity)
             if globals.cachedVehicles[netId] then return end
 
             globals.cachedVehicles[netId] = true
-            for i = 1, #vehicleInteractions do
-                local interaction = vehicleInteractions[i]
+            for i = 1, #globals.vehicleInteractions do
+                local interaction = lib.table.deepclone(globals.vehicleInteractions[i])
+                interaction.options = globals.vehicleInteractions[i].options
                 if ox and interaction.bone == 'boot' then
                     if utils.getTrunkPosition(NetworkGetEntityFromNetworkId(netId)) then
                         interaction.netId = netId
@@ -114,22 +108,22 @@ local function processEntity(entity, entType)
     end
 
     local model = GetEntityModel(entity)
-    local modelInteractions = globals.Models[model]
-    if modelInteractions then
-        local modelInteractions = lib.table.deepclone(modelInteractions)
+    if globals.Models[model] then
         local isNet = NetworkGetEntityIsNetworked(entity)
         local key = isNet and NetworkGetNetworkIdFromEntity(entity) or entity
         if globals.cachedModelEntities[key] then return end
 
         globals.cachedModelEntities[key] = true
-        for i = 1, #modelInteractions do
-            local modelInteraction = modelInteractions[i]
+        for i = 1, #globals.Models[model] do
+            local modelInteraction = lib.table.deepclone(globals.Models[model][i])
+            modelInteraction.options = globals.Models[model][i].options
             modelInteraction.model = model
             modelInteraction.id = string.format('%s:%s', model, key)
             if isNet then
                 modelInteraction.netId = key
                 interact.addEntity(modelInteraction)
             else
+                modelInteraction.entity = key
                 interact.addLocalEntity(modelInteraction)
             end
         end
@@ -202,7 +196,7 @@ utils.checkOptions = function(interaction)
     end
 
     if shouldUpdateUI then
-        dui.updateMenu('updateInteraction', {
+        updateMenu('updateInteraction', {
             id = interaction.id,
             options = (interaction.action and {}) or interaction.textOptions
         })
