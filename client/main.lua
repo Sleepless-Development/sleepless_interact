@@ -1,8 +1,7 @@
 local globals = require 'imports.globals'
-local dui = require 'imports.dui'
-local handleDuiControls in dui
 local utils = require 'imports.utils'
-
+local dui = require 'imports.dui'
+local updateMenu, handleDuiControls in dui
 local ClosestInteraction = nil
 local ActiveInteraction
 
@@ -36,7 +35,7 @@ local function drawTick()
                 if interaction.action or utils.checkOptions(interaction) then
                     newActiveInteraction = interaction
                     if newActiveInteraction ~= ActiveInteraction then
-                        dui.updateMenu('updateInteraction', {id = interaction.id, options = (interaction.action and {}) or interaction.textOptions})
+                        updateMenu('updateInteraction', {id = interaction.id, options = (interaction.action and {}) or interaction.textOptions})
                     end
                     ActiveInteraction = interaction
                     handleDuiControls()
