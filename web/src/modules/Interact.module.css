@@ -48,7 +48,10 @@
   border-radius: 0.4rem;
   border: 0.1rem solid currentColor;
   background: rgb(var(--bg), 0.65);
-  
+}
+
+.buttonIcon {
+  font-size: 1.2rem;
 }
 
 .active {
