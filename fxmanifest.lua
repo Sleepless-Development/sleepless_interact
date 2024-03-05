@@ -17,6 +17,10 @@ files {
 	'bridge/**/client.lua'
 }
 
+server_scripts {
+	'server/*.lua'
+}
+
 client_script {
 	'bridge/init.lua',
 	"init.lua",
