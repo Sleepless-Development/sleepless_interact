@@ -34,7 +34,7 @@ function CoordsInteraction:createStaticPoint()
 end
 
 function CoordsInteraction:shouldRender()
-    if self.shouldDestroy or not utils.checkGroups(self.groups) then return false end
+    if self.shouldDestroy then return false end
     
     return self.currentDistance <= self.renderDistance
 end

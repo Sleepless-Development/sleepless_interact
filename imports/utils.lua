@@ -130,7 +130,7 @@ local function processEntity(entity, entType)
     end
 end
 
-function utils.checkEntities() --0.01-0.02ms overhead. not sure how to do it better.
+utils.checkEntities = function () --0.01-0.02ms overhead. not sure how to do it better.
     local coords = cache.coords or GetEntityCoords(cache.ped)
 
     CreateThread(function()
@@ -178,32 +178,42 @@ function utils.checkEntities() --0.01-0.02ms overhead. not sure how to do it bet
     end)
 end
 
-utils.checkOptions = function(interaction)
-    local disabledCount = 0
+utils.checkOptions = function (interaction)
+    local disabledOptionsCount = 0
     local optionsLength = #interaction.options
-    local shouldUpdateUI
+    local shouldUpdateUI = false
+
     for i = 1, optionsLength do
         local option = interaction.options[i]
+        local disabled = false
         if option.canInteract then
-            local disabled = option.canInteract(interaction.getEntity and interaction:getEntity(),
-                interaction.currentDistance, interaction.coords, interaction.id) == false
-            if disabled ~= interaction.textOptions[i].disable then
-                shouldUpdateUI = disabled ~= interaction.textOptions[i].disable
-            end
+            local success, response = pcall(option.canInteract, interaction.getEntity and interaction:getEntity(), interaction.currentDistance, interaction.coords, interaction.id)
+            disabled = not success or not response
+        end
+        if not disabled and option.groups then
+            disabled = not utils.checkGroups(option.groups)
+        end
+
+        if disabled ~= interaction.textOptions[i].disable then
             interaction.textOptions[i].disable = disabled
-            if disabled then disabledCount += 1 end
+            shouldUpdateUI = true
+        end
+        
+        if disabled then
+            disabledOptionsCount = disabledOptionsCount + 1
         end
     end
 
     if shouldUpdateUI then
         updateMenu('updateInteraction', {
             id = interaction.id,
-            options = (interaction.action and {}) or interaction.textOptions
+            options = interaction.action and {} or interaction.textOptions
         })
     end
 
-    return disabledCount < optionsLength
+    return disabledOptionsCount < optionsLength
 end
+
 
 
 local backDoorIds = { 2, 3 }

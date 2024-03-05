@@ -18,6 +18,7 @@ lib.addKeybind({
 
 RegisterNuiCallback('setCurrentTextOption', function(data, cb)
     cb(1)
+    if not ActiveInteraction then return end
     ActiveInteraction:setCurrentTextOption(data.index)
 end)
 
