@@ -4,7 +4,7 @@ local ox_inv = GetResourceState('ox_inventory'):find('start')
 
 ---@class EntityInteraction: Interaction
 ---@field netId number entity network id
----@field bone? string
+---@field bone? string | table<string>
 ---@field offset? vector3 Optional offset for the placement of interaction if on an entity
 local EntityInteraction = lib.class('EntityInteraction', Interaction)
 
@@ -59,12 +59,13 @@ function EntityInteraction:getCoords()
         if ox_inv and bone == 'boot' then
             return utils.getTrunkPosition(entity)
         end
-        return GetEntityBonePosition_2(entity, GetEntityBoneIndexByName(entity, bone))
+        local boneIndex = GetEntityBoneIndexByName(entity, bone)
+        if boneIndex ~= -1 then
+            return GetEntityBonePosition_2(entity, boneIndex)
+        end
     end
 
-    return offset and
-        GetOffsetFromEntityInWorldCoords(entity, offset.x, offset.y, offset.z) or
-        GetEntityCoords(entity)
+    return offset and GetOffsetFromEntityInWorldCoords(entity, offset.x, offset.y, offset.z) or GetEntityCoords(entity)
 end
 
 function EntityInteraction:getDistance()
