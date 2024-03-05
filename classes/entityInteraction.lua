@@ -1,6 +1,6 @@
 local Interaction = require 'classes.interaction'
 local utils = require 'imports.utils'
-local ox = GetResourceState('ox_inventory'):find('start')
+local ox_inv = GetResourceState('ox_inventory'):find('start')
 
 ---@class EntityInteraction: Interaction
 ---@field netId number entity network id
@@ -56,7 +56,7 @@ function EntityInteraction:getCoords()
     local offset, bone in self
 
     if bone then
-        if ox and bone == 'boot' then
+        if ox_inv and bone == 'boot' then
             return utils.getTrunkPosition(entity)
         end
         return GetEntityBonePosition_2(entity, GetEntityBoneIndexByName(entity, bone))
