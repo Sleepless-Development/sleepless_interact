@@ -71,8 +71,8 @@ function MainLoop()
                 if interaction.shouldDestroy then
                     globals.Interactions[i] = nil
                 else
-                    if interaction:shouldRender() then
-                        if not ClosestInteraction and utils.checkOptions(interaction) then
+                    if interaction:shouldRender() and utils.checkOptions(interaction) then
+                        if not ClosestInteraction then
                             ClosestInteraction = globals.Interactions[i]
                         end
                         newNearbyInteractions[#newNearbyInteractions + 1] = interaction
