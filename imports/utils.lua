@@ -24,6 +24,25 @@ utils.loadInteractionData = function(data, resource)
     data.renderDistance = data.renderDistance or 5.0
     data.activeDistance = data.activeDistance or 1.0
     data.cooldown = data.cooldown or 1000
+
+    if type(data.bone) == 'table' then
+        local entity = (data.netId and NetworkGetEntityFromNetworkId(data.netId)) or data.entity
+        if DoesEntityExist(entity) then
+            local foundBone = nil
+            for i = 1, #data.bone do
+                local bone = data.bone[i]
+                print(bone,GetEntityBoneIndexByName(entity, bone))
+                print(GetEntityCoords(entity))
+                if GetEntityBoneIndexByName(entity, bone) ~= -1 then
+                    foundBone = bone
+                    break
+                end
+            end
+            data.bone = foundBone
+        end
+    end
+
+
     return data
 end
 
@@ -181,7 +200,7 @@ end
 ---Thanks linden https://github.com/overextended
 local checkItems = function(items, any)
     if not playerItems then return true end
-    
+
     local _type = type(items)
 
     if _type == 'string' then
@@ -247,7 +266,7 @@ utils.checkOptions = function (interaction)
         end
     end
 
-    if shouldUpdateUI then
+    if disabledOptionsCount < optionsLength and shouldUpdateUI then
         updateMenu('updateInteraction', {
             id = interaction.id,
             options = interaction.action and {} or interaction.textOptions
