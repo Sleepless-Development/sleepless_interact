@@ -2,12 +2,11 @@ local globals = require 'imports.globals'
 local Vehicles = require '@ox_inventory.data.vehicles'
 local dui = require 'imports.dui'
 local DuiObject, updateMenu in dui
-local ox = GetResourceState('ox_inventory'):find('start')
+local ox_inv = GetResourceState('ox_inventory'):find('start')
 local Groups
 
 local utils = {}
----@param action string
----@param data any
+
 utils.sendReactMessage = function(action, data)
     while not DuiObject do Wait(1) end
     SendDuiMessage(DuiObject, json.encode({
@@ -20,19 +19,8 @@ RegisterNetEvent('sleepless_interact:updateGroups', function(update)
     Groups = update
 end)
 
-utils.checkGroups = function(interactionGroups)
-    if not interactionGroups then return true end
-
-    for group, grade in pairs(Groups) do
-        if interactionGroups[group] and grade >= interactionGroups[group] then
-            return true
-        end
-    end
-
-    return false
-end
-
-utils.loadInteractionData = function(data)
+utils.loadInteractionData = function(data, resource)
+    data.resource = resource or 'sleepless_interact'
     data.renderDistance = data.renderDistance or 5.0
     data.activeDistance = data.activeDistance or 1.0
     data.cooldown = data.cooldown or 1000
@@ -48,8 +36,7 @@ local function processEntity(entity, entType)
 
             globals.cachedPlayers[serverid] = true
             for i = 1, #globals.playerInteractions do
-                local interaction = lib.table.deepclone(globals.playerInteractions[i])
-                interaction.options = globals.playerInteractions[i].options
+                local interaction = lib.table.clone(globals.playerInteractions[i])
                 interaction.id = string.format('%s:%s', interaction.id, serverid)
                 interaction.netId = NetworkGetNetworkIdFromEntity(entity)
                 interact.addEntity(interaction)
@@ -65,8 +52,7 @@ local function processEntity(entity, entType)
 
             globals.cachedPeds[key] = true
             for i = 1, #globals.pedInteractions do
-                local interaction = lib.table.deepclone(globals.pedInteractions[i])
-                interaction.options = globals.pedInteractions[i].options
+                local interaction = lib.table.clone(globals.pedInteractions[i])
                 interaction.id = string.format('%s:%s', interaction.id, key)
                 if isNet then
                     interaction.netId = key
@@ -87,9 +73,8 @@ local function processEntity(entity, entType)
 
             globals.cachedVehicles[netId] = true
             for i = 1, #globals.vehicleInteractions do
-                local interaction = lib.table.deepclone(globals.vehicleInteractions[i])
-                interaction.options = globals.vehicleInteractions[i].options
-                if ox and interaction.bone == 'boot' then
+                local interaction = lib.table.clone(globals.vehicleInteractions[i])
+                if ox_inv and interaction.bone == 'boot' then
                     if utils.getTrunkPosition(NetworkGetEntityFromNetworkId(netId)) then
                         interaction.netId = netId
                         interaction.id = interaction.id .. netId
@@ -112,8 +97,7 @@ local function processEntity(entity, entType)
 
         globals.cachedModelEntities[key] = true
         for i = 1, #globals.Models[model] do
-            local modelInteraction = lib.table.deepclone(globals.Models[model][i])
-            modelInteraction.options = globals.Models[model][i].options
+            local modelInteraction = lib.table.clone(globals.Models[model][i])
             modelInteraction.model = model
             modelInteraction.id = string.format('%s:%s', model, key)
             if isNet then
@@ -175,6 +159,62 @@ utils.checkEntities = function () --0.01-0.02ms overhead. not sure how to do it 
     end)
 end
 
+
+local checkGroups = function(interactionGroups)
+    if not interactionGroups then return true end
+
+    for group, grade in pairs(Groups) do
+        if interactionGroups[group] and grade >= interactionGroups[group] then
+            return true
+        end
+    end
+
+    return false
+end
+
+local playerItems = {}
+
+utils.getItems = function ()
+    return playerItems
+end
+
+---Thanks linden https://github.com/overextended
+local checkItems = function(items, any)
+    if not playerItems then return true end
+    
+    local _type = type(items)
+
+    if _type == 'string' then
+        return (playerItems[items] or 0) > 0
+    elseif _type == 'table' then
+        local tabletype = table.type(items)
+
+        if tabletype == 'hash' then
+            for name, amount in pairs(items) do
+                local hasItem = (playerItems[name] or 0) >= amount
+
+                if any then
+                    if hasItem then return true end
+                elseif not hasItem then
+                    return false
+                end
+            end
+        elseif tabletype == 'array' then
+            for i = 1, #items do
+                local hasItem = (playerItems[items[i]] or 0) > 0
+
+                if items then
+                    if hasItem then return true end
+                elseif not hasItem then
+                    return false
+                end
+            end
+        end
+    end
+
+    return not any
+end
+
 utils.checkOptions = function (interaction)
     local disabledOptionsCount = 0
     local optionsLength = #interaction.options
@@ -183,12 +223,18 @@ utils.checkOptions = function (interaction)
     for i = 1, optionsLength do
         local option = interaction.options[i]
         local disabled = false
+        
         if option.canInteract then
             local success, response = pcall(option.canInteract, interaction.getEntity and interaction:getEntity(), interaction.currentDistance, interaction.coords, interaction.id)
             disabled = not success or not response
         end
+
         if not disabled and option.groups then
-            disabled = not utils.checkGroups(option.groups)
+            disabled = not checkGroups(option.groups)
+        end
+
+        if not disabled and option.items then
+            disabled = not checkItems(option.items, option.anyitem)
         end
 
         if disabled ~= interaction.textOptions[i].disable then
@@ -197,7 +243,7 @@ utils.checkOptions = function (interaction)
         end
         
         if disabled then
-            disabledOptionsCount = disabledOptionsCount + 1
+            disabledOptionsCount += 1
         end
     end
 
@@ -211,7 +257,18 @@ utils.checkOptions = function (interaction)
     return disabledOptionsCount < optionsLength
 end
 
+if ox_inv then
+    setmetatable(playerItems, {
+        __index = function(self, index)
+            self[index] = exports.ox_inventory:Search('count', index) or 0
+            return self[index]
+        end
+    })
 
+    AddEventHandler('ox_inventory:itemCount', function(name, count)
+        playerItems[name] = count
+    end)
+end
 
 local backDoorIds = { 2, 3 }
 utils.getTrunkPosition = function(entity)

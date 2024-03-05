@@ -1,24 +1,43 @@
 local QBCore = exports['qb-core']:GetCoreObject()
 local Groups = {}
 local Player = {}
+local utils = require 'imports.utils'
+local playerItems = utils.getItems()
+local ox_inv = GetResourceState('ox_inventory'):find('start')
 
--- Group Updaters --
-RegisterNetEvent('QBCore:Client:OnJobUpdate', function(job)
+local function setPlayerItems(data)
+    if not data or not data.items then return end
+
+    table.wipe(playerItems)
+
+    for _, item in pairs(data.items) do
+        playerItems[item.name] = (playerItems[item.name] or 0) + (item.amount or 0)
+    end
+end
+
+local function updateJob(job)
     if not Player.Group then return end
 
     Groups[Player.job] = nil
     Groups[job.name] = job.grade.level
     Player.job = job.name
     TriggerEvent('sleepless_interact:updateGroups', Groups)
-end)
+end
 
-RegisterNetEvent('QBCore:Client:OnGangUpdate', function(gang)
+local function updateGang(gang)
     if not Player.Group then return end
 
     Groups[Player.gang] = nil
     Groups[gang.name] = gang.grade.level
     Player.gang = gang.name
     TriggerEvent('sleepless_interact:updateGroups', Groups)
+end
+
+RegisterNetEvent('QBCore:Player:SetPlayerData', function(playerData)
+    if source == '' then return end
+    updateJob(playerData.job)
+    updateGang(playerData.gang)
+    if not ox_inv then setPlayerItems(playerData) end
 end)
 
 RegisterNetEvent('QBCore:Client:OnPlayerLoaded', function()
@@ -32,6 +51,9 @@ RegisterNetEvent('QBCore:Client:OnPlayerLoaded', function()
         job = PlayerData.job.name,
         gang = PlayerData.gang.name,
     }
+
+    if not ox_inv then setPlayerItems(PlayerData) end
+
     TriggerEvent('sleepless_interact:updateGroups', Groups)
     TriggerEvent('sleepless_interact:LoadDui')
     MainLoop()
