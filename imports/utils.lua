@@ -54,7 +54,6 @@ local function processEntity(entity, entType)
                 interaction.netId = NetworkGetNetworkIdFromEntity(entity)
                 interact.addEntity(interaction)
             end
-            return
         end
     end
 
@@ -77,7 +76,6 @@ local function processEntity(entity, entType)
                     interact.addLocalEntity(interaction)
                 end
             end
-            return
         end
     end
 
@@ -103,7 +101,6 @@ local function processEntity(entity, entType)
                     interact.addEntity(interaction)
                 end
             end
-            return
         end
     end
 
