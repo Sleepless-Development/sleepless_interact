@@ -16,7 +16,7 @@ function interact.addCoords(data)
         return
     end
 
-    data = utils.loadInteractionData(data)
+    data = utils.loadInteractionData(data, GetInvokingResource())
     table.insert(globals.Interactions, CoordsInteraction:new(data))
 
     return id
@@ -39,7 +39,7 @@ function interact.addLocalEntity(data)
         return
     end
 
-    data = utils.loadInteractionData(data)
+    data = utils.loadInteractionData(data, GetInvokingResource())
     table.insert(globals.Interactions, LocalEntityInteraction:new(data))
 
     return id
@@ -67,7 +67,7 @@ function interact.addEntity(data)
         return
     end
 
-    data = utils.loadInteractionData(data)
+    data = utils.loadInteractionData(data, GetInvokingResource())
 
     table.insert(globals.Interactions, EntityInteraction:new(data))
     return id
@@ -92,7 +92,7 @@ end
 ---add interaction for model(s)
 ---@param data ModelData
 function interact.addGlobalModel(data)
-    data = utils.loadInteractionData(data)
+    data = utils.loadInteractionData(data, GetInvokingResource())
     local models = data.models
     data.models = nil
     for i = 1,#models do
@@ -106,21 +106,21 @@ end
 ---add global interaction for player
 ---@param data PedInteractionData
 function interact.addGlobalPlayer(data)
-    data = utils.loadInteractionData(data)
+    data = utils.loadInteractionData(data, GetInvokingResource())
     globals.playerInteractions[#globals.playerInteractions+1] = data
 end
 
 ---add global interaction for non-player ped
 ---@param data PedInteractionData
 function interact.addGlobalPed(data)
-    data = utils.loadInteractionData(data)
+    data = utils.loadInteractionData(data, GetInvokingResource())
     globals.pedInteractions[#globals.pedInteractions+1] = data
 end
 
 ---add global interaction for networked vehicle
 ---@param data VehicleInteractionData
 function interact.addGlobalVehicle(data)
-    data = utils.loadInteractionData(data)
+    data = utils.loadInteractionData(data, GetInvokingResource())
     globals.vehicleInteractions[#globals.vehicleInteractions+1] = data
 end
 
