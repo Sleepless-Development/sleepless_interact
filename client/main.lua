@@ -72,7 +72,7 @@ function MainLoop()
                     globals.Interactions[i] = nil
                 else
                     if interaction:shouldRender() then
-                        if not ClosestInteraction then
+                        if not ClosestInteraction and utils.checkOptions(interaction) then
                             ClosestInteraction = globals.Interactions[i]
                         end
                         newNearbyInteractions[#newNearbyInteractions + 1] = interaction
