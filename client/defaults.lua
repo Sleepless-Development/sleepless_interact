@@ -8,7 +8,6 @@ interact.addGlobalVehicle({
         {
             text = 'open trunk',
             icon = 'car',
-            groups = { ['police'] = 1 },
             canInteract = function(entity, distance, coords, id)
                 local veh = entity
                 return GetVehicleDoorLockStatus(veh) ~= 2
