@@ -20,7 +20,7 @@ RegisterNetEvent('sleepless_interact:updateGroups', function(update)
 end)
 
 utils.loadInteractionData = function(data, resource)
-    data.resource = resource or 'sleepless_interact'
+    data.resource = data.resource or resource or 'sleepless_interact'
     data.renderDistance = data.renderDistance or 5.0
     data.activeDistance = data.activeDistance or 1.0
     data.cooldown = data.cooldown or 1000
@@ -31,8 +31,6 @@ utils.loadInteractionData = function(data, resource)
             local foundBone = nil
             for i = 1, #data.bone do
                 local bone = data.bone[i]
-                print(bone,GetEntityBoneIndexByName(entity, bone))
-                print(GetEntityCoords(entity))
                 if GetEntityBoneIndexByName(entity, bone) ~= -1 then
                     foundBone = bone
                     break
@@ -115,10 +113,11 @@ local function processEntity(entity, entType)
         if globals.cachedModelEntities[key] then return end
 
         globals.cachedModelEntities[key] = true
+
         for i = 1, #globals.Models[model] do
             local modelInteraction = lib.table.clone(globals.Models[model][i])
             modelInteraction.model = model
-            modelInteraction.id = string.format('%s:%s', model, key)
+            modelInteraction.id = string.format('%s:%s:%s', modelInteraction.id, model, key)
             if isNet then
                 modelInteraction.netId = key
                 interact.addEntity(modelInteraction)

@@ -29,6 +29,7 @@
 ---@field cooldown? number time 'in' ms between interactions. prevent players from spamming E (default: 1000)
 
 ---@class ModelData
+---@field id string | number unique identifier for the interaction
 ---@field models table<{model: string | number, offset?: vector3, bone?: string}>
 ---@field options table<{text: string, icon: string, destroy?: boolean, action: fun(data: self), canInteract: fun(entity?: number, distance: number, coords: vector3, id: string | number): boolean}> list of options and actions for the interaction
 ---@field renderDistance? number distance that the interaction indicator is visible from (default: 5.0)
