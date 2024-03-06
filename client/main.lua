@@ -110,3 +110,35 @@ lib.onCache('vehicle', function (vehicle)
         MainLoop()
     end
 end)
+
+RegisterNetEvent('onResourceStop', function(resourceName)
+    for model, modeldata in pairs(globals.Models) do
+        for i = 1, #modeldata do
+            local data = modeldata[i]
+            if data.resource == resourceName then
+                globals.Models[model][i] = nil
+            end
+        end
+    end
+
+    for i = 1, #globals.playerInteractions do
+        local data = globals.playerInteractions[i]
+        if data.resource == resourceName then
+            globals.playerInteractions[i] = nil
+        end
+    end
+
+    for i = 1, #globals.vehicleInteractions do
+        local data = globals.vehicleInteractions[i]
+        if data.resource == resourceName then
+            globals.vehicleInteractions[i] = nil
+        end
+    end
+
+    for i = 1, #globals.pedInteractions do
+        local data = globals.pedInteractions[i]
+        if data.resource == resourceName then
+            globals.pedInteractions[i] = nil
+        end
+    end
+end)

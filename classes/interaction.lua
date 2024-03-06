@@ -42,12 +42,15 @@ function Interaction:super()
     lib.requestStreamedTextureDict(txdName)
     lib.requestStreamedTextureDict(indicatorSprite.dict)
     if interactionIds[self.id] then
-        if not self.id:find('global') then
-            lib.print.warn(string.format('duplicate interaction id added: %s', self.id))
-        end
+        lib.print.warn(string.format('duplicate interaction id added: %s', self.id))
         interactionIds[self.id]:destroy()
         Wait(100)
     end
+    RegisterNetEvent('onResourceStop', function(resourceName)
+        if self.resource == resourceName then
+            self:destroy()
+        end
+    end)
     self.currentDistance = 999
     self.currentOption = 1
     self.textOptions = {}
@@ -84,6 +87,7 @@ function Interaction:destroy()
     local netId, entity in self
     local serverid = entity and IsPedAPlayer(entity) and GetPlayerServerId(NetworkGetPlayerIndex(entity))
     local key = serverid or netId or entity
+    
     if key then
         globals.cachedModelEntities[key] = nil
         globals.cachedPlayers[key] = nil
