@@ -196,13 +196,13 @@ end
 
 ---remove non-networked entity interaction
 ---@param entity number entity handle
-function interact.removeAllFromLocalEntity(entity)
+function interact.removeLocalEntity(entity)
     removeByProperty('entity', entity)
 end
 
 ---remove networked entity interaction
 ---@param netId number Network Id
-function interact.removeAllFromEntity(netId)
+function interact.removeEntity(netId)
     removeByProperty('netId', netId)
 end
 
