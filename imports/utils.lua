@@ -129,7 +129,7 @@ local function processEntity(entity, entType)
     end
 end
 
-utils.checkEntities = function () --0.01-0.02ms overhead. not sure how to do it better.
+utils.checkEntities = function ()
     local coords = cache.coords or GetEntityCoords(cache.ped)
 
     CreateThread(function()
