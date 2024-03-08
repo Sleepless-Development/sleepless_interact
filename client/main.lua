@@ -1,12 +1,14 @@
 local globals = require 'imports.globals'
 local utils = require 'imports.utils'
 local dui = require 'imports.dui'
+local config = require 'imports.config'
 local updateMenu, handleDuiControls in dui
 local ClosestInteraction = nil
 local ActiveInteraction
+local mainLoopRunning = false
 
 lib.addKeybind({
-    name = 'sleepless_interact',
+    name = 'sleepless_interact:action',
     description = 'Interact',
     defaultKey = 'E',
     onPressed = function(self)
@@ -15,6 +17,36 @@ lib.addKeybind({
         end
     end,
 })
+
+local hideInteractions = false
+local defaultShowKeyBind, showKeyBindBehavior, useShowKeyBind in config
+if useShowKeyBind then
+    hideInteractions = true
+    lib.addKeybind({
+        name = 'sleepless_interact:toggle',
+        description = 'show interactions',
+        defaultKey = defaultShowKeyBind,
+        onPressed = function(self)
+            if cache.vehicle then return end
+            if showKeyBindBehavior == "toggle" then
+                hideInteractions = not hideInteractions
+                if hideInteractions then
+                    mainLoopRunning = false
+                else
+                    MainLoop()
+                end
+            else
+                hideInteractions = false
+                MainLoop()
+            end
+        end,
+        onReleased = function (self)
+            if showKeyBindBehavior == "toggle" or cache.vehicle then return end
+            hideInteractions = true
+            mainLoopRunning = false
+        end
+    })
+end
 
 RegisterNuiCallback('setCurrentTextOption', function(data, cb)
     cb(1)
@@ -53,11 +85,12 @@ local function drawTick()
     ActiveInteraction = nil
 end
 
-local mainLoopRunning = false
+
 function MainLoop()
-    if mainLoopRunning then return end
+    print('main loop')
+    if mainLoopRunning or hideInteractions then return end
     mainLoopRunning = true
-    while mainLoopRunning do
+    while mainLoopRunning and not hideInteractions do
         local newNearbyInteractions = {}
         utils.checkEntities()
         table.sort(globals.Interactions, function (a, b)
