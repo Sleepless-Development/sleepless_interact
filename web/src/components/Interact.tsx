@@ -85,7 +85,7 @@ const Interaction: React.FC<{ interaction: InteractionData; color: string }> = (
   }) => (
     <>
       <div
-        style={ {translate: numberOfActiveOptions < 2 ? "-1.5rem" : '', backgroundColor: color}}
+        style={ {translate: numberOfActiveOptions < 2 ? "-1.5rem" : '', backgroundColor: isActive ? color : 'transparent'}}
         className={`${styles.button} ${isActive && styles.active}`}
       >
         {numberOfActiveOptions > 1 && (
