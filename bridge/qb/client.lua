@@ -64,4 +64,25 @@ RegisterNetEvent('QBCore:Client:OnPlayerUnload', function()
     Player = table.wipe(Player)
 end)
 
+
+AddEventHandler('onResourceStart', function(resource)
+    if resource == GetCurrentResourceName() then
+        local PlayerData = QBCore.Functions.GetPlayerData()
+
+        Groups = {
+            [PlayerData.job.name] = PlayerData.job.grade.level,
+            [PlayerData.gang.name] = PlayerData.gang.grade.level
+        }
+        Player = {
+            job = PlayerData.job.name,
+            gang = PlayerData.gang.name,
+        }
+
+        if not ox_inv then setPlayerItems(PlayerData) end
+        
+        TriggerEvent('sleepless_interact:updateGroups', Groups)
+        MainLoop()
+    end
+end)
+
 return Groups
