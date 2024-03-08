@@ -10,11 +10,11 @@ config.color = vec4(28, 126, 214, 200)
 
 config.indicatorSprite = { dict = 'shared', txt = 'emptydot_32' }
 
-config.useShowKeyBind = true
+config.useShowKeyBind = false
 
 config.defaultShowKeyBind = 'LMENU'
 
-config.showKeyBindBehavior = 'toggle'
+config.showKeyBindBehavior = 'hold'
 
 
 return config
