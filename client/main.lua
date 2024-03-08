@@ -87,7 +87,6 @@ end
 
 
 function MainLoop()
-    print('main loop')
     if mainLoopRunning or hideInteractions then return end
     mainLoopRunning = true
     while mainLoopRunning and not hideInteractions do
