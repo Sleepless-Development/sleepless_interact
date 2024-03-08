@@ -3,7 +3,7 @@ local Vehicles = require '@ox_inventory.data.vehicles'
 local dui = require 'imports.dui'
 local DuiObject, updateMenu in dui
 local ox_inv = GetResourceState('ox_inventory'):find('start')
-local Groups
+local Groups = {}
 
 local utils = {}
 
@@ -39,8 +39,6 @@ utils.loadInteractionData = function(data, resource)
             data.bone = foundBone
         end
     end
-
-
     return data
 end
 
