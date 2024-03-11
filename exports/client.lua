@@ -99,6 +99,7 @@ local function insertModelData(model, data)
     if doesInteractionExist(globals.Models[model], data) then return end
 
     globals.Models[model][#globals.Models[model]+1] = data
+    table.wipe(globals.cachedModelEntities)
 end
 
 ---add interaction for model(s)
@@ -137,7 +138,7 @@ function interact.addGlobalPlayer(data)
     data = utils.loadInteractionData(data, GetInvokingResource())
     if doesInteractionExist(globals.playerInteractions, data) then return end
     globals.playerInteractions[#globals.playerInteractions+1] = data
-
+    table.wipe(globals.cachedPlayers)
     return id
 end
 
@@ -154,6 +155,7 @@ function interact.addGlobalPed(data)
     data = utils.loadInteractionData(data, GetInvokingResource())
     if doesInteractionExist(globals.pedInteractions, data) then return end
     globals.pedInteractions[#globals.pedInteractions+1] = data
+    table.wipe(globals.cachedPeds)
 
     return id
 end
@@ -171,7 +173,7 @@ function interact.addGlobalVehicle(data)
     data = utils.loadInteractionData(data, GetInvokingResource())
     if doesInteractionExist(globals.vehicleInteractions, data) then return end
     globals.vehicleInteractions[#globals.vehicleInteractions+1] = data
-    
+    table.wipe(globals.cachedVehicles)
     return id
 end
 
