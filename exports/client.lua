@@ -231,7 +231,7 @@ end
 
 ---remove global model interactions with id
 ---@param model number | number[]
-function interact.removeGlobalModelById(model, id)
+function interact.removeGlobalModel(model, id)
 
     if type(model) == 'table' then
         local models = model
@@ -247,7 +247,7 @@ end
 
 ---remove global player interactions with id
 ---@param id number | string
-function interact.removeGlobalPlayerById(id)
+function interact.removeGlobalPlayer(id)
     for i = 1, #globals.playerInteractions do
         local data = globals.playerInteractions[i]
         if data.id == id then
@@ -259,7 +259,7 @@ end
 
 ---remove global ped interactions with id
 ---@param id number | string
-function interact.removeGlobalPedById(id)
+function interact.removeGlobalPed(id)
     for i = 1, #globals.pednteractions do
         local data = globals.pednteractions[i]
         if data.id == id then
@@ -271,7 +271,7 @@ end
 
 ---remove global vehicle interactions with id
 ---@param id number | string
-function interact.removeGlobalVehicleById(id)
+function interact.removeGlobalVehicle(id)
     for i = 1, #globals.vehicleInteractions do
         local data = globals.vehicleInteractions[i]
         if data.id == id then
