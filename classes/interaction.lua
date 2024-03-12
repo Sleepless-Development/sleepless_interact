@@ -2,6 +2,7 @@
 local dui = require 'imports.dui'
 local globals = require 'imports.globals'
 local config = require 'imports.config'
+local utils = require 'imports.utils'
 local txdName, txtName in dui
 local color, indicatorSprite in config
 local interactionIds = {}
@@ -109,15 +110,27 @@ function Interaction:handleInteract()
     local time = GetGameTimer()
     if self:isOnCooldown(time) then return end
     self.lastActionTime = time
-    
-    local option = self.options[self.currentOption]
 
     if self.netId then
         self.entity = self:getEntity()
     end
 
-    option.action(self)
+    local option = self.options[self.currentOption]
+    local response = utils.getActionData(self)
 
+    if option.action then
+        option.action(response)
+    elseif option.onSelect then -- ox_target compatibility
+        option.onSelect(response)
+    elseif option.export then
+        exports[option.resource][option.export](response)
+    elseif option.event then
+        TriggerEvent(option.event, response)
+    elseif option.serverEvent then
+        TriggerServerEvent(option.serverEvent, response)
+    elseif option.command then
+        ExecuteCommand(option.command)
+    end
 
     if option.destroy then
         self:destroy()

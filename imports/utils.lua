@@ -19,6 +19,17 @@ RegisterNetEvent('sleepless_interact:updateGroups', function(update)
     Groups = update
 end)
 
+utils.getActionData = function (interaction)
+    local response = {}
+    
+    response.id = interaction.id
+    response.entity = interaction.entity
+    response.coords = interaction:getCoords()
+    response.distance = interaction.currentDistance
+    
+    return response
+end
+
 utils.loadInteractionData = function(data, resource)
     data.resource = data.resource or resource or 'sleepless_interact'
     data.renderDistance = data.renderDistance or 5.0
