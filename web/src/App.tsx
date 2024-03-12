@@ -34,7 +34,6 @@ const App: React.FC = () => {
   const [color, setColor] = useState('rgba(0,0,0,0)');
 
   useNuiEvent<{ x: number; y: number; z: number; w: number }>("setColor",(color) => {
-    console.log('set color', `rgb(${color.x}, ${color.y}, ${color.z})`)
       setColor(`rgba(${color.x}, ${color.y}, ${color.z}, ${color.w / 255})`);
     }
   );

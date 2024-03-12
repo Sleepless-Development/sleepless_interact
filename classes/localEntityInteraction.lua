@@ -6,8 +6,9 @@ local LocalEntityInteraction = lib.class('LocalEntityInteraction', EntityInterac
 
 local DoesEntityExist = DoesEntityExist
 
-function LocalEntityInteraction:constructor()
-    self:super()
+function LocalEntityInteraction:constructor(data)
+    self:super(data)
+    self.entity = data.entity
 end
 
 function LocalEntityInteraction:getEntity()

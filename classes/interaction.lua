@@ -39,7 +39,7 @@ local interactionIds = {}
 ---@field shouldBeActive fun(data: self): number abstract method for getting if the interaction should be active
 local Interaction = lib.class('Interaction')
 
-function Interaction:constructor()
+function Interaction:constructor(data)
     lib.requestStreamedTextureDict(txdName)
     lib.requestStreamedTextureDict(indicatorSprite.dict)
 
@@ -56,11 +56,22 @@ function Interaction:constructor()
     end)
 
     self.private.currentOption = 1
+    self.private.lastActionTime = 0
+    self.private.cooldown = data.cooldown
 
+    self.id = data.id
+    self.renderDistance = data.renderDistance
+    self.activeDistance = data.activeDistance
+    self.currentDistance = data.currentDistance
+
+    self.action = data.action
+    self.options = data.options
+
+    self.isActive = false
     self.currentDistance = 999
     self.shouldDestroy = false
     self.textOptions = {}
-    self.lastActionTime = 0
+
     
     if self.action then
         self.options = {}
