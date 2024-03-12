@@ -123,9 +123,7 @@ function MainLoop()
     nearbyInteractions = {}
 end
 
-AddStateBagChangeHandler("invOpen", nil, function(bagName, _, state)
-    if GetPlayerFromStateBagName(bagName) ~= cache.playerId then return end
-
+AddStateBagChangeHandler("invOpen", ('player:%s'):format(cache.serverId), function(bagName, _, state)
     if state then
         mainLoopRunning = false
     else
