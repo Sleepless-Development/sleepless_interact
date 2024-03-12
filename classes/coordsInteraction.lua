@@ -7,7 +7,7 @@ local utils = require 'imports.utils'
 ---@field point CPoint
 local CoordsInteraction = lib.class('CoordsInteraction', Interaction)
 
-function CoordsInteraction:init()
+function CoordsInteraction:constructor()
     self:super()
     self:createStaticPoint()
 end

@@ -13,7 +13,7 @@ local GetOffsetFromEntityInWorldCoords = GetOffsetFromEntityInWorldCoords
 local GetEntityBonePosition_2 = GetEntityBonePosition_2
 local GetEntityBoneIndexByName = GetEntityBoneIndexByName
 
-function EntityInteraction:init()
+function EntityInteraction:constructor()
     self:super()
 end
 

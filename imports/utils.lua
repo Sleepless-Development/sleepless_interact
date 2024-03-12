@@ -34,7 +34,9 @@ utils.loadInteractionData = function(data, resource)
     data.resource = data.resource or resource or 'sleepless_interact'
     data.renderDistance = data.renderDistance or 5.0
     data.activeDistance = data.activeDistance or 1.0
-    data.cooldown = data.cooldown or 1000
+    data.private = {}
+    data.private.cooldown = data.cooldown or 1000
+    data.cooldown = nil
 
     if type(data.bone) == 'table' then
         local entity = (data.netId and NetworkGetEntityFromNetworkId(data.netId)) or data.entity

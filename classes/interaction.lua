@@ -39,23 +39,29 @@ local interactionIds = {}
 ---@field shouldBeActive fun(data: self): number abstract method for getting if the interaction should be active
 local Interaction = lib.class('Interaction')
 
-function Interaction:super()
+function Interaction:constructor()
     lib.requestStreamedTextureDict(txdName)
     lib.requestStreamedTextureDict(indicatorSprite.dict)
+
     if interactionIds[self.id] then
         lib.print.warn(string.format('duplicate interaction id added: %s', self.id))
         interactionIds[self.id]:destroy()
         Wait(100)
     end
+
     RegisterNetEvent('onResourceStop', function(resourceName)
         if self.resource == resourceName then
             self:destroy()
         end
     end)
+
+    self.private.currentOption = 1
+
     self.currentDistance = 999
-    self.currentOption = 1
+    self.shouldDestroy = false
     self.textOptions = {}
     self.lastActionTime = 0
+    
     if self.action then
         self.options = {}
     else
@@ -66,26 +72,10 @@ function Interaction:super()
     interactionIds[self.id] = self
 end
 
-function Interaction:getCoords() --abstract method
-    error("Abstract method getCoords not implemented")
-end
-
-function Interaction:getDistance() --abstract method
-    error("Abstract method getDistance not implemented")
-end
-
-function Interaction:shouldRender() --abstract method
-    error("Abstract method shouldRender not implemented")
-end
-
-function Interaction:shouldBeActive() --abstract method
-    error("Abstract method shouldBeActive not implemented")
-end
-
 function Interaction:destroy()
     self.shouldDestroy = true
 
-    local netId, entity in self
+    local netId, entity, point in self
     local serverid = entity and IsPedAPlayer(entity) and GetPlayerServerId(NetworkGetPlayerIndex(entity))
     local key = serverid or netId or entity
     
@@ -95,27 +85,32 @@ function Interaction:destroy()
         globals.cachedVehicles[key] = nil
         globals.cachedPeds[key] = nil
     end
+
+    if point then
+        point:remove()
+    end
+
     interactionIds[self.id] = nil
 end
 
 function Interaction:setCurrentTextOption(index)
-    self.currentOption = index
+    self.private.currentOption = index
 end
 
 function Interaction:isOnCooldown(time)
-    return time - self.lastActionTime < self.cooldown
+    return time - self.private.lastActionTime < self.private.cooldown
 end
 
 function Interaction:handleInteract()
     local time = GetGameTimer()
     if self:isOnCooldown(time) then return end
-    self.lastActionTime = time
+    self.private.lastActionTime = time
 
     if self.netId then
         self.entity = self:getEntity()
     end
 
-    local option = self.options[self.currentOption]
+    local option = self.options[self.private.currentOption]
     local response = utils.getActionData(self)
 
     if option.action then
@@ -154,6 +149,22 @@ function Interaction:drawSprite()
         DrawInteractiveSprite(dict, txt, 0, 0, scale, scale * ratio, 0.0, x, y, z, w)
     end
     ClearDrawOrigin()
+end
+
+function Interaction:getCoords() --abstract method
+    error("Abstract method getCoords not implemented")
+end
+
+function Interaction:getDistance() --abstract method
+    error("Abstract method getDistance not implemented")
+end
+
+function Interaction:shouldRender() --abstract method
+    error("Abstract method shouldRender not implemented")
+end
+
+function Interaction:shouldBeActive() --abstract method
+    error("Abstract method shouldBeActive not implemented")
 end
 
 return Interaction
