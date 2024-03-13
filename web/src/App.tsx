@@ -45,7 +45,6 @@ const App: React.FC = () => {
   });
 
   useNuiEvent<InteractionData>("updateInteraction", (newInteraction) => {
-    console.log("update", newInteraction);
     setInteraction(newInteraction);
   });
 
