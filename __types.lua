@@ -2,7 +2,7 @@
 
 ---@class CoordsData
 ---@field id string | number unique identifier for the interaction
----@field coords vector3
+---@field coords vector3 | vector3[]
 ---@field options table<{text: string, icon: string, destroy?: boolean, action: fun(data: CoordsInteraction), canInteract: fun(data: {entity?: number, distance: number, coords: vector3, id: string | number}): boolean}> list of options and actions for the interaction
 ---@field renderDistance? number distance that the interaction indicator is visible from (default: 5.0)
 ---@field activeDistance? number distance that the interaction menu is visible from (default: 1.0)
