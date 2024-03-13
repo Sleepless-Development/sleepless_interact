@@ -68,9 +68,11 @@ local function drawTick()
                 if interaction.action or utils.checkOptions(interaction) then
                     newActiveInteraction = interaction
                     if newActiveInteraction ~= ActiveInteraction then
-                        updateMenu('updateInteraction', nil)
-                        Wait(100)
-                        updateMenu('updateInteraction', {id = interaction.id, options = (interaction.action and {}) or interaction.textOptions})
+                        CreateThread(function ()
+                            updateMenu('updateInteraction', nil)
+                            Wait(100)
+                            updateMenu('updateInteraction', {id = interaction.id, options = (interaction.action and {}) or interaction.textOptions})
+                        end)
                     end
                     ActiveInteraction = interaction
                     handleDuiControls()
@@ -105,15 +107,11 @@ function MainLoop()
         for i = 1, #globals.Interactions do
             local interaction = globals.Interactions[i]
             if interaction then
-                if interaction.shouldDestroy then
-                    globals.Interactions[i] = nil
-                else
-                    if interaction:shouldRender() and utils.checkOptions(interaction) then
-                        if not ClosestInteraction then
-                            ClosestInteraction = globals.Interactions[i]
-                        end
-                        newNearbyInteractions[#newNearbyInteractions + 1] = interaction
+                if interaction:shouldRender() and utils.checkOptions(interaction) then
+                    if not ClosestInteraction then
+                        ClosestInteraction = globals.Interactions[i]
                     end
+                    newNearbyInteractions[#newNearbyInteractions + 1] = interaction
                 end
             end
         end

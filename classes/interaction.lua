@@ -1,6 +1,5 @@
 ---@diagnostic disable: undefined-field
 local dui = require 'imports.dui'
-local globals = require 'imports.globals'
 local config = require 'imports.config'
 local utils = require 'imports.utils'
 local txdName, txtName in dui
@@ -20,7 +19,7 @@ local interactionIds = {}
     maybe even only merge them in the ui? keep both instances of it in lua?
 ]]
 
----@class Interaction
+---@class Interaction: OxClass
 ---@field id string Unique identifier.
 ---@field options {text: string, action: fun(data: Interaction), canInteract: fun(data: Interaction)} table of options for the UI.
 ---@field groups? table<string, number> list of jobs and grades allowed to interact
@@ -90,6 +89,8 @@ function Interaction:destroy()
     if self.point then
         self.point:remove()
     end
+    
+    interactionIds[self.id] = nil
 end
 
 function Interaction:setCurrentTextOption(index)
