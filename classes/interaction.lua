@@ -43,14 +43,15 @@ function Interaction:constructor(data)
     lib.requestStreamedTextureDict(txdName)
     lib.requestStreamedTextureDict(indicatorSprite.dict)
 
-    if interactionIds[self.id] then
-        lib.print.warn(string.format('duplicate interaction id added: %s', self.id))
-        interactionIds[self.id]:destroy()
+    if interactionIds[data.id] then
+        lib.print.warn(string.format('duplicate interaction id added: %s', data.id))
+        interactionIds[data.id]:destroy()
+        interactionIds[data.id] = nil
         Wait(100)
     end
 
     RegisterNetEvent('onResourceStop', function(resourceName)
-        if self.resource == resourceName then
+        if data.resource == resourceName then
             self:destroy()
         end
     end)
@@ -63,7 +64,7 @@ function Interaction:constructor(data)
     self.renderDistance = data.renderDistance
     self.activeDistance = data.activeDistance
     self.currentDistance = data.currentDistance
-
+    self.resource = data.resource
     self.action = data.action
     self.options = data.options
 
@@ -85,23 +86,10 @@ end
 
 function Interaction:destroy()
     self.shouldDestroy = true
-
-    local netId, entity, point in self
-    local serverid = entity and IsPedAPlayer(entity) and GetPlayerServerId(NetworkGetPlayerIndex(entity))
-    local key = serverid or netId or entity
     
-    if key then
-        globals.cachedModelEntities[key] = nil
-        globals.cachedPlayers[key] = nil
-        globals.cachedVehicles[key] = nil
-        globals.cachedPeds[key] = nil
+    if self.point then
+        self.point:remove()
     end
-
-    if point then
-        point:remove()
-    end
-
-    interactionIds[self.id] = nil
 end
 
 function Interaction:setCurrentTextOption(index)

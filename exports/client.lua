@@ -99,7 +99,10 @@ local function insertModelData(model, data)
     if doesInteractionExist(globals.Models[model], data) then return end
 
     globals.Models[model][#globals.Models[model]+1] = data
-    table.wipe(globals.cachedModelEntities)
+    
+    if globals.cachedModelEntities[model] then
+        table.wipe(globals.cachedModelEntities[model])
+    end
 end
 
 ---add interaction for model(s)
@@ -156,7 +159,6 @@ function interact.addGlobalPed(data)
     if doesInteractionExist(globals.pedInteractions, data) then return end
     globals.pedInteractions[#globals.pedInteractions+1] = data
     table.wipe(globals.cachedPeds)
-
     return id
 end
 
@@ -219,6 +221,7 @@ local function handleRemoveModel(model, id)
     if type(model) == "string" then
         model = joaat(model)
     end
+    
     for i = 1, #globals.Models[model] do
         local data = globals.Models[model][i]
         if data.id == id then
@@ -228,6 +231,10 @@ local function handleRemoveModel(model, id)
             end
             removeByProperty('id', id)
         end
+    end
+
+    if globals.cachedModelEntities[model] then
+        table.wipe(globals.cachedModelEntities[model])
     end
 end
 
@@ -257,6 +264,7 @@ function interact.removeGlobalPlayer(id)
             removeByProperty('id', id)
         end
     end
+    table.wipe(globals.cachedPlayers)
 end
 
 ---remove global ped interactions with id
@@ -269,6 +277,7 @@ function interact.removeGlobalPed(id)
             removeByProperty('id', id)
         end
     end
+    table.wipe(globals.cachedPeds)
 end
 
 ---remove global vehicle interactions with id
@@ -281,4 +290,5 @@ function interact.removeGlobalVehicle(id)
             removeByProperty('id', id)
         end
     end
+    table.wipe(globals.cachedVehicles)
 end

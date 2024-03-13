@@ -119,9 +119,12 @@ local function processEntity(entity, entType)
     if globals.Models[model] then
         local isNet = NetworkGetEntityIsNetworked(entity)
         local key = isNet and NetworkGetNetworkIdFromEntity(entity) or entity
-        if globals.cachedModelEntities[key] then return end
+        if not globals.cachedModelEntities[model] then
+            globals.cachedModelEntities[model] = {}
+        end
+        if globals.cachedModelEntities[model][key] then return end
 
-        globals.cachedModelEntities[key] = true
+        globals.cachedModelEntities[model][key] = true
 
         for i = 1, #globals.Models[model] do
             local modelInteraction = lib.table.clone(globals.Models[model][i])
