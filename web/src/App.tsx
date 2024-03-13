@@ -31,9 +31,11 @@ import { fetchNui } from "./utils/fetchNui";
 const App: React.FC = () => {
   const [pause, setPause] = useState<boolean>(false);
   const [interaction, setInteraction] = useState<InteractionData>();
-  const [color, setColor] = useState('rgba(0,0,0,0)');
+  const [color, setColor] = useState("rgba(0,0,0,0)");
 
-  useNuiEvent<{ x: number; y: number; z: number; w: number }>("setColor",(color) => {
+  useNuiEvent<{ x: number; y: number; z: number; w: number }>(
+    "setColor",
+    (color) => {
       setColor(`rgba(${color.x}, ${color.y}, ${color.z}, ${color.w / 255})`);
     }
   );
@@ -43,7 +45,7 @@ const App: React.FC = () => {
   });
 
   useNuiEvent<InteractionData>("updateInteraction", (newInteraction) => {
-    if (!newInteraction) return;
+    console.log("update", newInteraction);
     setInteraction(newInteraction);
   });
 
@@ -51,7 +53,11 @@ const App: React.FC = () => {
     fetchNui("loaded");
   }, []);
 
-  return <>{interaction && <Interaction interaction={interaction} color={color} />}</>;
+  return (
+    <>
+      {interaction && <Interaction interaction={interaction} color={color} />}
+    </>
+  );
 };
 
 export default App;

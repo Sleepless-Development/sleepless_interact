@@ -68,6 +68,8 @@ local function drawTick()
                 if interaction.action or utils.checkOptions(interaction) then
                     newActiveInteraction = interaction
                     if newActiveInteraction ~= ActiveInteraction then
+                        updateMenu('updateInteraction', nil)
+                        Wait(100)
                         updateMenu('updateInteraction', {id = interaction.id, options = (interaction.action and {}) or interaction.textOptions})
                     end
                     ActiveInteraction = interaction
@@ -77,6 +79,9 @@ local function drawTick()
                 end
             end
             interaction:drawSprite()
+        end
+        if ActiveInteraction and not newActiveInteraction then
+            updateMenu('updateInteraction', nil)
         end
         ActiveInteraction = newActiveInteraction
         Wait(0)
