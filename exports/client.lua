@@ -16,8 +16,17 @@ function interact.addCoords(data)
         return
     end
 
-    data = utils.loadInteractionData(data, GetInvokingResource())
-    table.insert(globals.Interactions, CoordsInteraction:new(data))
+    if type(coords) == 'table' then
+        for i = 1, #coords do
+            data = utils.loadInteractionData(data, GetInvokingResource())
+            data.id = string.format("%s:%s", id, i)
+            data.coords = coords[i]
+            table.insert(globals.Interactions, CoordsInteraction:new(data))
+        end
+    else
+        data = utils.loadInteractionData(data, GetInvokingResource())
+        table.insert(globals.Interactions, CoordsInteraction:new(data))
+    end
 
     return id
 end
@@ -183,16 +192,18 @@ end
 
 ---@param property string
 ---@param value string | number
-local function removeByProperty(property, value)
+local function removeByProperty(property, value, similar)
     for i = 1, #globals.Interactions do
         local interaction = globals.Interactions[i]
-        if property == 'id' then
+        if property == 'id' and similar then
             if interaction[property] and tostring(interaction[property]):find(tostring(value)) then
                 interaction:destroy()
+                globals.Interactions[i] = nil
             end
         else
             if interaction[property] and interaction[property] == value then
                 interaction:destroy()
+                globals.Interactions[i] = nil
             end
         end
     end
@@ -212,8 +223,9 @@ end
 
 ---remove an interaction by id
 ---@param id number | string unique id returned by add function
-function interact.removeById(id)
-    removeByProperty('id', id)
+---@param similar? boolean
+function interact.removeById(id, similar)
+    removeByProperty('id', id, similar)
 end
 
 ---@param model number
@@ -229,7 +241,7 @@ local function handleRemoveModel(model, id)
             if #globals.Models[model] == 0 then
                 globals.Models[model] = nil
             end
-            removeByProperty('id', id)
+            interact.removeById(id, true)
         end
     end
 
@@ -261,7 +273,7 @@ function interact.removeGlobalPlayer(id)
         local data = globals.playerInteractions[i]
         if data.id == id then
             globals.playerInteractions[i] = nil
-            removeByProperty('id', id)
+            interact.removeById(id, true)
         end
     end
     table.wipe(globals.cachedPlayers)
@@ -274,7 +286,7 @@ function interact.removeGlobalPed(id)
         local data = globals.pednteractions[i]
         if data.id == id then
             globals.pednteractions[i] = nil
-            removeByProperty('id', id)
+            interact.removeById(id, true)
         end
     end
     table.wipe(globals.cachedPeds)
@@ -287,7 +299,7 @@ function interact.removeGlobalVehicle(id)
         local data = globals.vehicleInteractions[i]
         if data.id == id then
             globals.vehicleInteractions[i] = nil
-            removeByProperty('id', id)
+            interact.removeById(id, true)
         end
     end
     table.wipe(globals.cachedVehicles)
