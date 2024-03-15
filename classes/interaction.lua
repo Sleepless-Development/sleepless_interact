@@ -133,13 +133,15 @@ function Interaction:handleInteract()
 end
 
 local ratio = GetAspectRatio(true)
-function Interaction:drawSprite()
+function Interaction:drawSprite(busy)
     if self.shouldDestroy then return end
     local coords = self:getCoords()
     SetDrawOrigin(coords.x, coords.y, coords.z)
     if self.isActive and not self:isOnCooldown(GetGameTimer()) then
-        local scale = 1
-        DrawInteractiveSprite(txdName, txtName, 0, 0, scale, scale, 0.0, 255, 255, 255, 255)
+        if not busy then
+            local scale = 1
+            DrawInteractiveSprite(txdName, txtName, 0, 0, scale, scale, 0.0, 255, 255, 255, 255)
+        end
     else
         local distanceRatio = self:getDistance() / self.renderDistance
         distanceRatio = 0.5 + (0.25 * distanceRatio)
