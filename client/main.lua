@@ -58,6 +58,7 @@ local nearbyInteractions = {}
 
 local function drawTick()
     globals.DrawTickRunning = true
+    local menuBusy = false
     while next(nearbyInteractions) do
         local newActiveInteraction
         for i = 1, #nearbyInteractions do
@@ -67,11 +68,12 @@ local function drawTick()
             if active then
                 if interaction.action or utils.checkOptions(interaction) then
                     newActiveInteraction = interaction
-                    if newActiveInteraction ~= ActiveInteraction then
-                        CreateThread(function ()
-                            updateMenu('updateInteraction', nil)
-                            Wait(100)
+                    if newActiveInteraction and newActiveInteraction ~= ActiveInteraction then
+                        menuBusy = true
+                        SetTimeout(0, function ()
                             updateMenu('updateInteraction', {id = interaction.id, options = (interaction.action and {}) or interaction.textOptions})
+                            Wait(100)
+                            menuBusy = false
                         end)
                     end
                     ActiveInteraction = interaction
@@ -80,7 +82,7 @@ local function drawTick()
                     interaction.isActive = false
                 end
             end
-            interaction:drawSprite()
+            interaction:drawSprite(menuBusy)
         end
         if ActiveInteraction and not newActiveInteraction then
             updateMenu('updateInteraction', nil)
