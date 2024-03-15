@@ -12,7 +12,10 @@ RegisterNetEvent('ox:setGroup', function(name, grade)
 end)
 
 AddEventHandler('ox:playerLoaded', function()
-    Groups = Ox.GetPlayerData().groups
+    local player = Ox.GetPlayer() --[[@as OxPlayerClient]]
+    if player then
+        Groups = player:getGroups()
+    end
     TriggerEvent('sleepless_interact:updateGroups', Groups)
     TriggerEvent('sleepless_interact:LoadDui')
     MainLoop()
@@ -25,7 +28,10 @@ end)
 AddEventHandler('onResourceStart', function(resource)
     if resource == GetCurrentResourceName() then
         Wait(500)
-        Groups = Ox.GetPlayerData().groups
+        local player = Ox.GetPlayer() --[[@as OxPlayerClient]]
+        if player then
+            Groups = player:getGroups()
+        end
         TriggerEvent('sleepless_interact:updateGroups', Groups)
         MainLoop()
     end
