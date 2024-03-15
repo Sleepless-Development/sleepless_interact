@@ -1,8 +1,4 @@
-local file = ('imports/%s.lua'):format('client')
-local import = LoadResourceFile('ox_core', file)
-local chunk = assert(load(import, ('@@ox_core/%s'):format(file)))
-
-chunk()
+local Ox = require '@ox_core.lib.init'
 
 local Groups = {}
 
@@ -13,7 +9,7 @@ end)
 
 AddEventHandler('ox:playerLoaded', function()
     local player = Ox.GetPlayer() --[[@as OxPlayerClient]]
-    if player then
+    if player.charId then
         Groups = player:getGroups()
     end
     TriggerEvent('sleepless_interact:updateGroups', Groups)
@@ -29,7 +25,7 @@ AddEventHandler('onResourceStart', function(resource)
     if resource == GetCurrentResourceName() then
         Wait(500)
         local player = Ox.GetPlayer() --[[@as OxPlayerClient]]
-        if player then
+        if player.charId then
             Groups = player:getGroups()
         end
         TriggerEvent('sleepless_interact:updateGroups', Groups)
