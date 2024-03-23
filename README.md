@@ -15,4 +15,4 @@ https://sleeplessdevelopment.dev/interact
 
 ## 💾 Download
 
-[seleepless_interact.zip](https://github.com/Sleepless-Development/sleepless_interact/releases/download/latest/sleepless_interact.zip)
+[seleepless_interact.zip](https://github.com/Sleepless-Development/sleepless_interact/releases/latest/download/sleepless_interact.zip)
