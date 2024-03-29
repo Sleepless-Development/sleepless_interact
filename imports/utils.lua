@@ -5,6 +5,7 @@ local DuiObject, updateMenu in dui
 local ox_inv = GetResourceState('ox_inventory'):find('start')
 local Groups = {}
 
+---@class InteractUtils
 local utils = {}
 
 utils.sendReactMessage = function(action, data)
@@ -277,7 +278,7 @@ utils.checkOptions = function (interaction)
         end
     end
 
-    if disabledOptionsCount < optionsLength and shouldUpdateUI then
+    if interaction.isActive and disabledOptionsCount < optionsLength and shouldUpdateUI then
         updateMenu('updateInteraction', {
             id = interaction.id,
             options = interaction.action and {} or interaction.textOptions
@@ -324,6 +325,19 @@ utils.getTrunkPosition = function(entity)
     local min, max = GetModelDimensions(vehicleHash)
     local offset = (max - min) * (not checkVehicle and vec3(0.5, 0, 0.5) or vec3(0.5, 1, 0.5)) + min
     return GetOffsetFromEntityInWorldCoords(entity, offset.x, offset.y, offset.z)
+end
+
+utils.clearCacheForInteractionEntity = function (interaction)
+    if interaction.getEntity then
+        local key = interaction.netId or interaction:getEntity()
+        
+        if interaction.model and globals.cachedModelEntities[interaction.model] then
+            globals.cachedModelEntities[interaction.model][key] = nil
+        end
+        globals.cachedPeds[key] = nil
+        globals.cachedPlayers[key] = nil
+        globals.cachedVehicles[key] = nil
+    end
 end
 
 return utils
