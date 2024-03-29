@@ -2,6 +2,7 @@
 local dui = require 'imports.dui'
 local config = require 'imports.config'
 local utils = require 'imports.utils'
+local globals = require 'imports.globals'
 local txdName, txtName in dui
 local color, indicatorSprite in config
 local interactionIds = {}
@@ -45,7 +46,6 @@ function Interaction:constructor(data)
     if interactionIds[data.id] then
         lib.print.warn(string.format('duplicate interaction id added: %s', data.id))
         interactionIds[data.id]:destroy()
-        interactionIds[data.id] = nil
         Wait(100)
     end
 
@@ -91,6 +91,16 @@ function Interaction:destroy()
     end
     
     interactionIds[self.id] = nil
+
+    if self.getEntity then
+        local key = self.netId or self.getEntity()
+        if self.model then
+            globals.cachedModelEntities[self.model][key] = nil
+        end
+        globals.cachedPeds[key] = nil
+        globals.cachedPlayers[key] = nil
+        globals.cachedVehicles[key] = nil
+    end
 end
 
 function Interaction:setCurrentTextOption(index)

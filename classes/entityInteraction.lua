@@ -24,13 +24,15 @@ function EntityInteraction:getEntity()
 
     if self.shouldDestroy then return 0 end
 
-    if not NetworkDoesNetworkIdExist(self.netId) then
+    local entity = NetworkDoesNetworkIdExist(self.netId)
+
+    if not entity then
         lib.print.warn(string.format('netId didnt exist for interaction: %s. interaction removed', self.id))
         self:destroy()
         return 0
     end
 
-    return NetworkGetEntityFromNetworkId(self.netId)
+    return entity
 end
 
 function EntityInteraction:verifyEntity()
