@@ -1,6 +1,6 @@
 local Groups = {}
 local Loaded = false
-local utils = require 'resources.[dev].sleepless_squads.moduless.utils'
+local utils = require 'imports.utils'
 local playerItems = utils.getItems()
 local ox_inv = GetResourceState('ox_inventory'):find('start')
 local ESX = exports.es_extended:getSharedObject()
