@@ -1,7 +1,7 @@
 local QBCore = exports['qb-core']:GetCoreObject()
 local Groups = {}
 local Player = {}
-local utils = require 'resources.[dev].sleepless_squads.moduless.utils'
+local utils = require 'imports.utils'
 local playerItems = utils.getItems()
 local ox_inv = GetResourceState('ox_inventory'):find('start')
 
