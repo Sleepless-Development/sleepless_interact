@@ -50,7 +50,7 @@ function Interaction:constructor(data)
 
     RegisterNetEvent('onResourceStop', function(resourceName)
         if data.resource == resourceName then
-            self:destroy()
+            interact.removeById(self.id)
         end
     end)
 
@@ -88,7 +88,7 @@ function Interaction:destroy()
     if self.point then
         self.point:remove()
     end
-    
+
     interactionIds[self.id] = nil
 end
 

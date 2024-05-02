@@ -54,6 +54,10 @@ utils.loadInteractionData = function(data, resource)
 end
 
 local function processEntity(entity, entType)
+
+    local isNet = NetworkGetEntityIsNetworked(entity)
+    local key = isNet and NetworkGetNetworkIdFromEntity(entity) or entity
+
     if entType == 'player' then
         if next(globals.playerInteractions) then
             local player = NetworkGetPlayerIndex(entity)
@@ -72,8 +76,6 @@ local function processEntity(entity, entType)
 
     if entType == 'ped' then
         if next(globals.pedInteractions) then
-            local isNet = NetworkGetEntityIsNetworked(entity)
-            local key = isNet and PedToNet(entity) or entity
             if globals.cachedPeds[key] then return end
 
             globals.cachedPeds[key] = true
@@ -94,22 +96,28 @@ local function processEntity(entity, entType)
     if entType == 'vehicle' then
         local isVehicle = IsEntityAVehicle(entity)
         if isVehicle and next(globals.vehicleInteractions) then
-            local netId = NetworkGetNetworkIdFromEntity(entity)
-            if globals.cachedVehicles[netId] then return end
+            if globals.cachedVehicles[key] then return end
 
-            globals.cachedVehicles[netId] = true
+            globals.cachedVehicles[key] = true
             for i = 1, #globals.vehicleInteractions do
                 local interaction = lib.table.clone(globals.vehicleInteractions[i])
-                if ox_inv and interaction.bone == 'boot' then
-                    if utils.getTrunkPosition(NetworkGetEntityFromNetworkId(netId)) then
-                        interaction.netId = netId
-                        interaction.id = interaction.id .. netId
+                interaction.id = string.format('%s:%s', interaction.id, key)
+                if ox_inv and interaction.bone == 'boot' and utils.getTrunkPosition(entity) then
+                    if isNet then
+                        interaction.netId = key
                         interact.addEntity(interaction)
+                    else
+                        interaction.entity = key
+                        interact.addLocalEntity(interaction)
                     end
                 else
-                    interaction.netId = netId
-                    interaction.id = string.format('%s:%s', interaction.id, netId)
-                    interact.addEntity(interaction)
+                    if isNet then
+                        interaction.netId = key
+                        interact.addEntity(interaction)
+                    else
+                        interaction.entity = key
+                        interact.addLocalEntity(interaction)
+                    end
                 end
             end
         end
@@ -117,8 +125,6 @@ local function processEntity(entity, entType)
 
     local model = GetEntityModel(entity)
     if globals.Models[model] then
-        local isNet = NetworkGetEntityIsNetworked(entity)
-        local key = isNet and NetworkGetNetworkIdFromEntity(entity) or entity
         if not globals.cachedModelEntities[model] then
             globals.cachedModelEntities[model] = {}
         end

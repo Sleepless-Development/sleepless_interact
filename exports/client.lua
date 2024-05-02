@@ -195,15 +195,17 @@ end
 local function removeByProperty(property, value, similar)
     for i = 1, #globals.Interactions do
         local interaction = globals.Interactions[i]
-        if property == 'id' and similar then
-            if interaction[property] and tostring(interaction[property]):find(tostring(value)) then
-                interaction:destroy()
-                globals.Interactions[i] = nil
-            end
-        else
-            if interaction[property] and interaction[property] == value then
-                interaction:destroy()
-                globals.Interactions[i] = nil
+        if interaction then
+            if property == 'id' and similar then
+                if interaction[property] and tostring(interaction[property]):find(tostring(value)) then
+                    interaction:destroy()
+                    globals.Interactions[i] = nil
+                end
+            else
+                if interaction[property] and interaction[property] == value then
+                    interaction:destroy()
+                    globals.Interactions[i] = nil
+                end
             end
         end
     end
