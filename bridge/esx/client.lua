@@ -5,6 +5,11 @@ local playerItems = utils.getItems()
 local ox_inv = GetResourceState('ox_inventory'):find('start')
 local ESX = exports.es_extended:getSharedObject()
 
+RegisterNetEvent('esx:setJob', function(job, lastJob)
+    Groups = { [job.name] = job.grade }
+    TriggerEvent('sleepless_interact:updateGroups', Groups)
+end)
+
 RegisterNetEvent('esx:setPlayerData', function(key, value)
     if not Loaded or GetInvokingResource() ~= 'es_extended' then return end
 
@@ -53,6 +58,7 @@ AddEventHandler('onResourceStart', function(resource)
             [xPlayer.job.name] = xPlayer.job.grade,
         }
         TriggerEvent('sleepless_interact:updateGroups', Groups)
+        print('start loop')
         MainLoop()
     end
 end)
