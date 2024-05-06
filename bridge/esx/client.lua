@@ -58,7 +58,6 @@ AddEventHandler('onResourceStart', function(resource)
             [xPlayer.job.name] = xPlayer.job.grade,
         }
         TriggerEvent('sleepless_interact:updateGroups', Groups)
-        print('start loop')
         MainLoop()
     end
 end)
