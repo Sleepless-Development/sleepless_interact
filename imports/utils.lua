@@ -273,7 +273,7 @@ utils.checkOptions = function (interaction)
             disabled = not checkItems(option.items, option.anyitem)
         end
 
-        if disabled ~= interaction.textOptions[i].disable then
+        if interaction.textOptions[i] and disabled ~= interaction.textOptions[i].disable then
             interaction.textOptions[i].disable = disabled
             shouldUpdateUI = true
         end
