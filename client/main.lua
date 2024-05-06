@@ -7,6 +7,9 @@ local ClosestInteraction = nil
 local ActiveInteraction
 local mainLoopRunning = false
 
+
+LocalPlayer.state.interactBusy = false
+
 lib.addKeybind({
     name = 'sleepless_interact:action',
     description = 'Interact',
@@ -96,9 +99,9 @@ end
 
 
 function MainLoop()
-    if mainLoopRunning or hideInteractions then return end
+    if mainLoopRunning or hideInteractions or LocalPlayer.state.interactBusy then return end
     mainLoopRunning = true
-    while mainLoopRunning and not hideInteractions do
+    while mainLoopRunning and not hideInteractions and not LocalPlayer.state.interactBusy do
         local newNearbyInteractions = {}
         utils.checkEntities()
         table.sort(globals.Interactions, function (a, b)
@@ -129,6 +132,16 @@ function MainLoop()
 end
 
 AddStateBagChangeHandler("invOpen", ('player:%s'):format(cache.serverId), function(bagName, _, state)
+    if state then
+        mainLoopRunning = false
+    else
+        if not cache.vehicle then
+            MainLoop()
+        end
+    end
+end)
+
+AddStateBagChangeHandler("interactBusy", ('player:%s'):format(cache.serverId), function(bagName, _, state)
     if state then
         mainLoopRunning = false
     else
