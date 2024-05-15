@@ -199,12 +199,12 @@ local function removeByProperty(property, value, similar)
             if property == 'id' and similar then
                 if interaction[property] and tostring(interaction[property]):find(tostring(value)) then
                     interaction:destroy()
-                    globals.Interactions[i] = nil
+                    table.remove(globals.Interactions, i)
                 end
             else
                 if interaction[property] and interaction[property] == value then
                     interaction:destroy()
-                    globals.Interactions[i] = nil
+                    table.remove(globals.Interactions, i)
                 end
             end
         end
