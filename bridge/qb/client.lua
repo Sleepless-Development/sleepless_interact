@@ -16,8 +16,6 @@ local function setPlayerItems(data)
 end
 
 local function updateJob(job)
-    if not Player.Group then return end
-
     Groups[Player.job] = nil
     Groups[job.name] = job.grade.level
     Player.job = job.name
@@ -25,8 +23,6 @@ local function updateJob(job)
 end
 
 local function updateGang(gang)
-    if not Player.Group then return end
-
     Groups[Player.gang] = nil
     Groups[gang.name] = gang.grade.level
     Player.gang = gang.name
