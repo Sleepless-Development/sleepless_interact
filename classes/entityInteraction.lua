@@ -21,31 +21,24 @@ function EntityInteraction:constructor(data)
 end
 
 function EntityInteraction:getEntity()
-
-    if self.shouldDestroy then return 0 end
-
-    if not NetworkDoesNetworkIdExist(self.netId) then
-        lib.print.warn(string.format('netId didnt exist for interaction: %s. interaction removed', self.id))
-        self:destroy()
-        return 0
-    end
+    if self.shouldDestroy or not self:verifyEntity() then return 0 end
 
     return NetworkGetEntityFromNetworkId(self.netId)
 end
 
 function EntityInteraction:verifyEntity()
-    if not NetworkDoesEntityExistWithNetworkId(self.netId) then
+    if not NetworkDoesNetworkIdExist(self.netId) or not NetworkDoesEntityExistWithNetworkId(self.netId) then
         lib.print.warn(string.format('entity didnt exist with netid %s for interaction: %s. interaction removed', self.netId, self.id))
-        self:destroy()
+        utils.clearCacheForInteractionEntity(self.netId)
+        interact.removeById(self.id)
         return false
     end
+    return true
 end
 
 function EntityInteraction:shouldRender()
+    if self.shouldDestroy or not self:verifyEntity() then return false end
 
-    if self.shouldDestroy then return false end
-
-    self:verifyEntity()
     self.currentDistance = self:getDistance()
     return self.currentDistance <= self.renderDistance
 end
@@ -56,7 +49,8 @@ end
 
 function EntityInteraction:getCoords()
     local entity = self:getEntity()
-    local offset, bone in self
+    local offset = self.offset
+    local bone = self.bone
 
     if bone then
         if ox_inv and bone == 'boot' then

@@ -10,7 +10,9 @@ local globals = require 'imports.globals'
 ---static coords interaction
 ---@param data CoordsData
 function interact.addCoords(data)
-    local id, coords, options in data
+    local id = data.id
+    local coords = data.coords
+    local options = data.options
     if not id or not coords or not options then
         lib.print.error('addCoords: missing parameters')
         return
@@ -36,8 +38,9 @@ end
 ---add interaction for local non-networked entity
 ---@param data LocalEntityData
 function interact.addLocalEntity(data)
-    local id, entity, options in data
-
+    local id = data.id
+    local entity = data.entity
+    local options = data.options
     if not id or not entity or not options then
         lib.print.error('addLocalEntity: missing parameters')
         return
@@ -59,8 +62,9 @@ end
 ---add interaction for a networked entity
 ---@param data EntityData
 function interact.addEntity(data)
-    local id, netId, options in data
-
+    local id = data.id
+    local netId = data.netId
+    local options = data.options
     if not id or not netId or not options then
         lib.print.error('addEntity: missing parameters')
         return
@@ -81,7 +85,6 @@ function interact.addEntity(data)
     table.insert(globals.Interactions, EntityInteraction:new(data))
     return id
 end
-
 
 -- GLOBAL INTERACTIONS
 
@@ -117,21 +120,24 @@ end
 ---add interaction for model(s)
 ---@param data ModelData
 function interact.addGlobalModel(data)
-    local id, models, options in data
+    local id = data.id
+    local options = data.options
 
-    if not id or not models or not options then
+    if not id or not data.models or not options then
         lib.print.error('addGlobalModel: missing parameters')
         return
     end
 
     data = utils.loadInteractionData(data, GetInvokingResource())
+
     local models = data.models
+
     data.models = nil
+
     for i = 1,#models do
-        local model, offset, bone in models[i]
-        data.offset = offset
-        data.bone = bone
-        insertModelData(model, data)
+        data.offset = models[i].offset
+        data.bone = models[i].bone
+        insertModelData(models[i].model, data)
     end
 
     return id
@@ -140,8 +146,8 @@ end
 ---add global interaction for player
 ---@param data PedInteractionData
 function interact.addGlobalPlayer(data)
-    local id, options in data
-
+    local id = data.id
+    local options = data.options
     if not id or not options then
         lib.print.error('addGlobalPlayer: missing parameters')
         return
@@ -157,7 +163,8 @@ end
 ---add global interaction for non-player ped
 ---@param data PedInteractionData
 function interact.addGlobalPed(data)
-    local id, options in data
+    local id = data.id
+    local options = data.options
 
     if not id or not options then
         lib.print.error('addGlobalPed: missing parameters')
@@ -174,7 +181,8 @@ end
 ---add global interaction for networked vehicle
 ---@param data VehicleInteractionData
 function interact.addGlobalVehicle(data)
-    local id, options in data
+    local id = data.id
+    local options = data.options
 
     if not id or not options then
         lib.print.error('addGlobalVehicle: missing parameters')
@@ -193,9 +201,10 @@ end
 ---@param property string
 ---@param value string | number
 local function removeByProperty(property, value, similar)
-    for i = 1, #globals.Interactions do
+    for i = #globals.Interactions, 1, -1 do
         local interaction = globals.Interactions[i]
         if interaction then
+            local cacheKey = interaction.netId or interaction.getEntity and interaction:getEntity()
             if property == 'id' and similar then
                 if interaction[property] and tostring(interaction[property]):find(tostring(value)) then
                     interaction:destroy()
@@ -206,6 +215,9 @@ local function removeByProperty(property, value, similar)
                     interaction:destroy()
                     table.remove(globals.Interactions, i)
                 end
+            end
+            if cacheKey then
+                utils.clearCacheForInteractionEntity(cacheKey)
             end
         end
     end
@@ -236,12 +248,12 @@ local function handleRemoveModel(model, id)
         model = joaat(model)
     end
     
-    for i = 1, #globals.Models[model] do
+    for i = #globals.Models[model], 1, -1 do
         local data = globals.Models[model][i]
         if data.id == id then
-            globals.Models[model][i] = nil
+            table.remove(globals.Models[model], i)
             if #globals.Models[model] == 0 then
-                globals.Models[model] = nil
+                globals.Models[model] = {}
             end
             interact.removeById(id, true)
         end
@@ -271,10 +283,10 @@ end
 ---remove global player interactions with id
 ---@param id number | string
 function interact.removeGlobalPlayer(id)
-    for i = 1, #globals.playerInteractions do
+    for i = #globals.playerInteractions, 1, -1 do
         local data = globals.playerInteractions[i]
         if data.id == id then
-            globals.playerInteractions[i] = nil
+            table.remove(globals.playerInteractions, i)
             interact.removeById(id, true)
         end
     end
@@ -284,10 +296,10 @@ end
 ---remove global ped interactions with id
 ---@param id number | string
 function interact.removeGlobalPed(id)
-    for i = 1, #globals.pednteractions do
+    for i = #globals.pednteractions, 1, -1  do
         local data = globals.pednteractions[i]
         if data.id == id then
-            globals.pednteractions[i] = nil
+            table.remove(globals.pednteractions, i)
             interact.removeById(id, true)
         end
     end
@@ -297,10 +309,10 @@ end
 ---remove global vehicle interactions with id
 ---@param id number | string
 function interact.removeGlobalVehicle(id)
-    for i = 1, #globals.vehicleInteractions do
+    for i = #globals.vehicleInteractions, 1, -1  do
         local data = globals.vehicleInteractions[i]
         if data.id == id then
-            globals.vehicleInteractions[i] = nil
+            table.remove(globals.vehicleInteractions, i)
             interact.removeById(id, true)
         end
     end

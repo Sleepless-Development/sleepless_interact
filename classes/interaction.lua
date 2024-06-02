@@ -2,8 +2,10 @@
 local dui = require 'imports.dui'
 local config = require 'imports.config'
 local utils = require 'imports.utils'
-local txdName, txtName in dui
-local color, indicatorSprite in config
+local txdName = dui.txdName
+local txtName = dui.txtName
+local color = config.color
+local indicatorSprite = config.indicatorSprite
 local interactionIds = {}
 
 ---@todo: FUTURE: may need to merge options for entities based on bones.
@@ -21,7 +23,7 @@ local interactionIds = {}
 
 ---@class Interaction: OxClass
 ---@field id string Unique identifier.
----@field options {text: string, action: fun(data: Interaction), canInteract: fun(data: Interaction)} table of options for the UI.
+---@field options {text: string, action: fun(data: Interaction), canInteract: fun(data: Interaction)}[] table of options for the UI.
 ---@field groups? table<string, number> list of jobs and grades allowed to interact
 ---@field currentOption? number currently selected option
 ---@field renderDistance? number Optional render distance. (default: 5.0)
@@ -44,7 +46,8 @@ function Interaction:constructor(data)
 
     if interactionIds[data.id] then
         lib.print.warn(string.format('duplicate interaction id added: %s', data.id))
-        interactionIds[data.id]:destroy()
+        interact.removeById(data.id)
+        interactionIds[data.id] = nil
         Wait(100)
     end
 
@@ -79,7 +82,7 @@ function Interaction:constructor(data)
             self.textOptions[i] = { text = self.options[i].text, icon = self.options[i].icon }
         end
     end
-    interactionIds[self.id] = self
+    interactionIds[self.id] = true
 end
 
 function Interaction:destroy()
@@ -127,7 +130,7 @@ function Interaction:handleInteract()
     end
 
     if option.destroy then
-        self:destroy()
+        interact.removeById(self.id)
     end
 end
 
@@ -145,9 +148,9 @@ function Interaction:drawSprite(busy)
         local distanceRatio = self:getDistance() / self.renderDistance
         distanceRatio = 0.5 + (0.25 * distanceRatio)
         local scale = 0.025 * (distanceRatio)
-        local x,y,z,w in color
-        local dict, txt in indicatorSprite
-        DrawInteractiveSprite(dict, txt, 0, 0, scale, scale * ratio, 0.0, x, y, z, w)
+        local dict = indicatorSprite.dict
+        local txt = indicatorSprite.txt
+        DrawInteractiveSprite(dict, txt, 0, 0, scale, scale * ratio, 0.0, color.x, color.y, color.z, color.w)
     end
     ClearDrawOrigin()
 end

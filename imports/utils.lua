@@ -1,6 +1,7 @@
 local globals = require 'imports.globals'
 local dui = require 'imports.dui'
-local DuiObject, updateMenu in dui
+local DuiObject = dui.DuiObject
+local updateMenu = dui.updateMenu
 local ox_inv = GetResourceState('ox_inventory'):find('start')
 local Groups = {}
 
@@ -332,17 +333,15 @@ if ox_inv then
     end
 end
 
-utils.clearCacheForInteractionEntity = function (interaction)
-    if interaction.getEntity then
-        local key = interaction.netId or interaction:getEntity()
-        
-        if interaction.model and globals.cachedModelEntities[interaction.model] then
-            globals.cachedModelEntities[interaction.model][key] = nil
-        end
-        globals.cachedPeds[key] = nil
-        globals.cachedPlayers[key] = nil
-        globals.cachedVehicles[key] = nil
+utils.clearCacheForInteractionEntity = function (key, model)
+      
+    if model and globals.cachedModelEntities[model] then
+        globals.cachedModelEntities[model][key] = nil
     end
+
+    globals.cachedPeds[key] = nil
+    globals.cachedPlayers[key] = nil
+    globals.cachedVehicles[key] = nil
 end
 
 return utils

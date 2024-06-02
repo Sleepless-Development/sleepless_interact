@@ -16,14 +16,18 @@ local function setPlayerItems(data)
 end
 
 local function updateJob(job)
-    Groups[Player.job] = nil
+    if Player.job and Groups[Player.job] then
+        Groups[Player.job] = nil
+    end
     Groups[job.name] = job.grade.level
     Player.job = job.name
     TriggerEvent('sleepless_interact:updateGroups', Groups)
 end
 
 local function updateGang(gang)
-    Groups[Player.gang] = nil
+    if Player.gang and Groups[Player.gang] then
+        Groups[Player.gang] = nil
+    end
     Groups[gang.name] = gang.grade.level
     Player.gang = gang.name
     TriggerEvent('sleepless_interact:updateGroups', Groups)

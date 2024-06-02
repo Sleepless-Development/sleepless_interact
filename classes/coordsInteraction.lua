@@ -18,12 +18,7 @@ function CoordsInteraction:createStaticPoint()
     instance.point = lib.points.new({
         coords = instance.coords,
         distance = instance.renderDistance,
-        interact = instance
     })
-
-    function instance.point:onEnter()
-
-    end
 
     function instance.point:onExit()
         instance.currentDistance = 999

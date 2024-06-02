@@ -1,6 +1,6 @@
 local dui = {}
 local config = require('imports.config')
-local color in config
+local color = config.color
 
 dui.txdName = "interaction_dui"
 dui.txtName = "interaction_dui_texture"

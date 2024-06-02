@@ -2,7 +2,8 @@ local globals = require 'imports.globals'
 local utils = require 'imports.utils'
 local dui = require 'imports.dui'
 local config = require 'imports.config'
-local updateMenu, handleDuiControls in dui
+local updateMenu = dui.updateMenu
+local handleDuiControls = dui.handleDuiControls
 local ClosestInteraction = nil
 local ActiveInteraction
 local mainLoopRunning = false
@@ -22,7 +23,9 @@ lib.addKeybind({
 })
 
 local hideInteractions = false
-local defaultShowKeyBind, showKeyBindBehavior, useShowKeyBind in config
+local defaultShowKeyBind = config.defaultShowKeyBind
+local showKeyBindBehavior = config.showKeyBindBehavior
+local useShowKeyBind = config.useShowKeyBind
 if useShowKeyBind then
     hideInteractions = true
     lib.addKeybind({
@@ -43,7 +46,7 @@ if useShowKeyBind then
                 MainLoop()
             end
         end,
-        onReleased = function (self)
+        onReleased = function(self)
             if showKeyBindBehavior == "toggle" or cache.vehicle then return end
             hideInteractions = true
             mainLoopRunning = false
@@ -73,8 +76,9 @@ local function drawTick()
                     newActiveInteraction = interaction
                     if newActiveInteraction and newActiveInteraction ~= ActiveInteraction then
                         menuBusy = true
-                        SetTimeout(0, function ()
-                            updateMenu('updateInteraction', {id = interaction.id, options = (interaction.action and {}) or interaction.textOptions})
+                        SetTimeout(0, function()
+                            updateMenu('updateInteraction',
+                                { id = interaction.id, options = (interaction.action and {}) or interaction.textOptions })
                             Wait(100)
                             menuBusy = false
                         end)
@@ -104,7 +108,7 @@ function MainLoop()
     while mainLoopRunning and not hideInteractions and not LocalPlayer.state.interactBusy do
         local newNearbyInteractions = {}
         utils.checkEntities()
-        table.sort(globals.Interactions, function (a, b)
+        table.sort(globals.Interactions, function(a, b)
             return (a?.currentDistance or 999) < (b?.currentDistance or 999)
         end)
         ClosestInteraction = nil
@@ -151,7 +155,7 @@ AddStateBagChangeHandler("interactBusy", ('player:%s'):format(cache.serverId), f
     end
 end)
 
-lib.onCache('vehicle', function (vehicle)
+lib.onCache('vehicle', function(vehicle)
     if vehicle then
         mainLoopRunning = false
     else
@@ -161,32 +165,38 @@ end)
 
 RegisterNetEvent('onResourceStop', function(resourceName)
     for model, modeldata in pairs(globals.Models) do
-        for i = 1, #modeldata do
+        for i = #modeldata, 1, -1 do
             local data = modeldata[i]
             if data.resource == resourceName then
-                globals.Models[model][i] = nil
+                table.remove(globals.Models[model], i)
             end
         end
     end
 
-    for i = 1, #globals.playerInteractions do
+    for i = #globals.playerInteractions, 1, -1 do
         local data = globals.playerInteractions[i]
         if data.resource == resourceName then
-            globals.playerInteractions[i] = nil
+            table.remove(globals.playerInteractions, i)
         end
     end
 
-    for i = 1, #globals.vehicleInteractions do
+    for i = #globals.vehicleInteractions, 1, -1 do
         local data = globals.vehicleInteractions[i]
         if data.resource == resourceName then
-            globals.vehicleInteractions[i] = nil
+            table.remove(globals.vehicleInteractions, i)
         end
     end
 
-    for i = 1, #globals.pedInteractions do
+    for i = #globals.pedInteractions, 1, -1 do
         local data = globals.pedInteractions[i]
         if data.resource == resourceName then
-            globals.pedInteractions[i] = nil
+            table.remove(globals.pedInteractions, i)
         end
     end
 end)
+
+
+RegisterCommand('checkInteractions', function()
+    lib.print.warn('number of interactions: ', #globals.Interactions)
+    lib.print.warn(msgpack.unpack(msgpack.pack(globals.Interactions)))
+end, false)
