@@ -13,9 +13,10 @@ export interface InteractionData {
   options: Option[];
 }
 
-const Interaction: React.FC<{ interaction: InteractionData; color: string }> = ({
-  interaction, color
-}) => {
+const Interaction: React.FC<{
+  interaction: InteractionData;
+  color: string;
+}> = ({ interaction, color }) => {
   const { id, options } = interaction;
   const [currentOption, setCurrentOption] = useState(0);
   const maxOptions = options.length;
@@ -85,7 +86,9 @@ const Interaction: React.FC<{ interaction: InteractionData; color: string }> = (
   }) => (
     <>
       <div
-        style={ {translate: numberOfActiveOptions < 2 ? "-1.5rem" : '', backgroundColor: isActive ? color : 'transparent'}}
+        style={{
+          translate: numberOfActiveOptions < 2 ? "-1.5rem" : ""
+        }}
         className={`${styles.button} ${isActive && styles.active}`}
       >
         {numberOfActiveOptions > 1 && (
@@ -117,8 +120,8 @@ const Interaction: React.FC<{ interaction: InteractionData; color: string }> = (
 
   return (
     <>
-      <div className={styles.container}>
-        <TbSquareLetterE className={styles.interactKeyIcon} />
+      <div className={styles.container} style={{color: color}}>
+        <div className={styles.interactKey}><div>E</div></div>
         <div className={styles.ButtonsContainer}>{renderOptions()}</div>
       </div>
     </>

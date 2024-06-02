@@ -20,7 +20,7 @@ import { fetchNui } from "./utils/fetchNui";
       data: {
         id: "123123",
         options: [
-          { text: "do something", icon: "house", disable: true },
+          { text: "do something", icon: "house", disable: false },
           { text: "world2", icon: "house" },
         ],
       },
@@ -31,7 +31,7 @@ import { fetchNui } from "./utils/fetchNui";
 const App: React.FC = () => {
   const [pause, setPause] = useState<boolean>(false);
   const [interaction, setInteraction] = useState<InteractionData | null>();
-  const [color, setColor] = useState("rgba(0,0,0,0)");
+  const [color, setColor] = useState("rgba(28, 126, 214,0.65)");
 
   useNuiEvent<{ x: number; y: number; z: number; w: number }>(
     "setColor",

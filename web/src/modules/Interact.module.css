@@ -1,10 +1,8 @@
-@import url("https://fonts.googleapis.com/css2?family=Open+Sans&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swap");
 
 .container {
-  --animationTime: 200ms;
-  --blue: 28, 126, 214;
-  --bg: 37, 38, 43;
-  --bghl: 50, 52, 55;
+  --bg: 25, 25, 25, 0.85;
+  --textColor: whitesmoke;
   position: absolute;
   top: 0;
   left: 0;
@@ -14,20 +12,40 @@
   align-items: center;
   justify-content: center;
   font-size: 1.5rem;
-  color: rgb(255, 255, 255, 0.85);
+  color: red;
   animation: fadein 500ms linear;
+  font-family: "Roboto", sans-serif;
+  font-weight: 400;
+  font-style: normal;
+  user-select: none;
 }
 
-.interactKeyIcon {
-  position: relative;
-  font-size: 3.2rem;
+.interactKey {
+  position: relative; 
+  border: 0.25rem solid currentColor;
+  border-radius: 50%;
+  background: rgb(var(--bg));
+  width: 3rem;
+  aspect-ratio: 1;
+}
+
+.interactKey > div {
+  width: 100%;
+  height: 100%;
+  text-align: center;
+  font-size: 2rem;
+  color: var(--textColor);
+  line-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .ButtonsContainer {
   position: absolute;
   top: 50%;
   left: 50%;
-  translate: 4.5rem -1.55rem;
+  translate: 5.5rem -1.25rem;
   display: flex;
   align-items: center;
   flex-direction: column;
@@ -40,28 +58,32 @@
   width: 100%;
   display: flex;
   align-items: center;
-  line-height: 0;
   font-size: 1.5rem;
-  padding: 0.65rem;
+  padding: 0.35rem;
+  padding-left: 1rem;
+  padding-right: 2rem;
   gap: 1rem;
-  border-radius: 0.4rem;
-  border: 0.1rem solid currentColor;
-  background: rgb(var(--bg), 0.65);
-}
-
-.buttonIcon {
-  width: 2rem;
-  height: 2rem;
+  background: rgb(var(--bg));
 }
 
 .active {
-  background: rgb(var(--blue), 0.65);
+  background: currentColor;
+}
+
+.buttonIcon {
+  width: 1.5rem;
+  height: 1.5rem;
+  color: var(--textColor);
+}
+
+.buttonText {
+  color: var(--textColor);
 }
 
 .indicator {
   position: absolute;
   top: 50%;
-  translate: -170% -50%;
+  translate: -220% -50%;
   height: 60%;
   aspect-ratio: 1;
   border-radius: 50%;
@@ -82,7 +104,7 @@
   background: radial-gradient(
     circle,
     rgba(255, 255, 255, 1) 0%,
-    rgba(28, 126, 214, 1) 50%
+    currentColor 50%
   );
 }
 
