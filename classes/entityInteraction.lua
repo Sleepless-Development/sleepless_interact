@@ -20,6 +20,32 @@ function EntityInteraction:constructor(data)
     self.offset = data.offset
 end
 
+function EntityInteraction:update(data)
+    self.private.cooldown = data.cooldown
+
+    self.id = data.id
+    self.renderDistance = data.renderDistance
+    self.activeDistance = data.activeDistance
+    self.resource = data.resource
+    self.action = data.action
+    self.options = data.options
+
+    self.textOptions = {}
+
+
+    if self.action then
+        self.options = {}
+    else
+        for i = 1, #self.options do
+            self.textOptions[i] = { text = self.options[i].text, icon = self.options[i].icon }
+        end
+    end
+
+    self.bone = data.bone
+    self.netId = data.netId
+    self.offset = data.offset
+end
+
 function EntityInteraction:getEntity()
     if self.shouldDestroy or not self:verifyEntity() then return 0 end
 
@@ -27,7 +53,9 @@ function EntityInteraction:getEntity()
 end
 
 function EntityInteraction:verifyEntity()
+    if self.shouldDestroy then return end
     if not NetworkDoesNetworkIdExist(self.netId) or not NetworkDoesEntityExistWithNetworkId(self.netId) then
+        self.shouldDestroy = true
         lib.print.warn(string.format('entity didnt exist with netid %s for interaction: %s. interaction removed', self.netId, self.id))
         utils.clearCacheForInteractionEntity(self.netId)
         interact.removeById(self.id)

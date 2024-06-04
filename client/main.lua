@@ -8,7 +8,6 @@ local ClosestInteraction = nil
 local ActiveInteraction
 local mainLoopRunning = false
 
-
 LocalPlayer.state.interactBusy = false
 
 lib.addKeybind({
@@ -117,7 +116,7 @@ function MainLoop()
             local interaction = globals.Interactions[i]
             if interaction then
                 if interaction:shouldRender() and utils.checkOptions(interaction) then
-                    if not ClosestInteraction then
+                    if not ClosestInteraction and interaction:shouldBeActive() then
                         ClosestInteraction = globals.Interactions[i]
                     end
                     newNearbyInteractions[#newNearbyInteractions + 1] = interaction
@@ -162,7 +161,7 @@ lib.onCache('vehicle', function(vehicle)
         MainLoop()
     end
 end)
-
+ 
 RegisterNetEvent('onResourceStop', function(resourceName)
     for model, modeldata in pairs(globals.Models) do
         for i = #modeldata, 1, -1 do
@@ -199,4 +198,11 @@ end)
 RegisterCommand('checkInteractions', function()
     lib.print.warn('number of interactions: ', #globals.Interactions)
     lib.print.warn(msgpack.unpack(msgpack.pack(globals.Interactions)))
+end, false)
+
+RegisterCommand('refreshInteract', function()
+    globals.cachedModelEntities = {}
+    globals.cachedPlayers = {}
+    globals.cachedVehicles = {}
+    globals.cachedPeds = {}
 end, false)

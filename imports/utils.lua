@@ -55,7 +55,6 @@ utils.loadInteractionData = function(data, resource)
 end
 
 local function processEntity(entity, entType)
-
     local isNet = NetworkGetEntityIsNetworked(entity)
     local key = isNet and NetworkGetNetworkIdFromEntity(entity) or entity
 

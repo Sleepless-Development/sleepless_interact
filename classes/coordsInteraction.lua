@@ -13,6 +13,32 @@ function CoordsInteraction:constructor(data)
     self:createStaticPoint()
 end
 
+function CoordsInteraction:update(data)
+    self.private.cooldown = data.cooldown
+
+    self.id = data.id
+    self.renderDistance = data.renderDistance
+    self.activeDistance = data.activeDistance
+    self.resource = data.resource
+    self.action = data.action
+    self.options = data.options
+
+    self.textOptions = {}
+
+    if self.action then
+        self.options = {}
+    else
+        for i = 1, #self.options do
+            self.textOptions[i] = { text = self.options[i].text, icon = self.options[i].icon }
+        end
+    end
+
+    self.point:remove()
+
+    self.coords = data.coords
+    self:createStaticPoint()
+end
+
 function CoordsInteraction:createStaticPoint()
     local instance = self
     instance.point = lib.points.new({

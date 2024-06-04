@@ -13,24 +13,29 @@ function interact.addCoords(data)
     local id = data.id
     local coords = data.coords
     local options = data.options
+
     if not id or not coords or not options then
         lib.print.error('addCoords: missing parameters')
         return
     end
 
+    local interaction
     if type(coords) == 'table' then
         for i = 1, #coords do
             data = utils.loadInteractionData(data, GetInvokingResource())
             data.id = string.format("%s:%s", id, i)
             data.coords = coords[i]
-            table.insert(globals.Interactions, CoordsInteraction:new(data))
+            interaction = CoordsInteraction:new(data)
         end
     else
         data = utils.loadInteractionData(data, GetInvokingResource())
-        table.insert(globals.Interactions, CoordsInteraction:new(data))
+        interaction = CoordsInteraction:new(data)
     end
 
-    return id
+    if interaction.id then
+        table.insert(globals.Interactions, interaction)
+        return id
+    end
 end
 
 --LOCAL NON_NETWORKED ENTITY INTERACTIONS
@@ -39,6 +44,7 @@ end
 ---@param data LocalEntityData
 function interact.addLocalEntity(data)
     local id = data.id
+
     local entity = data.entity
     local options = data.options
     if not id or not entity or not options then
@@ -52,9 +58,11 @@ function interact.addLocalEntity(data)
     end
 
     data = utils.loadInteractionData(data, GetInvokingResource())
-    table.insert(globals.Interactions, LocalEntityInteraction:new(data))
-
-    return id
+    local interaction = LocalEntityInteraction:new(data)
+    if interaction.id then
+        table.insert(globals.Interactions, interaction)
+        return id
+    end
 end
 
 --NETWORKED ENTITY INTERACTIONS
@@ -63,6 +71,7 @@ end
 ---@param data EntityData
 function interact.addEntity(data)
     local id = data.id
+
     local netId = data.netId
     local options = data.options
     if not id or not netId or not options then
@@ -81,9 +90,12 @@ function interact.addEntity(data)
     end
 
     data = utils.loadInteractionData(data, GetInvokingResource())
-    
-    table.insert(globals.Interactions, EntityInteraction:new(data))
-    return id
+
+    local interaction = EntityInteraction:new(data)
+    if interaction.id then
+        table.insert(globals.Interactions, interaction)
+        return id
+    end
 end
 
 -- GLOBAL INTERACTIONS
@@ -121,6 +133,7 @@ end
 ---@param data ModelData
 function interact.addGlobalModel(data)
     local id = data.id
+
     local options = data.options
 
     if not id or not data.models or not options then
@@ -147,6 +160,7 @@ end
 ---@param data PedInteractionData
 function interact.addGlobalPlayer(data)
     local id = data.id
+
     local options = data.options
     if not id or not options then
         lib.print.error('addGlobalPlayer: missing parameters')
@@ -164,6 +178,7 @@ end
 ---@param data PedInteractionData
 function interact.addGlobalPed(data)
     local id = data.id
+
     local options = data.options
 
     if not id or not options then
@@ -182,6 +197,7 @@ end
 ---@param data VehicleInteractionData
 function interact.addGlobalVehicle(data)
     local id = data.id
+    
     local options = data.options
 
     if not id or not options then
@@ -204,7 +220,6 @@ local function removeByProperty(property, value, similar)
     for i = #globals.Interactions, 1, -1 do
         local interaction = globals.Interactions[i]
         if interaction then
-            local cacheKey = interaction.netId or interaction.getEntity and interaction:getEntity()
             if property == 'id' and similar then
                 if interaction[property] and tostring(interaction[property]):find(tostring(value)) then
                     interaction:destroy()
@@ -215,9 +230,6 @@ local function removeByProperty(property, value, similar)
                     interaction:destroy()
                     table.remove(globals.Interactions, i)
                 end
-            end
-            if cacheKey then
-                utils.clearCacheForInteractionEntity(cacheKey)
             end
         end
     end

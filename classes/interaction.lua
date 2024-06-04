@@ -6,7 +6,7 @@ local txdName = dui.txdName
 local txtName = dui.txtName
 local color = config.color
 local indicatorSprite = config.indicatorSprite
-local interactionIds = {}
+local globals = require 'imports.globals'
 
 ---@todo: FUTURE: may need to merge options for entities based on bones.
 
@@ -41,17 +41,17 @@ local interactionIds = {}
 local Interaction = lib.class('Interaction')
 
 function Interaction:constructor(data)
+    if globals.interactionIds[data.id] then
+        lib.print.warn(string.format('duplicate interaction id added. replacing the old one: %s', data.id))
+        globals.interactionIds[data.id]:update(data)
+        Wait(100)
+        return
+    end
+
     lib.requestStreamedTextureDict(txdName)
     lib.requestStreamedTextureDict(indicatorSprite.dict)
 
-    if interactionIds[data.id] then
-        lib.print.warn(string.format('duplicate interaction id added: %s', data.id))
-        interact.removeById(data.id)
-        interactionIds[data.id] = nil
-        Wait(100)
-    end
-
-    RegisterNetEvent('onResourceStop', function(resourceName)
+    self.onStop = AddEventHandler('onResourceStop', function(resourceName)
         if data.resource == resourceName then
             interact.removeById(self.id)
         end
@@ -74,25 +74,29 @@ function Interaction:constructor(data)
     self.shouldDestroy = false
     self.textOptions = {}
 
-    
+
     if self.action then
         self.options = {}
     else
         for i = 1, #self.options do
+            self.options[i].text = self.options[i].text or self.options[i].label
             self.textOptions[i] = { text = self.options[i].text, icon = self.options[i].icon }
         end
     end
-    interactionIds[self.id] = true
+    
+    globals.interactionIds[self.id] = self
 end
 
 function Interaction:destroy()
     self.shouldDestroy = true
-    
+
     if self.point then
         self.point:remove()
     end
 
-    interactionIds[self.id] = nil
+    RemoveEventHandler(self.onStop)
+
+    globals.interactionIds[self.id] = nil
 end
 
 function Interaction:setCurrentTextOption(index)
