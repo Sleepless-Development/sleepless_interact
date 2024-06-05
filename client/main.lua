@@ -2,6 +2,7 @@ local utils = require 'imports.utils'
 local store = require 'imports.store'
 local dui = require 'imports.dui'
 local config = require 'imports.config'
+local indicator = config.indicatorSprite
 
 local drawLoopRunning = false
 local BuilderLoopRunning = false
@@ -54,6 +55,7 @@ end
 local drawPrint = false
 
 local function drawLoop()
+    lib.requestStreamedTextureDict(indicator.dict)
     while next(store.nearby) do
         ---@type Interaction | nil
         local newActive = nil
@@ -64,9 +66,8 @@ local function drawLoop()
                 newActive.isActive = true
                 if not store.activeInteraction or newActive.id ~= store.activeInteraction.id then
                     store.menuBusy = true
-                    SetTimeout(0, function()
-                        dui.updateMenu('updateInteraction', { id = newActive.id, options = interaction.DuiOptions })
-                        Wait(100)
+                    dui.updateMenu('updateInteraction', { id = newActive.id, options = interaction.DuiOptions })
+                    SetTimeout(100, function()
                         store.menuBusy = false
                     end)
                 end
@@ -79,11 +80,11 @@ local function drawLoop()
             store.activeInteraction.isActive = false
         end
 
-        store.activeInteraction = newActive
-
-        if not store.activeInteraction then
+        if store.activeInteraction and not newActive then
             dui.updateMenu('updateInteraction', nil)
         end
+
+        store.activeInteraction = newActive
 
         if drawPrint then
             drawPrint = false
@@ -91,6 +92,7 @@ local function drawLoop()
         end
         Wait(0)
     end
+    SetStreamedTextureDictAsNoLongerNeeded(indicator.dict)
     store.activeInteraction = nil
     drawLoopRunning = false
 end
