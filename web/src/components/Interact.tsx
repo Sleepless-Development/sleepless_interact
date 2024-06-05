@@ -1,4 +1,10 @@
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, {
+  useState,
+  useEffect,
+  useCallback,
+  useMemo,
+  useRef,
+} from "react";
 import styles from "../modules/Interact.module.css";
 import { MdOutlineHexagon, MdHexagon } from "react-icons/md";
 import { TbSquareLetterE } from "react-icons/tb";
@@ -20,6 +26,7 @@ const Interaction: React.FC<{
   const { id, options } = interaction;
   const [currentOption, setCurrentOption] = useState(0);
   const maxOptions = options.length;
+  const lastActive = useRef<number | null>(null);
 
   const updateOption = useCallback(
     (direction: "up" | "down") => {
@@ -34,7 +41,7 @@ const Interaction: React.FC<{
         tries++;
         newOption = (newOption + indexChange + maxOptions) % maxOptions;
       }
-
+      lastActive.current = currentOption;
       setCurrentOption(newOption);
       fetchNui("setCurrentTextOption", { index: newOption + 1 });
     },
@@ -79,18 +86,22 @@ const Interaction: React.FC<{
     text,
     icon,
     isActive,
+    wasActive,
   }: {
     text: string;
     icon: IconProp;
     isActive: boolean;
+    wasActive: boolean;
   }) => (
     <>
       <div
         style={{
-          translate: numberOfActiveOptions < 2 ? "-1.5rem" : ""
+          translate: numberOfActiveOptions < 2 ? "-1.5rem" : "",
         }}
-        className={`${styles.button} ${isActive && styles.active}`}
+        className={styles.button}
       >
+        <div className={`${styles.innerButton} ${isActive && styles.active} ${wasActive && styles.wasActive}`}></div>
+        
         {numberOfActiveOptions > 1 && (
           <div className={styles.indicator}>
             {isActive && <div className={styles.indicatorLight}></div>}
@@ -113,6 +124,7 @@ const Interaction: React.FC<{
             text={option.text}
             icon={option.icon}
             isActive={currentOption === index}
+            wasActive={typeof lastActive == "number" && lastActive === index}
           />
         )
     );
@@ -120,8 +132,10 @@ const Interaction: React.FC<{
 
   return (
     <>
-      <div className={styles.container} style={{color: color}}>
-        <div className={styles.interactKey}><div>E</div></div>
+      <div className={styles.container} style={{ color: color }}>
+        <div className={styles.interactKey}>
+          <div>E</div>
+        </div>
         <div className={styles.ButtonsContainer}>{renderOptions()}</div>
       </div>
     </>

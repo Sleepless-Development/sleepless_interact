@@ -1,41 +1,79 @@
-local globals = require 'imports.globals'
 local dui = require 'imports.dui'
-local DuiObject = dui.DuiObject
+local store = require 'imports.store'
 local updateMenu = dui.updateMenu
-local ox_inv = GetResourceState('ox_inventory'):find('start')
 local Groups = {}
 
 ---@class InteractUtils
 local utils = {}
 
-utils.sendReactMessage = function(action, data)
-    while not DuiObject do Wait(1) end
-    SendDuiMessage(DuiObject, json.encode({
-        action = action,
-        data = data
-    }))
-end
-
 RegisterNetEvent('sleepless_interact:updateGroups', function(update)
     Groups = update
 end)
 
-utils.getActionData = function (interaction)
-    local response = {}
-    
-    response.id = interaction.id
-    response.entity = interaction.entity
-    response.coords = interaction:getCoords()
-    response.distance = interaction.currentDistance
-    
-    return response
+local globalTableMap = {
+    ['vehicle'] = { interactions = store.globalVehicle, cache = store.cachedVehicles },
+    ['player'] = { interactions = store.globalPlayer, cache = store.cachedPlayers },
+    ['ped'] = { interactions = store.globalPed, cache = store.cachedPeds },
+    ['object'] = { cache = store.cachedObjects }
+}
+
+utils.updateGlobalInteraction = function(type, data)
+    local context = globalTableMap[type]
+
+    local interactions = context.interactions
+
+    for i = 1, #interactions do
+        if data.id == interactions[i].id then
+            interactions[i] = data
+        end
+    end
+
+    local cache = context.cache
+
+    for entityKey, _ in pairs(cache) do
+        if cache?[entityKey]?[data.id] then
+            cache[entityKey][data.id] = nil
+        end
+    end
 end
 
-utils.loadInteractionData = function(data, resource)
-    data.resource = data.resource or resource or 'sleepless_interact'
+utils.wipeCacheForEntityKey = function(globalType, entityKey)
+    local cache = globalTableMap[globalType]?.cache
+
+    if not cache then return end
+
+    if cache[entityKey] then
+        cache[entityKey] = {}
+    end
+end
+
+utils.loadInteractionDefaults = function(data, resource)
+    local idType = type(data.id)
+    assert(
+        idType == "string" or idType == 'number',
+        string.format('unexpected type for id. expected string or number. got %s', idType)
+    )
+
+    local optionsType = type(data.options)
+    assert(optionsType == "table" and lib.table.type(data.options) == 'array',
+        string.format('unexpected type for options. array expected. got %s',
+            (optionsType == "table" and lib.table.type(data.options)) or optionsType))
+
+
+    for i = 1, #data.options do --backwards compatibility
+        data.options[i].label = data.options[i].label or data.options[i].text or ''
+        data.options[i].remove = data.options[i].remove or data.options[i].destroy
+        data.options[i].onSelect = data.options[i].onSelect or data.options[i].action
+        data.options[i].text = nil
+        data.options[i].destroy = nil
+        data.options[i].action = nil
+    end
+
+
     data.renderDistance = data.renderDistance or 5.0
     data.activeDistance = data.activeDistance or 1.0
-    data.cooldown = data.cooldown or 1000
+    data.cooldown       = data.cooldown or 1000
+    data.resource       = data.resource or resource or 'sleepless_interact'
 
     if type(data.bone) == 'table' then
         local entity = (data.netId and NetworkGetEntityFromNetworkId(data.netId)) or data.entity
@@ -51,148 +89,109 @@ utils.loadInteractionData = function(data, resource)
             data.bone = foundBone
         end
     end
-    return data
 end
 
 local function processEntity(entity, entType)
     local isNet = NetworkGetEntityIsNetworked(entity)
-    local key = isNet and NetworkGetNetworkIdFromEntity(entity) or entity
-
-    if entType == 'player' then
-        if next(globals.playerInteractions) then
-            local player = NetworkGetPlayerIndex(entity)
-            local serverid = GetPlayerServerId(player)
-            if globals.cachedPlayers[serverid] then return end
-
-            globals.cachedPlayers[serverid] = true
-            for i = 1, #globals.playerInteractions do
-                local interaction = lib.table.clone(globals.playerInteractions[i])
-                interaction.id = string.format('%s:%s', interaction.id, serverid)
-                interaction.netId = NetworkGetNetworkIdFromEntity(entity)
-                interact.addEntity(interaction)
-            end
-        end
-    end
-
-    if entType == 'ped' then
-        if next(globals.pedInteractions) then
-            if globals.cachedPeds[key] then return end
-
-            globals.cachedPeds[key] = true
-            for i = 1, #globals.pedInteractions do
-                local interaction = lib.table.clone(globals.pedInteractions[i])
-                interaction.id = string.format('%s:%s', interaction.id, key)
-                if isNet then
-                    interaction.netId = key
-                    interact.addEntity(interaction)
-                else
-                    interaction.entity = entity
-                    interact.addLocalEntity(interaction)
-                end
-            end
-        end
-    end
-
-    if entType == 'vehicle' then
-        local isVehicle = IsEntityAVehicle(entity)
-        if isVehicle and next(globals.vehicleInteractions) then
-            if globals.cachedVehicles[key] then return end
-
-            globals.cachedVehicles[key] = true
-            for i = 1, #globals.vehicleInteractions do
-                local interaction = lib.table.clone(globals.vehicleInteractions[i])
-                interaction.id = string.format('%s:%s', interaction.id, key)
-                if ox_inv and interaction.bone == 'boot' and utils.getTrunkPosition(entity) then
-                    if isNet then
-                        interaction.netId = key
-                        interact.addEntity(interaction)
-                    else
-                        interaction.entity = key
-                        interact.addLocalEntity(interaction)
-                    end
-                else
-                    if isNet then
-                        interaction.netId = key
-                        interact.addEntity(interaction)
-                    else
-                        interaction.entity = key
-                        interact.addLocalEntity(interaction)
-                    end
-                end
-            end
-        end
-    end
-
+    local entityKey = isNet and NetworkGetNetworkIdFromEntity(entity) or entity
+    local interactions = {}
     local model = GetEntityModel(entity)
-    if globals.Models[model] then
-        if not globals.cachedModelEntities[model] then
-            globals.cachedModelEntities[model] = {}
+
+    entType = entType or 'object'
+
+    local context = globalTableMap[entType]
+    local globalTable = context.interactions
+    local cache = context.cache
+
+    if not cache[entityKey] then
+        cache[entityKey] = {}
+    end
+
+    if globalTable then
+        for i = 1, #globalTable do
+            local data = globalTable[i]
+            if not cache[entityKey][data.id] then
+                cache[entityKey][data.id] = true
+                local interactionData = lib.table.clone(data)
+                interactions[#interactions + 1] = interactionData
+            end
         end
-        if globals.cachedModelEntities[model][key] then return end
+    end
 
-        globals.cachedModelEntities[model][key] = true
 
-        for i = 1, #globals.Models[model] do
-            local modelInteraction = lib.table.clone(globals.Models[model][i])
-            modelInteraction.model = model
-            modelInteraction.id = string.format('%s:%s:%s', modelInteraction.id, model, key)
+
+    if store.globalModels[model] then
+        for i = 1, #store.globalModels[model] do
+            local data = store.globalModels[model][i]
+            if not cache[entityKey][data.id] then
+                cache[entityKey][data.id] = true
+                local interactionData = lib.table.clone(data)
+                interactions[#interactions + 1] = interactionData
+            end
+        end
+    end
+
+    if next(interactions) then
+        for i = 1, #interactions do
+            local interactionData = interactions[i]
+            interactionData.id = string.format('%s:%s', interactionData.id, entityKey)
+            interactionData.globalType = entType
             if isNet then
-                modelInteraction.netId = key
-                interact.addEntity(modelInteraction)
+                interactionData.netId = entityKey
+                interact.addEntity(interactionData)
             else
-                modelInteraction.entity = key
-                interact.addLocalEntity(modelInteraction)
+                interactionData.entity = entityKey
+                interact.addLocalEntity(interactionData)
             end
         end
     end
 end
 
-utils.checkEntities = function ()
+utils.checkEntities = function()
     local coords = cache.coords or GetEntityCoords(cache.ped)
 
-    CreateThread(function()
-        local objects = lib.getNearbyObjects(coords, 15.0)
-        if #objects > 0 then
-            for i = 1, #objects do
-                ---@diagnostic disable-next-line: undefined-field
-                local entity = objects[i].object
-                processEntity(entity)
-            end
-        end
-    end)
 
-    CreateThread(function()
-        local vehicles = lib.getNearbyVehicles(coords, 4.0)
-        if #vehicles > 0 then
-            for i = 1, #vehicles do
-                ---@diagnostic disable-next-line: undefined-field
-                local entity = vehicles[i].vehicle
-                processEntity(entity, 'vehicle')
-            end
+    local objects = lib.getNearbyObjects(coords, 15.0)
+    if #objects > 0 then
+        for i = 1, #objects do
+            ---@diagnostic disable-next-line: undefined-field
+            local entity = objects[i].object
+            processEntity(entity)
         end
-    end)
+    end
 
-    CreateThread(function()
-        local players = lib.getNearbyPlayers(coords, 4.0, false)
-        if #players > 0 then
-            for i = 1, #players do
-                ---@diagnostic disable-next-line: undefined-field
-                local entity = players[i].ped
-                processEntity(entity, 'player')
-            end
-        end
-    end)
 
-    CreateThread(function()
-        local peds = lib.getNearbyPeds(coords, 4.0)
-        if #peds > 0 then
-            for i = 1, #peds do
-                ---@diagnostic disable-next-line: undefined-field
-                local entity = peds[i].ped
-                processEntity(entity, 'ped')
-            end
+
+    local vehicles = lib.getNearbyVehicles(coords, 4.0)
+    if #vehicles > 0 then
+        for i = 1, #vehicles do
+            ---@diagnostic disable-next-line: undefined-field
+            local entity = vehicles[i].vehicle
+            processEntity(entity, 'vehicle')
         end
-    end)
+    end
+
+
+
+    local players = lib.getNearbyPlayers(coords, 4.0, false)
+    if #players > 0 then
+        for i = 1, #players do
+            ---@diagnostic disable-next-line: undefined-field
+            local entity = players[i].ped
+            processEntity(entity, 'player')
+        end
+    end
+
+
+
+    local peds = lib.getNearbyPeds(coords, 4.0)
+    if #peds > 0 then
+        for i = 1, #peds do
+            ---@diagnostic disable-next-line: undefined-field
+            local entity = peds[i].ped
+            processEntity(entity, 'ped')
+        end
+    end
 end
 
 
@@ -210,12 +209,13 @@ end
 
 local playerItems = {}
 
-utils.getItems = function ()
+utils.getItems = function()
     return playerItems
 end
 
 ---Thanks linden https://github.com/overextended
 local checkItems = function(items, any)
+    print(any)
     if not playerItems then return true end
 
     local _type = type(items)
@@ -251,18 +251,19 @@ local checkItems = function(items, any)
     return not any
 end
 
-utils.checkOptions = function (interaction)
+utils.checkOptions = function(interaction)
     local disabledOptionsCount = 0
     local optionsLength = #interaction.options
     local shouldUpdateUI = false
 
     for i = 1, optionsLength do
+
         local option = interaction.options[i]
         local disabled = false
-        
+        -- print(option.label)
         if option.canInteract then
-            local success, response = pcall(option.canInteract, interaction.getEntity and interaction:getEntity(), interaction.currentDistance, interaction.coords, interaction.id)
-            disabled = not success or not response
+            disabled = not option.canInteract(interaction.getEntity and interaction:getEntity(), interaction.currentDistance, interaction.coords, interaction.id)
+            -- print(disabled)
         end
 
         if not disabled and option.groups then
@@ -270,14 +271,14 @@ utils.checkOptions = function (interaction)
         end
 
         if not disabled and option.items then
-            disabled = not checkItems(option.items, option.anyitem)
+            disabled = not checkItems(option.items, option.anyItem)
         end
 
-        if interaction.textOptions[i] and disabled ~= interaction.textOptions[i].disable then
-            interaction.textOptions[i].disable = disabled
+        if interaction.DuiOptions[i] and disabled ~= interaction.DuiOptions[i].disable then
+            interaction.DuiOptions[i].disable = disabled
             shouldUpdateUI = true
         end
-        
+
         if disabled then
             disabledOptionsCount += 1
         end
@@ -286,14 +287,14 @@ utils.checkOptions = function (interaction)
     if interaction.isActive and disabledOptionsCount < optionsLength and shouldUpdateUI then
         updateMenu('updateInteraction', {
             id = interaction.id,
-            options = interaction.action and {} or interaction.textOptions
+            options = interaction.action and {} or interaction.DuiOptions
         })
     end
 
     return disabledOptionsCount < optionsLength
 end
 
-if ox_inv then
+if store.ox_inv then
     setmetatable(playerItems, {
         __index = function(self, index)
             self[index] = exports.ox_inventory:Search('count', index) or 0
@@ -304,6 +305,7 @@ if ox_inv then
     AddEventHandler('ox_inventory:itemCount', function(name, count)
         playerItems[name] = count
     end)
+
     local Vehicles = require '@ox_inventory.data.vehicles'
     local backDoorIds = { 2, 3 }
     utils.getTrunkPosition = function(entity)
@@ -330,17 +332,6 @@ if ox_inv then
         local offset = (max - min) * (not checkVehicle and vec3(0.5, 0, 0.5) or vec3(0.5, 1, 0.5)) + min
         return GetOffsetFromEntityInWorldCoords(entity, offset.x, offset.y, offset.z)
     end
-end
-
-utils.clearCacheForInteractionEntity = function (key, model)
-      
-    if model and globals.cachedModelEntities[model] then
-        globals.cachedModelEntities[model][key] = nil
-    end
-
-    globals.cachedPeds[key] = nil
-    globals.cachedPlayers[key] = nil
-    globals.cachedVehicles[key] = nil
 end
 
 return utils

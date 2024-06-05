@@ -14,7 +14,7 @@ AddEventHandler('ox:playerLoaded', function()
     end
     TriggerEvent('sleepless_interact:updateGroups', Groups)
     TriggerEvent('sleepless_interact:LoadDui')
-    MainLoop()
+    BuilderLoop()
 end)
 
 AddEventHandler('ox:playerLogout', function()
@@ -29,7 +29,7 @@ AddEventHandler('onResourceStart', function(resource)
             Groups = player:getGroups()
         end
         TriggerEvent('sleepless_interact:updateGroups', Groups)
-        MainLoop()
+        BuilderLoop()
     end
 end)
 

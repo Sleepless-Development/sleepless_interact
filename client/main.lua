@@ -1,12 +1,9 @@
-local globals = require 'imports.globals'
 local utils = require 'imports.utils'
+local store = require 'imports.store'
 local dui = require 'imports.dui'
-local config = require 'imports.config'
-local updateMenu = dui.updateMenu
-local handleDuiControls = dui.handleDuiControls
-local ClosestInteraction = nil
-local ActiveInteraction
-local mainLoopRunning = false
+
+local drawLoopRunning = false
+local BuilderLoopRunning = false
 
 LocalPlayer.state.interactBusy = false
 
@@ -15,194 +12,162 @@ lib.addKeybind({
     description = 'Interact',
     defaultKey = 'E',
     onPressed = function(self)
-        if ActiveInteraction then
-            ActiveInteraction:handleInteract()
+        if store.activeInteraction then
+            store.activeInteraction:handleInteract()
         end
     end,
 })
 
-local hideInteractions = false
-local defaultShowKeyBind = config.defaultShowKeyBind
-local showKeyBindBehavior = config.showKeyBindBehavior
-local useShowKeyBind = config.useShowKeyBind
-if useShowKeyBind then
-    hideInteractions = true
-    lib.addKeybind({
-        name = 'sleepless_interact:toggle',
-        description = 'show interactions',
-        defaultKey = defaultShowKeyBind,
-        onPressed = function(self)
-            if cache.vehicle then return end
-            if showKeyBindBehavior == "toggle" then
-                hideInteractions = not hideInteractions
-                if hideInteractions then
-                    mainLoopRunning = false
-                else
-                    MainLoop()
+local drawPrint = false
+
+local function drawLoop()
+    while next(store.nearby) do
+        ---@type Interaction | nil
+        local newActive = nil
+        for i = 1, #store.nearby do
+            local interaction = store.nearby[i]
+            if not newActive and interaction:shouldBeActive() and utils.checkOptions(interaction) then
+                newActive = interaction
+                newActive.isActive = true
+                if not store.activeInteraction or newActive.id ~= store.activeInteraction.id then
+                    store.menuBusy = true
+                    SetTimeout(0, function()
+                        dui.updateMenu('updateInteraction', { id = newActive.id, options = interaction.DuiOptions })
+                        Wait(100)
+                        store.menuBusy = false
+                    end)
                 end
-            else
-                hideInteractions = false
-                MainLoop()
+                dui.handleDuiControls()
             end
-        end,
-        onReleased = function(self)
-            if showKeyBindBehavior == "toggle" or cache.vehicle then return end
-            hideInteractions = true
-            mainLoopRunning = false
+            interaction:drawSprite()
         end
-    })
-end
 
-RegisterNuiCallback('setCurrentTextOption', function(data, cb)
-    cb(1)
-    if not ActiveInteraction then return end
-    ActiveInteraction:setCurrentTextOption(data.index)
-end)
-
-local nearbyInteractions = {}
-
-local function drawTick()
-    globals.DrawTickRunning = true
-    local menuBusy = false
-    while next(nearbyInteractions) do
-        local newActiveInteraction
-        for i = 1, #nearbyInteractions do
-            local interaction = nearbyInteractions[i]
-            local active = ClosestInteraction == interaction and interaction:shouldBeActive()
-            interaction.isActive = active
-            if active then
-                if interaction.action or utils.checkOptions(interaction) then
-                    newActiveInteraction = interaction
-                    if newActiveInteraction and newActiveInteraction ~= ActiveInteraction then
-                        menuBusy = true
-                        SetTimeout(0, function()
-                            updateMenu('updateInteraction',
-                                { id = interaction.id, options = (interaction.action and {}) or interaction.textOptions })
-                            Wait(100)
-                            menuBusy = false
-                        end)
-                    end
-                    ActiveInteraction = interaction
-                    handleDuiControls()
-                else
-                    interaction.isActive = false
-                end
-            end
-            interaction:drawSprite(menuBusy)
+        if (not newActive and store.activeInteraction) or (newActive and store.activeInteraction and store.activeInteraction.id ~= newActive.id) then
+            store.activeInteraction.isActive = false
         end
-        if ActiveInteraction and not newActiveInteraction then
-            updateMenu('updateInteraction', nil)
+
+        store.activeInteraction = newActive
+
+        if not store.activeInteraction then
+            dui.updateMenu('updateInteraction', nil)
         end
-        ActiveInteraction = newActiveInteraction
+
+        if drawPrint then
+            drawPrint = false
+            print('yes draw loop is running')
+        end
         Wait(0)
     end
-    globals.DrawTickRunning = false
-    ActiveInteraction = nil
+    store.activeInteraction = nil
+    drawLoopRunning = false
 end
 
+local builderPrint = false
 
-function MainLoop()
-    if mainLoopRunning or hideInteractions or LocalPlayer.state.interactBusy then return end
-    mainLoopRunning = true
-    while mainLoopRunning and not hideInteractions and not LocalPlayer.state.interactBusy do
-        local newNearbyInteractions = {}
+function BuilderLoop()
+    if BuilderLoopRunning then return end
+    BuilderLoopRunning = true
+    while BuilderLoopRunning do
+
         utils.checkEntities()
-        table.sort(globals.Interactions, function(a, b)
-            return (a?.currentDistance or 999) < (b?.currentDistance or 999)
-        end)
-        ClosestInteraction = nil
 
-        for i = 1, #globals.Interactions do
-            local interaction = globals.Interactions[i]
-            if interaction then
-                if interaction:shouldRender() and utils.checkOptions(interaction) then
-                    if not ClosestInteraction and interaction:shouldBeActive() then
-                        ClosestInteraction = globals.Interactions[i]
-                    end
-                    newNearbyInteractions[#newNearbyInteractions + 1] = interaction
-                end
+        local nearby = {}
+        for i = 1, #store.Interactions do
+            local interaction = store.Interactions[i]
+            if interaction and interaction:shouldRender() and utils.checkOptions(interaction) then
+                nearby[#nearby + 1] = interaction
             end
         end
-        nearbyInteractions = newNearbyInteractions
 
-        if not globals.DrawTickRunning and next(nearbyInteractions) then
-            CreateThread(drawTick)
+        table.sort(nearby, function(a, b)
+            return a.currentDistance < b.currentDistance
+        end)
+
+        store.nearby = nearby
+
+        if #store.nearby > 0 and not drawLoopRunning then
+            drawLoopRunning = true
+            CreateThread(drawLoop)
         end
 
-        Wait(500)
+        if builderPrint then
+            builderPrint = false
+            print('yes builder is running')
+        end
+        Wait(1000)
     end
-    nearbyInteractions = {}
+    store.nearby = {}
 end
 
 AddStateBagChangeHandler("invOpen", ('player:%s'):format(cache.serverId), function(bagName, _, state)
     if state then
-        mainLoopRunning = false
+        BuilderLoopRunning = false
+        drawLoopRunning = false
+        store.nearby = {}
     else
         if not cache.vehicle then
-            MainLoop()
+            BuilderLoop()
         end
     end
 end)
 
 AddStateBagChangeHandler("interactBusy", ('player:%s'):format(cache.serverId), function(bagName, _, state)
     if state then
-        mainLoopRunning = false
+        BuilderLoopRunning = false
     else
         if not cache.vehicle then
-            MainLoop()
+            BuilderLoop()
         end
     end
 end)
 
 lib.onCache('vehicle', function(vehicle)
     if vehicle then
-        mainLoopRunning = false
+        BuilderLoopRunning = false
     else
-        MainLoop()
+        BuilderLoop()
     end
 end)
- 
+
+
 RegisterNetEvent('onResourceStop', function(resourceName)
-    for model, modeldata in pairs(globals.Models) do
-        for i = #modeldata, 1, -1 do
-            local data = modeldata[i]
-            if data.resource == resourceName then
-                table.remove(globals.Models[model], i)
-            end
+    for i = #store.globalVehicle, 1, -1 do
+        local data = store.globalVehicle[i]
+        if data.resource == resourceName then
+            store.globalIds[data.id] = nil
+            table.remove(store.globalVehicle, i)
         end
     end
 
-    for i = #globals.playerInteractions, 1, -1 do
-        local data = globals.playerInteractions[i]
+
+    for i = #store.globalVehicle, 1, -1 do
+        local data = store.globalVehicle[i]
         if data.resource == resourceName then
-            table.remove(globals.playerInteractions, i)
+            store.globalIds[data.id] = nil
+            table.remove(store.globalVehicle, i)
         end
     end
 
-    for i = #globals.vehicleInteractions, 1, -1 do
-        local data = globals.vehicleInteractions[i]
-        if data.resource == resourceName then
-            table.remove(globals.vehicleInteractions, i)
-        end
-    end
 
-    for i = #globals.pedInteractions, 1, -1 do
-        local data = globals.pedInteractions[i]
+    for i = #store.globalVehicle, 1, -1 do
+        local data = store.globalVehicle[i]
         if data.resource == resourceName then
-            table.remove(globals.pedInteractions, i)
+            store.globalIds[data.id] = nil
+            table.remove(store.globalVehicle, i)
         end
     end
 end)
 
 
-RegisterCommand('checkInteractions', function()
-    lib.print.warn('number of interactions: ', #globals.Interactions)
-    lib.print.warn(msgpack.unpack(msgpack.pack(globals.Interactions)))
-end, false)
-
-RegisterCommand('refreshInteract', function()
-    globals.cachedModelEntities = {}
-    globals.cachedPlayers = {}
-    globals.cachedVehicles = {}
-    globals.cachedPeds = {}
-end, false)
+RegisterCommand('checkInteractions', function(source, args, raw)
+    print('==========================================================================================')
+    lib.print.info('number of ALL interactions:', #store.Interactions)
+    lib.print.info('number of NEARBY interactions:', #store.nearby)
+    lib.print.info('is builder running?', BuilderLoopRunning)
+    builderPrint = true
+    Wait(1000)
+    lib.print.info('is draw running?', drawLoopRunning)
+    drawPrint = true
+    lib.print.info(msgpack.unpack(msgpack.pack(store)))
+    print('==========================================================================================')
+end)

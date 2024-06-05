@@ -2,67 +2,70 @@ local Interaction = require 'classes.interaction'
 local utils = require 'imports.utils'
 
 ---@class CoordsInteraction: Interaction
----@field coords vector3 Interaction coordinates.\
----@field currentDistance number
----@field point CPoint
 local CoordsInteraction = lib.class('CoordsInteraction', Interaction)
 
 function CoordsInteraction:constructor(data)
     self:super(data)
+    if not self.id then return end
     self.coords = data.coords
-    self:createStaticPoint()
+    self:createInteractPoint()
 end
 
 function CoordsInteraction:update(data)
-    self.private.cooldown = data.cooldown
+    utils.loadInteractionDefaults(data, self.resource)
 
-    self.id = data.id
     self.renderDistance = data.renderDistance
     self.activeDistance = data.activeDistance
-    self.resource = data.resource
-    self.action = data.action
     self.options = data.options
+    self.DuiOptions = {}
 
-    self.textOptions = {}
+    self.private.cooldown = data.cooldown
 
-    if self.action then
-        self.options = {}
-    else
-        for i = 1, #self.options do
-            self.textOptions[i] = { text = self.options[i].text, icon = self.options[i].icon }
-        end
+    for i = 1, #self.options do
+        self.DuiOptions[i] = { text = self.options[i].label or self.options[i].text, icon = self.options[i].icon }
     end
 
     self.point:remove()
-
     self.coords = data.coords
-    self:createStaticPoint()
+    self:createInteractPoint()
 end
 
-function CoordsInteraction:createStaticPoint()
-    local instance = self
-    instance.point = lib.points.new({
-        coords = instance.coords,
-        distance = instance.renderDistance,
+function CoordsInteraction:createInteractPoint()
+    local coordInteraction = self
+    local point = lib.points.new({
+        coords = coordInteraction.coords,
+        distance = coordInteraction.renderDistance,
     })
 
-    function instance.point:onExit()
-        instance.currentDistance = 999
+    if coordInteraction.onEnter then
+        function point:onEnter()
+            coordInteraction.onEnter(self)
+        end
     end
 
-    function instance.point:nearby()
-        instance.currentDistance = self.currentDistance
+    function point:onExit()
+        coordInteraction.currentDistance = 1 / 0
+
+        if coordInteraction.onExit then
+            coordInteraction.onExit(self)
+        end
     end
+
+    function point:nearby()
+        coordInteraction.currentDistance = self.currentDistance
+        if coordInteraction.nearby then
+            coordInteraction.nearby(self)
+        end
+    end
+    self.point = point
 end
 
 function CoordsInteraction:shouldRender()
-    if self.shouldDestroy then return false end
-    
     return self.currentDistance <= self.renderDistance
 end
 
 function CoordsInteraction:shouldBeActive()
-    return self?.currentDistance and self.currentDistance <= self.activeDistance
+    return self.currentDistance <= self.activeDistance
 end
 
 function CoordsInteraction:getCoords()
@@ -70,7 +73,7 @@ function CoordsInteraction:getCoords()
 end
 
 function CoordsInteraction:getDistance()
-    return #(self.coords - cache.coords or GetEntityCoords(cache.ped))
+    return self.currentDistance
 end
 
 return CoordsInteraction

@@ -56,7 +56,7 @@ RegisterNetEvent('QBCore:Client:OnPlayerLoaded', function()
 
     TriggerEvent('sleepless_interact:updateGroups', Groups)
     TriggerEvent('sleepless_interact:LoadDui')
-    MainLoop()
+    BuilderLoop()
 end)
 
 RegisterNetEvent('QBCore:Client:OnPlayerUnload', function()
@@ -81,7 +81,7 @@ AddEventHandler('onResourceStart', function(resource)
         if not ox_inv then setPlayerItems(PlayerData) end
         
         TriggerEvent('sleepless_interact:updateGroups', Groups)
-        MainLoop()
+        BuilderLoop()
     end
 end)
 

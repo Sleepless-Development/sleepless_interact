@@ -1,6 +1,7 @@
 local dui = {}
 local config = require('imports.config')
 local color = config.color
+local store = require 'imports.store'
 
 dui.txdName = "interaction_dui"
 dui.txtName = "interaction_dui_texture"
@@ -11,6 +12,12 @@ dui.loaded = false
 RegisterNuiCallback('loaded', function(_, cb)
     cb(1)
     dui.loaded = true
+end)
+
+RegisterNuiCallback('setCurrentTextOption', function(data, cb)
+    cb(1)
+    if not store.activeInteraction then return end
+    store.currentOptionIndex = data.index
 end)
 
 local function loadDui()

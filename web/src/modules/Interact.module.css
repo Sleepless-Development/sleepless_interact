@@ -21,9 +21,8 @@
 }
 
 .interactKey {
-  position: relative; 
-  border: 0.25rem solid currentColor;
-  border-radius: 50%;
+  position: relative;
+  border: 0.2rem solid currentColor;
   background: rgb(var(--bg));
   width: 3rem;
   aspect-ratio: 1;
@@ -64,20 +63,50 @@
   padding-right: 2rem;
   gap: 1rem;
   background: rgb(var(--bg));
+  z-index: -1;
+}
+
+.innerButton {
+  position: absolute;
+  box-sizing: border-box;
+  width: 1%;
+  height: 100%;
+  translate: -1rem;
+  background: currentColor;
+  z-index: 1;
+}
+
+.wasActive {
+  animation: extend 250ms ease-in-out reverse;
+  animation-delay: 50ms;
+  animation-fill-mode: forwards;
 }
 
 .active {
-  background: currentColor;
+  animation: extend 250ms ease-in-out;
+  animation-delay: 50ms;
+  animation-fill-mode: forwards;
+}
+
+@keyframes extend {
+  from {
+    width: 1%;
+  }
+  to {
+    width: 100%;
+  }
 }
 
 .buttonIcon {
   width: 1.5rem;
   height: 1.5rem;
   color: var(--textColor);
+  z-index: 2;
 }
 
 .buttonText {
   color: var(--textColor);
+  z-index: 2;
 }
 
 .indicator {

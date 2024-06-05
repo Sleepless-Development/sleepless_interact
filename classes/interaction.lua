@@ -1,106 +1,49 @@
 ---@diagnostic disable: undefined-field
-local dui = require 'imports.dui'
 local config = require 'imports.config'
-local utils = require 'imports.utils'
-local txdName = dui.txdName
-local txtName = dui.txtName
+local utils  = require 'imports.utils'
+local indicator = config.indicatorSprite
 local color = config.color
-local indicatorSprite = config.indicatorSprite
-local globals = require 'imports.globals'
-
----@todo: FUTURE: may need to merge options for entities based on bones.
-
---[[
-    if not entityBoneOptions[bone] then
-        entityBoneOptions[bone] = {}
-    end
-
-    > merge new options with old options INSTEAD of creating a new interaction
-    which distances to use? highest?
-    which id?
-    maybe even only merge them in the ui? keep both instances of it in lua?
-]]
+local store = require 'imports.store'
+local dui = require 'imports.dui'
 
 ---@class Interaction: OxClass
----@field id string Unique identifier.
----@field options {text: string, action: fun(data: Interaction), canInteract: fun(data: Interaction)}[] table of options for the UI.
----@field groups? table<string, number> list of jobs and grades allowed to interact
----@field currentOption? number currently selected option
----@field renderDistance? number Optional render distance. (default: 5.0)
----@field activeDistance? number Optional activation distance. (default: 1.0)
----@field currentDistance number current distance from player
----@field isActive boolean is this interaction active?
----@field cooldown? number time 'in' ms between actions. prevent spam (default: 1000)
----@field lastActionTime number
----@field action fun(data: self) allows for just a button action with no options
----@field handleInteract fun(data: self) handles action when e is pressed for current option
----@field getCoords fun(data: self): vector3 abstract method for getting coords for the interaction
----@field getDistance fun(data: self): vector3 abstract method for getting distance from the interaction
----@field shouldRender fun(data: self): number abstract method for getting if the interaction should render
----@field shouldBeActive fun(data: self): number abstract method for getting if the interaction should be active
 local Interaction = lib.class('Interaction')
 
+---@param data Interaction
 function Interaction:constructor(data)
-    if globals.interactionIds[data.id] then
-        lib.print.warn(string.format('duplicate interaction id added. replacing the old one: %s', data.id))
-        globals.interactionIds[data.id]:update(data)
-        Wait(100)
+
+    if store.InteractionIds[data.id] then
+        lib.print.warn(string.format("interaction id '%s' already exists. updating existing data", data.id))
+        store.InteractionIds[data.id]:update(data)
         return
     end
 
-    lib.requestStreamedTextureDict(txdName)
-    lib.requestStreamedTextureDict(indicatorSprite.dict)
+    self.id = data.id
+    store.InteractionIds[self.id] = self
+
+    self.resource = data.resource
+    self.globalType = data.globalType
+    self.renderDistance = data.renderDistance
+    self.activeDistance = data.activeDistance
+    self.currentDistance = 1 / 0
+    self.options = data.options
+    self.isDestroyed = false
+    self.DuiOptions = {}
+
+    self.private = {
+        lastActionTime = 0,
+        cooldown = data.cooldown
+    }
+
+    for i = 1, #self.options do
+        self.DuiOptions[i] = { text = self.options[i].label or self.options[i].text, icon = self.options[i].icon }
+    end
 
     self.onStop = AddEventHandler('onResourceStop', function(resourceName)
         if data.resource == resourceName then
             interact.removeById(self.id)
         end
     end)
-
-    self.private.currentOption = 1
-    self.private.lastActionTime = 0
-    self.private.cooldown = data.cooldown
-
-    self.id = data.id
-    self.renderDistance = data.renderDistance
-    self.activeDistance = data.activeDistance
-    self.currentDistance = data.currentDistance
-    self.resource = data.resource
-    self.action = data.action
-    self.options = data.options
-
-    self.isActive = false
-    self.currentDistance = 999
-    self.shouldDestroy = false
-    self.textOptions = {}
-
-
-    if self.action then
-        self.options = {}
-    else
-        for i = 1, #self.options do
-            self.options[i].text = self.options[i].text or self.options[i].label
-            self.textOptions[i] = { text = self.options[i].text, icon = self.options[i].icon }
-        end
-    end
-    
-    globals.interactionIds[self.id] = self
-end
-
-function Interaction:destroy()
-    self.shouldDestroy = true
-
-    if self.point then
-        self.point:remove()
-    end
-
-    RemoveEventHandler(self.onStop)
-
-    globals.interactionIds[self.id] = nil
-end
-
-function Interaction:setCurrentTextOption(index)
-    self.private.currentOption = index
 end
 
 function Interaction:isOnCooldown(time)
@@ -116,48 +59,62 @@ function Interaction:handleInteract()
         self.entity = self:getEntity()
     end
 
-    local option = self.options[self.private.currentOption]
-    local response = utils.getActionData(self)
+    local option = self.options[store.currentOptionIndex]
 
     if option.action then
-        option.action(response)
+        option.action(self)
     elseif option.onSelect then -- ox_target compatibility
-        option.onSelect(response)
+        option.onSelect(self)
     elseif option.export then
-        exports[option.resource][option.export](response)
+        exports[option.resource][option.export](self)
     elseif option.event then
-        TriggerEvent(option.event, response)
+        TriggerEvent(option.event, self)
     elseif option.serverEvent then
-        TriggerServerEvent(option.serverEvent, response)
+        TriggerServerEvent(option.serverEvent, self)
     elseif option.command then
         ExecuteCommand(option.command)
     end
 
-    if option.destroy then
+    if option.remove then
         interact.removeById(self.id)
     end
 end
 
 local ratio = GetAspectRatio(true)
-function Interaction:drawSprite(busy)
-    if self.shouldDestroy then return end
+function Interaction:drawSprite()
+    if self.isDestroyed then return end
     local coords = self:getCoords()
     SetDrawOrigin(coords.x, coords.y, coords.z)
     if self.isActive and not self:isOnCooldown(GetGameTimer()) then
-        if not busy then
-            local scale = 1
-            DrawInteractiveSprite(txdName, txtName, 0, 0, scale, scale, 0.0, 255, 255, 255, 255)
+        if not store.menuBusy then
+            DrawInteractiveSprite(dui.txdName, dui.txtName, 0, 0, 1, 1, 0.0, 255, 255, 255, 255)
         end
     else
         local distanceRatio = self:getDistance() / self.renderDistance
         distanceRatio = 0.5 + (0.25 * distanceRatio)
         local scale = 0.025 * (distanceRatio)
-        local dict = indicatorSprite.dict
-        local txt = indicatorSprite.txt
+        local dict = indicator.dict
+        local txt = indicator.txt
         DrawInteractiveSprite(dict, txt, 0, 0, scale, scale * ratio, 0.0, color.x, color.y, color.z, color.w)
     end
     ClearDrawOrigin()
 end
+
+function Interaction:destroy()
+    self.isDestroyed = true
+
+    if self.point then
+        self.point:remove()
+    end
+
+    if self.globalType and ( self.entity or self.netId) then
+        utils.wipeCacheForEntityKey(self.globalType, self.entity or self.netId)
+    end
+    
+    RemoveEventHandler(self.onStop)
+    store.InteractionIds[self.id] = nil
+end
+
 
 function Interaction:getCoords() --abstract method
     error("Abstract method getCoords not implemented")

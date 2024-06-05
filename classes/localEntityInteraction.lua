@@ -1,67 +1,93 @@
-local EntityInteraction = require 'classes.entityInteraction'
+local Interaction = require 'classes.interaction'
 local utils = require 'imports.utils'
+local store = require 'imports.store'
 
 ---@class LocalEntityInteraction: Interaction
----@field entity number entity handle.
-local LocalEntityInteraction = lib.class('LocalEntityInteraction', EntityInteraction)
-
-local DoesEntityExist = DoesEntityExist
+local LocalEntityInteraction = lib.class('LocalEntityInteraction', Interaction)
 
 function LocalEntityInteraction:constructor(data)
     self:super(data)
+    if not self.id then return end
     self.entity = data.entity
+    self.bone = data.bone
+    self.offset = data.offset
 end
 
 function LocalEntityInteraction:update(data)
-    self.private.cooldown = data.cooldown
+    utils.loadInteractionDefaults(data, self.resource)
 
-    self.id = data.id
     self.renderDistance = data.renderDistance
     self.activeDistance = data.activeDistance
-    self.resource = data.resource
-    self.action = data.action
     self.options = data.options
+    self.DuiOptions = {}
 
-    self.textOptions = {}
+    self.private.cooldown = data.cooldown
 
-
-    if self.action then
-        self.options = {}
-    else
-        for i = 1, #self.options do
-            self.textOptions[i] = { text = self.options[i].text, icon = self.options[i].icon }
-        end
+    for i = 1, #self.options do
+        self.DuiOptions[i] = { text = self.options[i].label or self.options[i].text, icon = self.options[i].icon }
     end
 
-    
-    self.bone = data.bone
     self.entity = data.entity
+    self.bone = data.bone
     self.offset = data.offset
 end
 
 function LocalEntityInteraction:getEntity()
-
-    if self.shouldDestroy then return 0 end
-
-    if not self:verifyEntity() then
-        interact.removeById(self.id)
+    if self.isDestroyed or not self:verifyEntity() then
         return 0
     end
-
     return self.entity
 end
 
 function LocalEntityInteraction:verifyEntity()
-    if self.shouldDestroy then return end
-
-    if not DoesEntityExist(self.entity) then
-        self.shouldDestroy = true
-        lib.print.warn(string.format('entity didnt exist for interaction: %s. interaction removed', self.id))
-        utils.clearCacheForInteractionEntity(self.entity)
+    if not self.isDestroyed and not DoesEntityExist(self.entity) then
+        self.isDestroyed = true
+        lib.print.warn(string.format("entity didnt exist for interaction id '%s'. interaction removed", self.id))
         interact.removeById(self.id)
+        if self.globalType then
+            utils.wipeCacheForEntityKey(self.globalType, self.entity)
+        end
         return false
     end
     return true
+end
+
+function LocalEntityInteraction:shouldRender()
+    if not self.isDestroyed and not self:verifyEntity() then return false end
+
+    self.currentDistance = self:getDistance()
+    return self.currentDistance <= self.renderDistance
+end
+
+function LocalEntityInteraction:shouldBeActive()
+    return not self.isDestroyed and self.currentDistance <= self.activeDistance
+end
+
+function LocalEntityInteraction:getCoords()
+    local entity = self:getEntity()
+    local offset = self.offset
+    local bone = self.bone
+
+    if bone then
+
+        if store.ox_inv and bone == 'boot' and self.id:find('ox:Trunk') then
+            return utils.getTrunkPosition(entity)
+        end
+
+        local boneIndex = GetEntityBoneIndexByName(entity, bone)
+
+        if boneIndex ~= -1 then
+            local bonePos = GetEntityBonePosition_2(entity, boneIndex)
+            return offset and GetOffsetFromCoordAndHeadingInWorldCoords(bonePos.x, bonePos.y, bonePos.z, GetEntityHeading(entity), offset.x, offset.y, offset.z) or bonePos
+        end
+
+    end
+
+    return offset and GetOffsetFromEntityInWorldCoords(entity, offset.x, offset.y, offset.z) or GetEntityCoords(entity)
+end
+
+function LocalEntityInteraction:getDistance()
+    return #(self:getCoords() - GetEntityCoords(cache.ped))
 end
 
 return LocalEntityInteraction
