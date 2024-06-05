@@ -1,6 +1,7 @@
 local utils = require 'imports.utils'
 local store = require 'imports.store'
 local dui = require 'imports.dui'
+local config = require 'imports.config'
 
 local drawLoopRunning = false
 local BuilderLoopRunning = false
@@ -17,6 +18,38 @@ lib.addKeybind({
         end
     end,
 })
+
+local hideInteractions = false
+local defaultShowKeyBind = config.defaultShowKeyBind
+local showKeyBindBehavior = config.showKeyBindBehavior
+local useShowKeyBind = config.useShowKeyBind
+if useShowKeyBind then
+    hideInteractions = true
+    lib.addKeybind({
+        name = 'sleepless_interact:toggle',
+        description = 'show interactions',
+        defaultKey = defaultShowKeyBind,
+        onPressed = function(self)
+            if cache.vehicle then return end
+            if showKeyBindBehavior == "toggle" then
+                hideInteractions = not hideInteractions
+                if hideInteractions then
+                    BuilderLoopRunning = false
+                else
+                    BuilderLoop()
+                end
+            else
+                hideInteractions = false
+                BuilderLoop()
+            end
+        end,
+        onReleased = function(self)
+            if showKeyBindBehavior == "toggle" or cache.vehicle then return end
+            hideInteractions = true
+            BuilderLoopRunning = false
+        end
+    })
+end
 
 local drawPrint = false
 
@@ -65,7 +98,7 @@ end
 local builderPrint = false
 
 function BuilderLoop()
-    if BuilderLoopRunning then return end
+    if BuilderLoopRunning or hideInteractions or LocalPlayer.state.interactBusy then return end
     BuilderLoopRunning = true
     while BuilderLoopRunning do
 
