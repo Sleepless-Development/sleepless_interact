@@ -35,7 +35,7 @@ RegisterNetEvent('esx:playerLoaded', function(xPlayer)
 
     TriggerEvent('sleepless_interact:updateGroups', Groups)
     TriggerEvent('sleepless_interact:LoadDui')
-    MainLoop()
+    BuilderLoop()
 end)
 
 RegisterNetEvent('esx:addInventoryItem', function(name, count)
@@ -58,7 +58,7 @@ AddEventHandler('onResourceStart', function(resource)
             [xPlayer.job.name] = xPlayer.job.grade,
         }
         TriggerEvent('sleepless_interact:updateGroups', Groups)
-        MainLoop()
+        BuilderLoop()
     end
 end)
 
