@@ -29,6 +29,13 @@ function Interaction:constructor(data)
     self.options = data.options
     self.isDestroyed = false
     self.DuiOptions = {}
+    self.sprite = data.sprite
+
+    if data.sprite ~= nil then
+        pcall(function()
+            lib.requestStreamedTextureDict(data.sprite.dict)
+        end)
+    end
 
     self.private = {
         lastActionTime = 0,
@@ -95,7 +102,18 @@ function Interaction:drawSprite()
         local scale = 0.025 * (distanceRatio)
         local dict = defaultIndicator.dict
         local txt = defaultIndicator.txt
-        DrawInteractiveSprite(dict, txt, 0, 0, scale, scale * ratio, 0.0, color.x, color.y, color.z, color.w)
+        local spriteColour = color
+
+        if self.sprite ~= nil then
+            dict = self.sprite.dict
+            txt = self.sprite.txt
+
+            if type(self.sprite.color) == 'vector4' then
+                spriteColour = self.sprite.color
+            end
+        end
+
+        DrawInteractiveSprite(dict, txt, 0, 0, scale, scale * ratio, 0.0, spriteColour.x, spriteColour.y, spriteColour.z, spriteColour.w)
     end
     ClearDrawOrigin()
 end
@@ -110,7 +128,11 @@ function Interaction:destroy()
     if self.globalType and ( self.entity or self.netId) then
         utils.wipeCacheForEntityKey(self.globalType, self.entity or self.netId)
     end
-    
+
+    if self.sprite ~= nil then
+        SetStreamedTextureDictAsNoLongerNeeded(self.sprite.dict)
+    end
+
     RemoveEventHandler(self.onStop)
     store.InteractionIds[self.id] = nil
 end
