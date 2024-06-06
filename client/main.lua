@@ -2,7 +2,7 @@ local utils = require 'imports.utils'
 local store = require 'imports.store'
 local dui = require 'imports.dui'
 local config = require 'imports.config'
-local indicator = config.indicatorSprite
+local indicator = config.defaultIndicatorSprite
 
 local drawLoopRunning = false
 local BuilderLoopRunning = false

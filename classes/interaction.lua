@@ -1,7 +1,7 @@
 ---@diagnostic disable: undefined-field
 local config = require 'imports.config'
 local utils  = require 'imports.utils'
-local indicator = config.indicatorSprite
+local defaultIndicator = config.defaultIndicatorSprite
 local color = config.color
 local store = require 'imports.store'
 local dui = require 'imports.dui'
@@ -93,8 +93,8 @@ function Interaction:drawSprite()
         local distanceRatio = self:getDistance() / self.renderDistance
         distanceRatio = 0.5 + (0.25 * distanceRatio)
         local scale = 0.025 * (distanceRatio)
-        local dict = indicator.dict
-        local txt = indicator.txt
+        local dict = defaultIndicator.dict
+        local txt = defaultIndicator.txt
         DrawInteractiveSprite(dict, txt, 0, 0, scale, scale * ratio, 0.0, color.x, color.y, color.z, color.w)
     end
     ClearDrawOrigin()
