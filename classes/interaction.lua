@@ -1,7 +1,7 @@
 ---@diagnostic disable: undefined-field
 local config = require 'imports.config'
 local utils  = require 'imports.utils'
-local indicator = config.indicatorSprite
+local defaultIndicator = config.defaultIndicatorSprite
 local color = config.color
 local store = require 'imports.store'
 local dui = require 'imports.dui'
@@ -29,6 +29,11 @@ function Interaction:constructor(data)
     self.options = data.options
     self.isDestroyed = false
     self.DuiOptions = {}
+    self.sprite = data.sprite
+
+    if data?.sprite?.dict then
+        pcall(lib.requestStreamedTextureDict, data.sprite.dict)
+    end
 
     self.private = {
         lastActionTime = 0,
@@ -93,9 +98,20 @@ function Interaction:drawSprite()
         local distanceRatio = self:getDistance() / self.renderDistance
         distanceRatio = 0.5 + (0.25 * distanceRatio)
         local scale = 0.025 * (distanceRatio)
-        local dict = indicator.dict
-        local txt = indicator.txt
-        DrawInteractiveSprite(dict, txt, 0, 0, scale, scale * ratio, 0.0, color.x, color.y, color.z, color.w)
+        local dict = defaultIndicator.dict
+        local txt = defaultIndicator.txt
+        local spriteColour = color
+
+        if self?.sprite?.dict and self?.sprite?.txt then
+            dict = self.sprite.dict --[[@as string]]
+            txt = self.sprite.txt --[[@as string]]
+        end
+
+        if self?.sprite?.color and type(self.sprite.color) == 'vector4' then
+            spriteColour = self.sprite.color --[[@as vector4]]
+        end
+
+        DrawInteractiveSprite(dict, txt, 0, 0, scale, scale * ratio, 0.0, spriteColour.x, spriteColour.y, spriteColour.z, spriteColour.w)
     end
     ClearDrawOrigin()
 end
@@ -110,7 +126,11 @@ function Interaction:destroy()
     if self.globalType and ( self.entity or self.netId) then
         utils.wipeCacheForEntityKey(self.globalType, self.entity or self.netId)
     end
-    
+
+    if self?.sprite?.dict then
+        SetStreamedTextureDictAsNoLongerNeeded(self.sprite.dict)
+    end
+
     RemoveEventHandler(self.onStop)
     store.InteractionIds[self.id] = nil
 end
