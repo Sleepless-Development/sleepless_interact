@@ -32,9 +32,7 @@ function Interaction:constructor(data)
     self.sprite = data.sprite
 
     if data?.sprite?.dict then
-        pcall(function()
-            lib.requestStreamedTextureDict(data.sprite.dict)
-        end)
+        pcall(lib.requestStreamedTextureDict, data.sprite.dict)
     end
 
     self.private = {
