@@ -6,12 +6,9 @@ import React, {
   useRef,
 } from "react";
 import styles from "../modules/Interact.module.css";
-import { MdOutlineHexagon, MdHexagon } from "react-icons/md";
-import { TbSquareLetterE } from "react-icons/tb";
 import { fetchNui } from "../utils/fetchNui";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { IconProp } from "@fortawesome/fontawesome-svg-core";
-import { useNuiEvent } from "../hooks/useNuiEvent";
 
 type Option = { text: string; icon: IconProp; disable: boolean | null };
 export interface InteractionData {
@@ -100,12 +97,14 @@ const Interaction: React.FC<{
         }}
         className={styles.button}
       >
-        <div className={`${styles.innerButton} ${isActive && styles.active} ${wasActive && styles.wasActive}`}></div>
-        
-        {numberOfActiveOptions > 1 && (
-          <div className={styles.indicator}>
-            {isActive && <div className={styles.indicatorLight}></div>}
-          </div>
+        <div
+          className={`${styles.innerButton} ${isActive && styles.active} ${
+            wasActive && styles.wasActive
+          }`}
+        ></div>
+
+        {numberOfActiveOptions > 1 && isActive && (
+          <FontAwesomeIcon icon={"caret-right"} className={styles.indicator} />
         )}
         {icon && <FontAwesomeIcon icon={icon} className={styles.buttonIcon} />}
         <div className={styles.buttonText}>{text}</div>
