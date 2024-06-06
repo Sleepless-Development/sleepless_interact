@@ -31,7 +31,7 @@ function Interaction:constructor(data)
     self.DuiOptions = {}
     self.sprite = data.sprite
 
-    if data.sprite ~= nil then
+    if data?.sprite?.dict then
         pcall(function()
             lib.requestStreamedTextureDict(data.sprite.dict)
         end)
@@ -104,13 +104,13 @@ function Interaction:drawSprite()
         local txt = defaultIndicator.txt
         local spriteColour = color
 
-        if self.sprite ~= nil then
-            dict = self.sprite.dict
-            txt = self.sprite.txt
+        if self?.sprite?.dict and self?.sprite?.txt then
+            dict = self.sprite.dict --[[@as string]]
+            txt = self.sprite.txt --[[@as string]]
+        end
 
-            if type(self.sprite.color) == 'vector4' then
-                spriteColour = self.sprite.color
-            end
+        if self?.sprite?.color and type(self.sprite.color) == 'vector4' then
+            spriteColour = self.sprite.color --[[@as vector4]]
         end
 
         DrawInteractiveSprite(dict, txt, 0, 0, scale, scale * ratio, 0.0, spriteColour.x, spriteColour.y, spriteColour.z, spriteColour.w)
@@ -129,7 +129,7 @@ function Interaction:destroy()
         utils.wipeCacheForEntityKey(self.globalType, self.entity or self.netId)
     end
 
-    if self.sprite ~= nil then
+    if self?.sprite?.dict then
         SetStreamedTextureDictAsNoLongerNeeded(self.sprite.dict)
     end
 
