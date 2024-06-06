@@ -16,9 +16,24 @@ function interact.addCoords(data)
     )
 
     utils.loadInteractionDefaults(data, GetInvokingResource())
-    local newInteraction = CoordsInteraction:new(data)
-    if newInteraction.id then
-        table.insert(store.Interactions, newInteraction)
+
+    if coordsType == 'table' then
+        for i = 1, #data.coords do
+            local interactionData = lib.table.clone(data)
+            interactionData.coords = data.coords[i]
+            interactionData.id = string.format("%s:%s", interactionData.id, i)
+            
+            local newInteraction = CoordsInteraction:new(interactionData)
+
+            if newInteraction.id then
+                table.insert(store.Interactions, newInteraction)
+            end
+        end
+    else
+        local newInteraction = CoordsInteraction:new(data)
+        if newInteraction.id then
+            table.insert(store.Interactions, newInteraction)
+        end
     end
 end
 
