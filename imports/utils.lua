@@ -110,7 +110,7 @@ local function processEntity(entity, entType)
     if globalTable then
         for i = 1, #globalTable do
             local data = globalTable[i]
-            if not cache[entityKey][data.id] then
+            if not cache[entityKey][data.id] and (not data.removeWhenDead or not IsEntityDead(entity)) then
                 cache[entityKey][data.id] = true
                 local interactionData = lib.table.clone(data)
                 interactions[#interactions + 1] = interactionData
@@ -123,7 +123,7 @@ local function processEntity(entity, entType)
     if store.globalModels[model] then
         for i = 1, #store.globalModels[model] do
             local data = store.globalModels[model][i]
-            if not cache[entityKey][data.id] then
+            if not cache[entityKey][data.id] and (not data.removeWhenDead or not IsEntityDead(entity)) then
                 cache[entityKey][data.id] = true
                 local interactionData = lib.table.clone(data)
                 interactions[#interactions + 1] = interactionData
@@ -257,12 +257,12 @@ utils.checkOptions = function(interaction)
     local shouldUpdateUI = false
 
     for i = 1, optionsLength do
-
         local option = interaction.options[i]
         local disabled = false
         -- print(option.label)
         if option.canInteract then
-            disabled = not option.canInteract(interaction.getEntity and interaction:getEntity(), interaction.currentDistance, interaction.coords, interaction.id)
+            disabled = not option.canInteract(interaction.getEntity and interaction:getEntity(),
+                interaction.currentDistance, interaction.coords, interaction.id)
             -- print(disabled)
         end
 
@@ -312,22 +312,22 @@ if store.ox_inv then
         local vehicleHash = GetEntityModel(entity)
         local vehicleClass = GetVehicleClass(entity)
         local checkVehicle = Vehicles.Storage[vehicleHash]
-    
+
         if (checkVehicle == 0 or checkVehicle == 1) or (not Vehicles.trunk[vehicleClass] and not Vehicles.trunk.models[vehicleHash]) then return end
-    
+
         ---@type number | number[]
         local doorId = checkVehicle and 4 or 5
-    
+
         if not Vehicles.trunk.boneIndex?[vehicleHash] and not GetIsDoorValid(entity, doorId --[[@as number]]) then
             if vehicleClass ~= 11 and (doorId ~= 5 or GetEntityBoneIndexByName(entity, 'boot') ~= -1 or not GetIsDoorValid(entity, 2)) then
                 return
             end
-    
+
             if vehicleClass ~= 11 then
                 doorId = backDoorIds
             end
         end
-    
+
         local min, max = GetModelDimensions(vehicleHash)
         local offset = (max - min) * (not checkVehicle and vec3(0.5, 0, 0.5) or vec3(0.5, 1, 0.5)) + min
         return GetOffsetFromEntityInWorldCoords(entity, offset.x, offset.y, offset.z)

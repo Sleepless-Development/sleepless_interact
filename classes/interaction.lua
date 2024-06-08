@@ -1,17 +1,16 @@
 ---@diagnostic disable: undefined-field
-local config = require 'imports.config'
-local utils  = require 'imports.utils'
+local config           = require 'imports.config'
+local utils            = require 'imports.utils'
 local defaultIndicator = config.defaultIndicatorSprite
-local color = config.color
-local store = require 'imports.store'
-local dui = require 'imports.dui'
+local color            = config.color
+local store            = require 'imports.store'
+local dui              = require 'imports.dui'
 
 ---@class Interaction: OxClass
-local Interaction = lib.class('Interaction')
+local Interaction      = lib.class('Interaction')
 
 ---@param data Interaction
 function Interaction:constructor(data)
-
     if store.InteractionIds[data.id] then
         lib.print.warn(string.format("interaction id '%s' already exists. updating existing data", data.id))
         store.InteractionIds[data.id]:update(data)
@@ -27,6 +26,7 @@ function Interaction:constructor(data)
     self.activeDistance = data.activeDistance
     self.currentDistance = 1 / 0
     self.options = data.options
+    self.removeWhenDead = data.removeWhenDead
     self.isDestroyed = false
     self.DuiOptions = {}
     self.sprite = data.sprite
@@ -111,7 +111,8 @@ function Interaction:drawSprite()
             spriteColour = self.sprite.color --[[@as vector4]]
         end
 
-        DrawInteractiveSprite(dict, txt, 0, 0, scale, scale * ratio, 0.0, spriteColour.x, spriteColour.y, spriteColour.z, spriteColour.w)
+        DrawInteractiveSprite(dict, txt, 0, 0, scale, scale * ratio, 0.0, spriteColour.x, spriteColour.y, spriteColour.z,
+            spriteColour.w)
     end
     ClearDrawOrigin()
 end
@@ -123,7 +124,7 @@ function Interaction:destroy()
         self.point:remove()
     end
 
-    if self.globalType and ( self.entity or self.netId) then
+    if self.globalType and (self.entity or self.netId) then
         utils.wipeCacheForEntityKey(self.globalType, self.entity or self.netId)
     end
 
@@ -134,7 +135,6 @@ function Interaction:destroy()
     RemoveEventHandler(self.onStop)
     store.InteractionIds[self.id] = nil
 end
-
 
 function Interaction:getCoords() --abstract method
     error("Abstract method getCoords not implemented")

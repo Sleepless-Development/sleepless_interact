@@ -28,6 +28,7 @@
 ---@field currentDistance number
 ---@field sprite? { dict?: string, txt?: string, color?: vector4 }
 ---@field cooldown number
+---@field removeWhenDead boolean
 ---@field DuiOptions {text: string, icon: string}
 ---@field getCoords fun(data: self): vector3
 ---@field getDistance fun(data: self): number

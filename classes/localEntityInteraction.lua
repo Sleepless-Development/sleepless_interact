@@ -30,6 +30,7 @@ function LocalEntityInteraction:update(data)
     self.entity = data.entity
     self.bone = data.bone
     self.offset = data.offset
+    self.removeWhenDead = data.removeWhenDead
 end
 
 function LocalEntityInteraction:getEntity()
@@ -40,7 +41,7 @@ function LocalEntityInteraction:getEntity()
 end
 
 function LocalEntityInteraction:verifyEntity()
-    if not self.isDestroyed and not DoesEntityExist(self.entity) then
+    if not self.isDestroyed and (not DoesEntityExist(self.entity) or (self.removeWhenDead and IsEntityDead(self.entity))) then
         self.isDestroyed = true
         lib.print.warn(string.format("entity didnt exist for interaction id '%s'. interaction removed", self.id))
         interact.removeById(self.id)
@@ -69,7 +70,6 @@ function LocalEntityInteraction:getCoords()
     local bone = self.bone
 
     if bone then
-
         if store.ox_inv and bone == 'boot' and self.id:find('ox:Trunk') then
             return utils.getTrunkPosition(entity)
         end
@@ -78,9 +78,10 @@ function LocalEntityInteraction:getCoords()
 
         if boneIndex ~= -1 then
             local bonePos = GetEntityBonePosition_2(entity, boneIndex)
-            return offset and GetOffsetFromCoordAndHeadingInWorldCoords(bonePos.x, bonePos.y, bonePos.z, GetEntityHeading(entity), offset.x, offset.y, offset.z) or bonePos
+            return offset and
+            GetOffsetFromCoordAndHeadingInWorldCoords(bonePos.x, bonePos.y, bonePos.z, GetEntityHeading(entity), offset
+            .x, offset.y, offset.z) or bonePos
         end
-
     end
 
     return offset and GetOffsetFromEntityInWorldCoords(entity, offset.x, offset.y, offset.z) or GetEntityCoords(entity)
