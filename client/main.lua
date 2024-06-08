@@ -61,9 +61,11 @@ local function drawLoop()
         local newActive = nil
         for i = 1, #store.nearby do
             local interaction = store.nearby[i]
+            local active = false
+            
             if not newActive and interaction:shouldBeActive() and utils.checkOptions(interaction) then
                 newActive = interaction
-                newActive.isActive = true
+                active = true
                 if not store.activeInteraction or newActive.id ~= store.activeInteraction.id then
                     store.menuBusy = true
                     dui.updateMenu('updateInteraction', { id = newActive.id, options = interaction.DuiOptions })
@@ -73,6 +75,11 @@ local function drawLoop()
                 end
                 dui.handleDuiControls()
             end
+
+            if interaction.isActive ~= active then
+                interaction.isActive = active
+            end
+
             interaction:drawSprite()
         end
 
