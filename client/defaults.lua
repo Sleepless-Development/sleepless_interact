@@ -3,7 +3,7 @@ local store = require "imports.store"
 
 if store.ox_inv then
     interact.addGlobalVehicle({
-        id = 'global:vehicle:Trunk',
+        id = 'ox:Trunk', --- special handling for this id. pulls trunk data from ox_inventory vehicles
         bone = 'boot',
         activeDistance = 1.5,
         renderDistance = 3.0,
