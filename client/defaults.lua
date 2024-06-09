@@ -18,7 +18,7 @@ if store.ox_inv then
                 action = function(interaction)
                     local veh = interaction.entity
                     SetVehicleDoorOpen(veh, 5, false, false)
-                    ExecuteCommand('+inv')
+                    ExecuteCommand('+inv2')
                 end
             },
             {
