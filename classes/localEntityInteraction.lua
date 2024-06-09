@@ -69,18 +69,19 @@ function LocalEntityInteraction:getCoords()
     local offset = self.offset
     local bone = self.bone
 
-    if bone then
-        if store.ox_inv and bone == 'boot' and self.id:find('ox:Trunk') then
-            return utils.getTrunkPosition(entity)
+    if store.ox_inv and self.id == 'ox:Trunk' then
+        local pos = utils.getTrunkPosition(entity)
+        if pos then
+            return pos
         end
+    end
 
+    if bone then
         local boneIndex = GetEntityBoneIndexByName(entity, bone)
 
         if boneIndex ~= -1 then
             local bonePos = GetEntityBonePosition_2(entity, boneIndex)
-            return offset and
-            GetOffsetFromCoordAndHeadingInWorldCoords(bonePos.x, bonePos.y, bonePos.z, GetEntityHeading(entity), offset
-            .x, offset.y, offset.z) or bonePos
+            return offset and GetOffsetFromCoordAndHeadingInWorldCoords(bonePos.x, bonePos.y, bonePos.z, GetEntityHeading(entity),offset .x, offset.y, offset.z) or bonePos
         end
     end
 

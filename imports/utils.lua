@@ -112,8 +112,15 @@ local function processEntity(entity, entType)
             local data = globalTable[i]
             if not cache[entityKey][data.id] and (not data.removeWhenDead or not IsEntityDead(entity)) then
                 cache[entityKey][data.id] = true
-                local interactionData = lib.table.clone(data)
-                interactions[#interactions + 1] = interactionData
+                if store.ox_inv and data.id == 'ox:trunk' then
+                    if utils.getTrunkPosition(entity) then
+                        local interactionData = lib.table.clone(data)
+                        interactions[#interactions + 1] = interactionData
+                    end
+                else
+                    local interactionData = lib.table.clone(data)
+                    interactions[#interactions + 1] = interactionData
+                end
             end
         end
     end
