@@ -21,7 +21,7 @@
 ---@field bone? string
 
 ---@class Interaction
----@field id any unique identifier for the interaction
+---@field id string unique identifier for the interaction
 ---@field options InteractOption[]
 ---@field renderDistance number
 ---@field activeDistance number

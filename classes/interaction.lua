@@ -124,8 +124,8 @@ function Interaction:destroy()
         self.point:remove()
     end
 
-    if self.globalType and (self.entity or self.netId) then
-        utils.wipeCacheForEntityKey(self.globalType, self.entity or self.netId)
+    if self.globalType and (self.netId or self.entity) then
+        utils.wipeCacheForEntityKey(self.globalType, self.netId or self.entity, self.id)
     end
 
     if self?.sprite?.dict then

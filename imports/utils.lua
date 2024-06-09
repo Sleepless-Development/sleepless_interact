@@ -37,13 +37,20 @@ utils.updateGlobalInteraction = function(type, data)
     end
 end
 
-utils.wipeCacheForEntityKey = function(globalType, entityKey)
+utils.wipeCacheForEntityKey = function(globalType, entityKey, id)
     local cache = globalTableMap[globalType]?.cache
 
     if not cache then return end
 
-    if cache[entityKey] then
-        cache[entityKey] = {}
+    if id then
+        id = id:gsub(':' .. entityKey, '')
+        if cache[entityKey]?[id] then
+            cache[entityKey][id] = nil
+        end
+    else
+        if cache[entityKey] then
+            cache[entityKey] = {}
+        end
     end
 end
 
@@ -112,7 +119,7 @@ local function processEntity(entity, entType)
             local data = globalTable[i]
             if not cache[entityKey][data.id] and (not data.removeWhenDead or not IsEntityDead(entity)) then
                 cache[entityKey][data.id] = true
-                if store.ox_inv and data.id == 'ox:trunk' then
+                if store.ox_inv and data.id == 'ox:Trunk' then
                     if utils.getTrunkPosition(entity) then
                         local interactionData = lib.table.clone(data)
                         interactions[#interactions + 1] = interactionData
