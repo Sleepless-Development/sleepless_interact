@@ -69,7 +69,7 @@ function LocalEntityInteraction:getCoords()
     local offset = self.offset
     local bone = self.bone
 
-    if store.ox_inv and self.id == 'ox:Trunk' then
+    if store.ox_inv and self.id:find('ox:Trunk') then
         local pos = utils.getTrunkPosition(entity)
         if pos then
             return pos
