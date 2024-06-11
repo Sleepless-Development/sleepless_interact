@@ -275,9 +275,8 @@ utils.checkOptions = function(interaction)
         local disabled = false
         -- print(option.label)
         if option.canInteract then
-            disabled = not option.canInteract(interaction.getEntity and interaction:getEntity(),
-                interaction.currentDistance, interaction.coords, interaction.id)
-            -- print(disabled)
+            local success, resp = pcall(option.canInteract, interaction.getEntity and interaction:getEntity(), interaction.currentDistance, interaction.coords, interaction.id)
+            disabled = not success or not resp
         end
 
         if not disabled and option.groups then
