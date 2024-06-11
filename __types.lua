@@ -1,12 +1,11 @@
 ---@class InteractOption
 ---@field label string
 ---@field icon string
----@field options InteractOption[]
 ---@field groups? string | string[] | table<string, number>
 ---@field items? string | string[] | table<string, number>
 ---@field anyItem? boolean
 ---@field remove? boolean
----@field canInteract? fun(id: any, entity?: number, coords: vector3, distance: number)
+---@field canInteract? fun(id: any, entity?: number, coords: vector3, distance: number): boolean
 ---@field onSelect? fun(data: Interaction)
 ---@field export? string
 ---@field event? string

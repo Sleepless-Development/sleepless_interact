@@ -40,8 +40,7 @@ end
 function NetEntityInteraction:verifyEntity()
     if not self.isDestroyed and (not NetworkDoesEntityExistWithNetworkId(self.netId) or (self.removeWhenDead and IsEntityDead(NetworkGetEntityFromNetworkId(self.netId)))) then
         self.isDestroyed = true
-        lib.print.warn(string.format('entity didnt exist with netid %s for interaction: %s. interaction removed',
-            self.netId, self.id))
+        lib.print.warn(string.format('entity didnt exist with netid %s for interaction: %s. interaction removed', self.netId, self.id))
         interact.removeById(self.id)
         if self.globalType then
             utils.wipeCacheForEntityKey(self.globalType, self.netId)
