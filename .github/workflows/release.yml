@@ -72,7 +72,7 @@ jobs:
           mkdir -p ./temp/sleepless_interact
           mkdir -p ./temp/sleepless_interact/web
           cp ./{README.md,LICENSE,fxmanifest.lua,init.lua,__types.lua} ./temp/sleepless_interact
-          cp -r ./{bridge,classes,client,server,exports,imgs,imports} ./temp/sleepless_interact
+          cp -r ./{bridge,classes,client,server,exports,imports} ./temp/sleepless_interact
           cp -r ./web/build ./temp/sleepless_interact/web/build
           cd ./temp && zip -r ../sleepless_interact.zip ./sleepless_interact
 
