@@ -8,7 +8,6 @@ local store = require 'imports.store'
 --STATIC COORDS INTERACTION
 
 ---static coords interaction
----@param data CoordsInteraction
 function interact.addCoords(data)
     local coordsType = type(data.coords)
     assert(
@@ -21,7 +20,7 @@ function interact.addCoords(data)
     if coordsType == 'table' then
         for i = 1, #data.coords do
             local interactionData = lib.table.clone(data)
-            interactionData.coords = data.coords[i] --[[@as vector3]]
+            interactionData.coords = data.coords[i]
             interactionData.id = string.format("%s:%s", interactionData.id, i)
             
             local newInteraction = CoordsInteraction:new(interactionData)
@@ -41,7 +40,6 @@ end
 --LOCAL NON_NETWORKED ENTITY INTERACTIONS
 
 ---add interaction for local non-networked entity
----@param data LocalEntityInteraction
 function interact.addLocalEntity(data)
     local entityType = type(data.entity)
     assert(
@@ -67,7 +65,6 @@ end
 --NETWORKED ENTITY INTERACTIONS
 
 ---add interaction for a networked entity
----@param data NetEntityInteraction
 function interact.addEntity(data)
     local netIdType = type(data.netId)
     assert(
@@ -91,7 +88,6 @@ end
 -- GLOBAL INTERACTIONS
 
 ---add global interaction for vehicles
----@param data Interaction
 function interact.addGlobalVehicle(data)
     utils.loadInteractionDefaults(data, GetInvokingResource())
 
@@ -106,7 +102,6 @@ function interact.addGlobalVehicle(data)
 end
 
 ---add global interaction for player
----@param data Interaction
 function interact.addGlobalPlayer(data)
     utils.loadInteractionDefaults(data, GetInvokingResource())
 
@@ -121,7 +116,6 @@ function interact.addGlobalPlayer(data)
 end
 
 ---add global interaction for non-player ped
----@param data Interaction
 function interact.addGlobalPed(data)
     utils.loadInteractionDefaults(data, GetInvokingResource())
 
@@ -136,7 +130,6 @@ function interact.addGlobalPed(data)
 end
 
 ---add interaction for model(s)
----@param data Interaction
 function interact.addGlobalModel(data)
 
     utils.loadInteractionDefaults(data, GetInvokingResource())
@@ -150,9 +143,9 @@ function interact.addGlobalModel(data)
     store.globalIds[data.id] = true
 
     local modelsType = type(data.models)
-    assert(modelsType == "string" or modelsType == "table", 'unexpected value for models. expected string or string[] or {model: string | number, bone: string, offset: vec3}[]. got '..modelsType)
+    assert(modelsType == "string" or modelsType == "number" or modelsType == "table", 'unexpected value for models. expected string or number or string[] or number[] {model: string | number, bone: string, offset: vec3}[]. got '..modelsType)
 
-    if modelsType == "string" then
+    if modelsType == "string" or modelsType == "number" then
         data.models = { data.models }
     end
 
