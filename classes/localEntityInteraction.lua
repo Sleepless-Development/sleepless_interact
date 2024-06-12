@@ -41,7 +41,7 @@ function LocalEntityInteraction:getEntity()
 end
 
 function LocalEntityInteraction:verifyEntity()
-    if not self.isDestroyed and (not DoesEntityExist(self.entity) or (self.removeWhenDead and IsEntityDead(self.entity))) then
+    if not self.isDestroyed and ((self.globalType and not DoesEntityExist(self.entity)) or (self.removeWhenDead and IsEntityDead(self.entity))) then
         self.isDestroyed = true
         lib.print.warn(string.format("entity didnt exist for interaction id '%s'. interaction removed", self.id))
         interact.removeById(self.id)
