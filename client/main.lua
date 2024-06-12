@@ -62,7 +62,7 @@ local function drawLoop()
         for i = 1, #store.nearby do
             local interaction = store.nearby[i]
             local active = false
-            
+
             if not newActive and interaction:shouldBeActive() and utils.checkOptions(interaction) then
                 newActive = interaction
                 active = true
@@ -110,7 +110,6 @@ function BuilderLoop()
     if BuilderLoopRunning or hideInteractions or LocalPlayer.state.interactBusy then return end
     BuilderLoopRunning = true
     while BuilderLoopRunning do
-
         utils.checkEntities()
 
         local nearby = {}
@@ -158,6 +157,11 @@ AddStateBagChangeHandler("interactBusy", ('player:%s'):format(cache.serverId), f
         BuilderLoopRunning = false
     else
         if not cache.vehicle then
+            lib.waitFor(function()
+                if state == LocalPlayer.state.interactBusy then
+                    return true
+                end
+            end)
             BuilderLoop()
         end
     end
