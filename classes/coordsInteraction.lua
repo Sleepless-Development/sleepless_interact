@@ -8,6 +8,9 @@ function CoordsInteraction:constructor(data)
     self:super(data)
     if not self.id then return end
     self.coords = data.coords
+    self.onEnter = data.onEnter
+    self.onExit = data.onExit
+    self.nearby = data.nearby
     self:createInteractPoint()
 end
 
