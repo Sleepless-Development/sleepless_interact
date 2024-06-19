@@ -57,7 +57,6 @@ local drawPrint = false
 local function drawLoop()
     lib.requestStreamedTextureDict(indicator.dict)
     while next(store.nearby) do
-        if utils.shouldHideInteractions() then break end
         ---@type Interaction | nil
         local newActive = nil
         for i = 1, #store.nearby do
@@ -139,7 +138,7 @@ function BuilderLoop()
                 print('yes builder is running')
             end
         end
-        Wait(1000)
+        Wait(500)
     end
     store.nearby = {}
 end
