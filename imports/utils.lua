@@ -17,6 +17,13 @@ local globalTableMap = {
     ['object'] = { cache = store.cachedObjects }
 }
 
+utils.shouldHideInteractions = function()
+    if IsNuiFocused() or LocalPlayer.state.interactBusy or (store.ox_lib and (lib.progressActive() or cache.vehicle)) or store.hidePerKeybind or LocalPlayer.state.invOpen then
+        return true
+    end
+    return false
+end
+
 utils.updateGlobalInteraction = function(type, data)
     local context = globalTableMap[type]
 
@@ -229,7 +236,6 @@ end
 
 ---Thanks linden https://github.com/overextended
 local checkItems = function(items, any)
-    print(any)
     if not playerItems then return true end
 
     local _type = type(items)
@@ -273,9 +279,9 @@ utils.checkOptions = function(interaction)
     for i = 1, optionsLength do
         local option = interaction.options[i]
         local disabled = false
-        -- print(option.label)
         if option.canInteract then
-            local success, resp = pcall(option.canInteract, interaction.getEntity and interaction:getEntity(), interaction.currentDistance, interaction.coords, interaction.id)
+            local success, resp = pcall(option.canInteract, interaction.getEntity and interaction:getEntity(),
+                interaction.currentDistance, interaction.coords, interaction.id)
             disabled = not success or not resp
         end
 

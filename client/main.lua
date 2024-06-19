@@ -20,12 +20,12 @@ lib.addKeybind({
     end,
 })
 
-local hideInteractions = false
+store.hidePerKeybind = false
 local defaultShowKeyBind = config.defaultShowKeyBind
 local showKeyBindBehavior = config.showKeyBindBehavior
 local useShowKeyBind = config.useShowKeyBind
 if useShowKeyBind then
-    hideInteractions = true
+    store.hidePerKeybind = true
     lib.addKeybind({
         name = 'sleepless_interact:toggle',
         description = 'show interactions',
@@ -33,20 +33,20 @@ if useShowKeyBind then
         onPressed = function(self)
             if cache.vehicle then return end
             if showKeyBindBehavior == "toggle" then
-                hideInteractions = not hideInteractions
-                if hideInteractions then
+                store.hidePerKeybind = not store.hidePerKeybind
+                if store.hidePerKeybind then
                     BuilderLoopRunning = false
                 else
                     BuilderLoop()
                 end
             else
-                hideInteractions = false
+                store.hidePerKeybind = false
                 BuilderLoop()
             end
         end,
         onReleased = function(self)
             if showKeyBindBehavior == "toggle" or cache.vehicle then return end
-            hideInteractions = true
+            store.hidePerKeybind = true
             BuilderLoopRunning = false
         end
     })
@@ -57,6 +57,7 @@ local drawPrint = false
 local function drawLoop()
     lib.requestStreamedTextureDict(indicator.dict)
     while next(store.nearby) do
+        if utils.shouldHideInteractions() then break end
         ---@type Interaction | nil
         local newActive = nil
         for i = 1, #store.nearby do
@@ -107,74 +108,41 @@ end
 local builderPrint = false
 
 function BuilderLoop()
-    if BuilderLoopRunning or hideInteractions or LocalPlayer.state.interactBusy then return end
+    if BuilderLoopRunning then return end
     BuilderLoopRunning = true
     while BuilderLoopRunning do
-        utils.checkEntities()
-
-        local nearby = {}
-        for i = 1, #store.Interactions do
-            local interaction = store.Interactions[i]
-            if interaction and interaction:shouldRender() and utils.checkOptions(interaction) then
-                nearby[#nearby + 1] = interaction
+        if utils.shouldHideInteractions() then
+            store.nearby = {}
+        else
+            utils.checkEntities()
+            local nearby = {}
+            for i = 1, #store.Interactions do
+                local interaction = store.Interactions[i]
+                if interaction and interaction:shouldRender() and utils.checkOptions(interaction) then
+                    nearby[#nearby + 1] = interaction
+                end
             end
-        end
 
-        table.sort(nearby, function(a, b)
-            return a.currentDistance < b.currentDistance
-        end)
+            table.sort(nearby, function(a, b)
+                return a.currentDistance < b.currentDistance
+            end)
 
-        store.nearby = nearby
+            store.nearby = nearby
 
-        if #store.nearby > 0 and not drawLoopRunning then
-            drawLoopRunning = true
-            CreateThread(drawLoop)
-        end
+            if #store.nearby > 0 and not drawLoopRunning then
+                drawLoopRunning = true
+                CreateThread(drawLoop)
+            end
 
-        if builderPrint then
-            builderPrint = false
-            print('yes builder is running')
+            if builderPrint then
+                builderPrint = false
+                print('yes builder is running')
+            end
         end
         Wait(1000)
     end
     store.nearby = {}
 end
-
-AddStateBagChangeHandler("invOpen", ('player:%s'):format(cache.serverId), function(bagName, _, state)
-    if state then
-        BuilderLoopRunning = false
-        drawLoopRunning = false
-        store.nearby = {}
-    else
-        if not cache.vehicle then
-            BuilderLoop()
-        end
-    end
-end)
-
-AddStateBagChangeHandler("interactBusy", ('player:%s'):format(cache.serverId), function(bagName, _, state)
-    if state then
-        BuilderLoopRunning = false
-    else
-        if not cache.vehicle then
-            lib.waitFor(function()
-                if state == LocalPlayer.state.interactBusy then
-                    return true
-                end
-            end)
-            BuilderLoop()
-        end
-    end
-end)
-
-lib.onCache('vehicle', function(vehicle)
-    if vehicle then
-        BuilderLoopRunning = false
-    else
-        BuilderLoop()
-    end
-end)
-
 
 RegisterNetEvent('onResourceStop', function(resourceName)
     for i = #store.globalVehicle, 1, -1 do

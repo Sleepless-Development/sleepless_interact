@@ -1,5 +1,6 @@
 local store = {}
 
+store.ox_lib = GetResourceState('ox_lib'):find('start')
 store.ox_inv = GetResourceState('ox_inventory'):find('start')
 
 ---@type Interaction | nil
