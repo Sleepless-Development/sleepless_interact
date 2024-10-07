@@ -103,7 +103,7 @@ if store.ox_inv then
             {
                 name = 'ox_target:driverF',
                 icon = 'car-side',
-                label = "Abrir porta 1",
+                label = "Abrir / Fechar porta 1",
                 bones = { 'door_dside_f', 'seat_dside_f' },
                 activeDistance = 1.2,
                 renderDistance = 3.0,
@@ -117,7 +117,7 @@ if store.ox_inv then
             {
                 name = 'ox_target:passengerF',
                 icon = 'car-side',
-                label = "Abrir porta 2",
+                label = "Abrir / Fechar porta 2",
                 bones = { 'door_pside_f', 'seat_pside_f' },
                 activeDistance = 1.2,
                 renderDistance = 3.0,
@@ -131,7 +131,7 @@ if store.ox_inv then
             {
                 name = 'ox_target:driverR',
                 icon = 'car-side',
-                label = "Abrir porta 3",
+                label = "Abrir / Fechar porta 3",
                 bones = { 'door_dside_r', 'seat_dside_r' },
                 activeDistance = 1.2,
                 renderDistance = 3.0,
@@ -145,7 +145,7 @@ if store.ox_inv then
             {
                 name = 'ox_target:passengerR',
                 icon = 'car-side',
-                label = "Abrir porta 4",
+                label = "Abrir / Fechar porta 4",
                 bones = { 'door_pside_r', 'seat_pside_r' },
                 activeDistance = 1.2,
                 renderDistance = 3.0,

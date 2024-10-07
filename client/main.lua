@@ -86,8 +86,9 @@ local function drawLoop()
             end
         end
 
+        local matchesNewActives = lib.table.matches(store.activeInteractions, newActives)
 
-        if #DUIOptions > 0 and not lib.table.matches(store.activeInteractions, newActives) then
+        if #DUIOptions > 0 and not matchesNewActives and not store.menuBusy then
             store.menuBusy = true
 
             dui.updateMenu('updateInteraction',
@@ -100,7 +101,7 @@ local function drawLoop()
 
         local hasNext = next(newActives)
 
-        if (not hasNext and next(store.activeInteractions)) or (hasNext and not lib.table.matches(store.activeInteractions, newActives)) then
+        if (not hasNext and next(store.activeInteractions)) or (hasNext and not matchesNewActives) then
             store.activeInteractions = {}
         end
 
@@ -108,7 +109,7 @@ local function drawLoop()
             dui.updateMenu('updateInteraction', nil)
         end
 
-        if newActives then
+        if not matchesNewActives then
             store.activeInteractions = newActives
         end
 
@@ -118,8 +119,12 @@ local function drawLoop()
         end
         Wait(0)
     end
+
     SetStreamedTextureDictAsNoLongerNeeded(indicator.dict)
     drawLoopRunning = false
+
+    -- reset current interaction
+    store.activeInteraction = nil
 end
 
 local builderPrint = false
@@ -161,6 +166,9 @@ function BuilderLoop()
         Wait(500)
     end
     store.nearby = {}
+    -- store.activeInteraction = nil
+    -- store.activeInteractions = {}
+    -- dui.updateMenu('updateInteraction', nil)
 end
 
 RegisterNetEvent('onResourceStop', function(resourceName)
