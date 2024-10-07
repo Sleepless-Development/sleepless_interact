@@ -1,7 +1,10 @@
----@class InteractOption
+---@class Interaction
+---@field id string unique identifier for the interaction
+---@field renderDistance number
+---@field activeDistance number
+---@field bones? string
 ---@field label string
 ---@field icon string
----@field options InteractOption[]
 ---@field groups? string | string[] | table<string, number>
 ---@field items? string | string[] | table<string, number>
 ---@field anyItem? boolean
@@ -12,20 +15,6 @@
 ---@field event? string
 ---@field serverEvent? string
 ---@field command? string
-
----@class InteractionData
----@field cooldown number
----@field renderDistance number
----@field activeDistance number
----@field resource string
----@field bone? string
-
----@class Interaction
----@field id string unique identifier for the interaction
----@field options InteractOption[]
----@field renderDistance number
----@field activeDistance number
----@field currentDistance number
 ---@field sprite? { dict?: string, txt?: string, color?: vector4 }
 ---@field cooldown number
 ---@field removeWhenDead boolean
@@ -50,7 +39,7 @@
 ---@class LocalEntityInteraction: Interaction
 ---@field entity number
 ---@field offset vector3
----@field bone string
+---@field bones string
 
 ---@class NetEntityInteraction: LocalEntityInteraction
 ---@field netId number

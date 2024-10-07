@@ -16,8 +16,10 @@ end)
 
 RegisterNuiCallback('setCurrentTextOption', function(data, cb)
     cb(1)
-    if not store.activeInteraction then return end
+
+    if not store.activeInteractions[data.id] then return end
     store.currentOptionIndex = data.index
+    store.activeInteraction = store.activeInteractions[data.id]
 end)
 
 local function loadDui()
@@ -72,6 +74,7 @@ end
 
 dui.updateMenu = function(action, data)
     if not dui.DuiObject then return end
+
     SendDuiMessage(dui.DuiObject, json.encode({
         action = action,
         data = data

@@ -14,14 +14,23 @@ function NetEntityInteraction:update(data)
 
     self.renderDistance = data.renderDistance
     self.activeDistance = data.activeDistance
-    self.options = data.options
-    self.DuiOptions = {}
-
+    self.text = data.text
+    self.label = data.label
+    self.icon = data.icon
+    self.groups = data.groups
+    self.items = data.items
+    self.anyItem = data.anyItem
+    self.remove = data.remove
+    self.canInteract = data.canInteract
+    self.onSelect = data.onSelect
+    self.export = data.export
+    self.event = data.event
+    self.serverEvent = data.serverEvent
+    self.command = data.command
+    self.bones = data.bones
     self.private.cooldown = data.cooldown
+    self.DuiOptions = { id = self.id, text = self.label or self.text, icon = self.icon }
 
-    for i = 1, #self.options do
-        self.DuiOptions[i] = { text = self.options[i].label or self.options[i].text, icon = self.options[i].icon }
-    end
 
     self.netId = data.netId
     self.bone = data.bone
@@ -40,7 +49,8 @@ end
 function NetEntityInteraction:verifyEntity()
     if not self.isDestroyed and ((self.globalType and not NetworkDoesEntityExistWithNetworkId(self.netId)) or (self.removeWhenDead and IsEntityDead(NetworkGetEntityFromNetworkId(self.netId)))) then
         self.isDestroyed = true
-        lib.print.warn(string.format('entity didnt exist with netid %s for interaction: %s. interaction removed', self.netId, self.id))
+        lib.print.warn(string.format('entity didnt exist with netid %s for interaction: %s. interaction removed',
+            self.netId, self.id))
         interact.removeById(self.id)
         if self.globalType then
             utils.wipeCacheForEntityKey(self.globalType, self.netId)

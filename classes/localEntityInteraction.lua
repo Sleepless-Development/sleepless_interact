@@ -9,7 +9,7 @@ function LocalEntityInteraction:constructor(data)
     self:super(data)
     if not self.id then return end
     self.entity = data.entity
-    self.bone = data.bone
+    self.bones = data.bones
     self.offset = data.offset
 end
 
@@ -18,17 +18,23 @@ function LocalEntityInteraction:update(data)
 
     self.renderDistance = data.renderDistance
     self.activeDistance = data.activeDistance
-    self.options = data.options
-    self.DuiOptions = {}
-
+    self.label = data.label
+    self.text = data.text
+    self.icon = data.icon
+    self.groups = data.groups
+    self.items = data.items
+    self.anyItem = data.anyItem
+    self.remove = data.remove
+    self.canInteract = data.canInteract
+    self.onSelect = data.onSelect
+    self.export = data.export
+    self.event = data.event
+    self.serverEvent = data.serverEvent
+    self.command = data.command
     self.private.cooldown = data.cooldown
-
-    for i = 1, #self.options do
-        self.DuiOptions[i] = { text = self.options[i].label or self.options[i].text, icon = self.options[i].icon }
-    end
-
+    self.DuiOptions = { id = self.id, text = self.label or self.text, icon = self.icon }
     self.entity = data.entity
-    self.bone = data.bone
+    self.bones = data.bones
     self.offset = data.offset
     self.removeWhenDead = data.removeWhenDead
 end
@@ -67,7 +73,7 @@ end
 function LocalEntityInteraction:getCoords()
     local entity = self:getEntity()
     local offset = self.offset
-    local bone = self.bone
+    local bones = self.bones
 
     if store.ox_inv and self.id:find('ox:Trunk') then
         local pos = utils.getTrunkPosition(entity)
@@ -76,12 +82,16 @@ function LocalEntityInteraction:getCoords()
         end
     end
 
-    if bone then
-        local boneIndex = GetEntityBoneIndexByName(entity, bone)
+
+    if bones then
+        local boneIndex = GetEntityBoneIndexByName(entity, bones)
 
         if boneIndex ~= -1 then
             local bonePos = GetEntityBonePosition_2(entity, boneIndex)
-            return offset and GetOffsetFromCoordAndHeadingInWorldCoords(bonePos.x, bonePos.y, bonePos.z, GetEntityHeading(entity),offset .x, offset.y, offset.z) or bonePos
+
+            return offset and
+                GetOffsetFromCoordAndHeadingInWorldCoords(bonePos.x, bonePos.y, bonePos.z, GetEntityHeading(entity),
+                    offset.x, offset.y, offset.z) or bonePos
         end
     end
 

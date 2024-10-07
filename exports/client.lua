@@ -12,29 +12,47 @@ function interact.addCoords(data)
     local coordsType = type(data.coords)
     assert(
         coordsType == 'vector3' or coordsType == "table" and lib.table.type(data.coords) == 'array',
-        string.format('unexpected type for coords. expected vector3 or vector3 array. got %s', (coordsType == "table" and lib.table.type(data.coords)) or coordsType)
+        string.format('unexpected type for coords. expected vector3 or vector3 array. got %s',
+            (coordsType == "table" and lib.table.type(data.coords)) or coordsType)
     )
 
-    utils.loadInteractionDefaults(data, GetInvokingResource())
+    local optionsType = type(data.options)
+    assert(optionsType == "table" and lib.table.type(data.options) == 'array',
+        string.format('unexpected type for options. array expected. got %s',
+            (optionsType == "table" and lib.table.type(data.options)) or optionsType))
 
-    if coordsType == 'table' then
-        for i = 1, #data.coords do
-            local interactionData = lib.table.clone(data)
-            interactionData.coords = data.coords[i]
-            interactionData.id = string.format("%s:%s", interactionData.id, i)
-            
-            local newInteraction = CoordsInteraction:new(interactionData)
 
+    local toReturn = {}
+
+    for _, option in ipairs(data.options) do
+        local clone = lib.table.clone(data)
+        local merge = lib.table.merge(clone, option, false)
+
+        utils.loadInteractionDefaults(merge, GetInvokingResource())
+
+        if coordsType == 'table' then
+            for i = 1, #data.coords do
+                local interactionData = lib.table.clone(merge)
+                interactionData.coords = data.coords[i]
+                interactionData.id = string.format("%s:%s", merge.id, i)
+
+                local newInteraction = CoordsInteraction:new(interactionData)
+
+                if newInteraction.id then
+                    table.insert(store.Interactions, newInteraction)
+                    toReturn[#toReturn + 1] = newInteraction.id
+                end
+            end
+        else
+            local newInteraction = CoordsInteraction:new(merge)
             if newInteraction.id then
                 table.insert(store.Interactions, newInteraction)
+                toReturn[#toReturn + 1] = newInteraction.id
             end
         end
-    else
-        local newInteraction = CoordsInteraction:new(data)
-        if newInteraction.id then
-            table.insert(store.Interactions, newInteraction)
-        end
     end
+
+    return toReturn
 end
 
 --LOCAL NON_NETWORKED ENTITY INTERACTIONS
@@ -55,11 +73,40 @@ function interact.addLocalEntity(data)
         'Net Entity Passed to addLocalEntity, use addEntity instead'
     )
 
-    utils.loadInteractionDefaults(data, GetInvokingResource())
-    local newInteraction = LocalEntityInteraction:new(data)
-    if newInteraction.id then
-        table.insert(store.Interactions, newInteraction)
+
+    local toReturn = {}
+
+    if data.options then
+        local optionsType = type(data.options)
+        assert(optionsType == "table",
+            string.format('unexpected type for options. table expected. got %s',
+                optionsType))
+
+        for _, option in ipairs(data.options) do
+            local clone = lib.table.clone(data)
+            local merge = lib.table.merge(clone, option, false)
+
+            utils.loadInteractionDefaults(merge, GetInvokingResource())
+
+            local newInteraction = LocalEntityInteraction:new(merge)
+            if newInteraction.id then
+                table.insert(store.Interactions, newInteraction)
+                toReturn[#toReturn + 1] = newInteraction.id
+            end
+        end
+    else
+        local merge = lib.table.clone(data)
+
+        utils.loadInteractionDefaults(merge, GetInvokingResource())
+
+        local newInteraction = LocalEntityInteraction:new(merge)
+        if newInteraction.id then
+            table.insert(store.Interactions, newInteraction)
+            toReturn[#toReturn + 1] = newInteraction.id
+        end
     end
+
+    return toReturn
 end
 
 --NETWORKED ENTITY INTERACTIONS
@@ -71,132 +118,244 @@ function interact.addEntity(data)
         netIdType == 'number',
         string.format('unexpected type for netId. expected number. got %s', netIdType)
     )
-    
+
     assert(
         NetworkDoesEntityExistWithNetworkId(data.netId),
         string.format('Entity with netid: %s Did Not Exist For addEntity', data.netId)
     )
 
+    local toReturn = {}
 
-    utils.loadInteractionDefaults(data, GetInvokingResource())
-    local newInteraction = NetEntityInteraction:new(data)
-    if newInteraction.id then
-        table.insert(store.Interactions, newInteraction)
+    if data.options then
+        local optionsType = type(data.options)
+        assert(optionsType == "table",
+            string.format('unexpected type for options. table expected. got %s',
+                optionsType))
+
+        for _, option in ipairs(data.options) do
+            local clone = lib.table.clone(data)
+            local merge = lib.table.merge(clone, option, false)
+
+            utils.loadInteractionDefaults(merge, GetInvokingResource())
+
+            local newInteraction = NetEntityInteraction:new(merge)
+            if newInteraction.id then
+                table.insert(store.Interactions, newInteraction)
+                toReturn[#toReturn + 1] = newInteraction.id
+            end
+        end
+    else
+        local merge = lib.table.clone(data)
+
+        utils.loadInteractionDefaults(merge, GetInvokingResource())
+
+        local newInteraction = NetEntityInteraction:new(merge)
+        if newInteraction.id then
+            table.insert(store.Interactions, newInteraction)
+            toReturn[#toReturn + 1] = newInteraction.id
+        end
     end
+
+    return toReturn
 end
 
 -- GLOBAL INTERACTIONS
 
 ---add global interaction for vehicles
 function interact.addGlobalVehicle(data)
-    utils.loadInteractionDefaults(data, GetInvokingResource())
+    local optionsType = type(data.options)
+    assert(optionsType == "table" and lib.table.type(data.options) == 'array',
+        string.format('unexpected type for options. array expected. got %s',
+            (optionsType == "table" and lib.table.type(data.options)) or optionsType))
 
-    if store.globalIds[data.id] then
-        utils.updateGlobalInteraction('vehicle', data)
-        return
+    local toReturn = {}
+
+    for _, option in ipairs(data.options) do
+        local clone = lib.table.clone(data)
+        local merge = lib.table.merge(clone, option, false)
+
+        utils.loadInteractionDefaults(merge, GetInvokingResource())
+
+        if store.globalIds[merge.id] then
+            utils.updateGlobalInteraction('vehicle', merge)
+            return
+        end
+
+        store.globalIds[merge.id] = true
+
+        table.insert(store.globalVehicle, merge)
+
+        toReturn[#toReturn + 1] = merge.id
     end
 
-    store.globalIds[data.id] = true
-
-    table.insert(store.globalVehicle, data)
+    return toReturn
 end
 
 ---add global interaction for player
 function interact.addGlobalPlayer(data)
-    utils.loadInteractionDefaults(data, GetInvokingResource())
+    local optionsType = type(data.options)
+    assert(optionsType == "table" and lib.table.type(data.options) == 'array',
+        string.format('unexpected type for options. array expected. got %s',
+            (optionsType == "table" and lib.table.type(data.options)) or optionsType))
 
-    if store.globalIds[data.id] then
-        utils.updateGlobalInteraction('player', data)
-        return
+
+    local toReturn = {}
+
+    for _, option in ipairs(data.options) do
+        local clone = lib.table.clone(data)
+        local merge = lib.table.merge(clone, option, false)
+
+        utils.loadInteractionDefaults(merge, GetInvokingResource())
+
+        if store.globalIds[merge.id] then
+            utils.updateGlobalInteraction('player', merge)
+            return
+        end
+
+        store.globalIds[merge.id] = true
+
+        table.insert(store.globalPlayer, merge)
+
+        toReturn[#toReturn + 1] = merge.id
     end
 
-    store.globalIds[data.id] = true
-
-    table.insert(store.globalPlayer, data)
+    return toReturn
 end
 
 ---add global interaction for non-player ped
 function interact.addGlobalPed(data)
-    utils.loadInteractionDefaults(data, GetInvokingResource())
+    local optionsType = type(data.options)
+    assert(optionsType == "table" and lib.table.type(data.options) == 'array',
+        string.format('unexpected type for options. array expected. got %s',
+            (optionsType == "table" and lib.table.type(data.options)) or optionsType))
 
-    if store.globalIds[data.id] then
-        utils.updateGlobalInteraction('ped', data)
-        return
+    local toReturn = {}
+
+    for _, option in ipairs(data.options) do
+        local clone = lib.table.clone(data)
+        local merge = lib.table.merge(clone, option, false)
+
+        utils.loadInteractionDefaults(merge, GetInvokingResource())
+
+        if store.globalIds[merge.id] then
+            utils.updateGlobalInteraction('ped', merge)
+            return
+        end
+
+        store.globalIds[merge.id] = true
+
+        table.insert(store.globalPed, merge)
+
+        toReturn[#toReturn + 1] = merge.id
     end
 
-    store.globalIds[data.id] = true
-
-    table.insert(store.globalPed, data)
+    return toReturn
 end
 
 ---add interaction for model(s)
 function interact.addGlobalModel(data)
+    local optionsType = type(data.options)
+    assert(optionsType == "table" and lib.table.type(data.options) == 'array',
+        string.format('unexpected type for options. array expected. got %s',
+            (optionsType == "table" and lib.table.type(data.options)) or optionsType))
 
-    utils.loadInteractionDefaults(data, GetInvokingResource())
+    local toReturn = {}
 
-    if store.globalIds[data.id] then
-        interact.removeGlobalModel(data.id)
-        interact.addGlobalModel(data)
-        return
-    end
+    for _, option in ipairs(data.options) do
+        local clone = lib.table.clone(data)
+        local merge = lib.table.merge(clone, option, false)
 
-    store.globalIds[data.id] = true
+        utils.loadInteractionDefaults(merge, GetInvokingResource())
 
-    local modelsType = type(data.models)
-    assert(modelsType == "string" or modelsType == "number" or modelsType == "table", 'unexpected value for models. expected string or number or string[] or number[] {model: string | number, bone: string, offset: vec3}[]. got '..modelsType)
-
-    if modelsType == "string" or modelsType == "number" then
-        data.models = { data.models }
-    end
-
-    for i = 1, #data.models do
-        local interactionData = lib.table.clone(data)
-        local modelData = data.models[i]
-        if type(modelData) == 'table' then
-            interactionData.offset = modelData.offset or interactionData.offset
-            interactionData.bone = modelData.bone
-            interactionData.model = type(modelData.model) == 'string' and joaat(modelData.model) or modelData.model
-        else
-            interactionData.model =  type(modelData) == 'string' and joaat(modelData) or modelData
-        end
-        
-        if not store.globalModels[interactionData.model] then
-            store.globalModels[interactionData.model] = {}
+        if store.globalIds[merge.id] then
+            interact.removeGlobalModel(merge.id)
+            interact.addGlobalModel(merge)
+            return
         end
 
-        table.insert(store.globalModels[interactionData.model], interactionData)
+        store.globalIds[merge.id] = true
+
+        toReturn[#toReturn + 1] = merge.id
+
+        local modelsType = type(merge.models)
+        assert(modelsType == "string" or modelsType == "number" or modelsType == "table",
+            'unexpected value for models. expected string or number or string[] or number[] {model: string | number, bone: string, offset: vec3}[]. got ' ..
+            modelsType)
+
+        if modelsType == "string" or modelsType == "number" then
+            merge.models = { merge.models }
+        end
+
+        for i = 1, #merge.models do
+            local interactionData = lib.table.clone(merge)
+            local modelData = merge.models[i]
+            if type(modelData) == 'table' then
+                interactionData.offset = modelData.offset or interactionData.offset
+                interactionData.bone = modelData.bone
+                interactionData.model = type(modelData.model) == 'string' and joaat(modelData.model) or modelData.model
+            else
+                interactionData.model = type(modelData) == 'string' and joaat(modelData) or modelData
+            end
+
+            if not store.globalModels[interactionData.model] then
+                store.globalModels[interactionData.model] = {}
+            end
+
+            table.insert(store.globalModels[interactionData.model], interactionData)
+
+            toReturn[#toReturn + 1] = interactionData.id
+        end
     end
+
+    return toReturn
 end
 
 -- REMOVE INTERACTIONS
 
 ---@param property string
 ---@param value string | number
-local function removeByProperty(property, value, similar)
+local function removeByProperty(property, value, similar, optionName)
     for i = #store.Interactions, 1, -1 do
         local interaction = store.Interactions[i]
-        if property == 'id' and similar then
-            if interaction[property] and tostring(interaction[property]):find(tostring(value)) then
-                interaction:destroy()
-                table.remove(store.Interactions, i)
+
+        if type(value) == "array" then
+            for _, id in ipairs(value) do
+                if property == 'id' and similar then
+                    if interaction[property] and tostring(interaction[property]):find(tostring(id)) then
+                        interaction:destroy()
+                        table.remove(store.Interactions, i)
+                    end
+                else
+                    if interaction[property] and ((optionName and interaction[property] == optionName) or (interaction[property] == id)) then
+                        interaction:destroy()
+                        table.remove(store.Interactions, i)
+                    end
+                end
             end
         else
-            if interaction[property] and interaction[property] == value then
-                interaction:destroy()
-                table.remove(store.Interactions, i)
+            if property == 'id' and similar then
+                if interaction[property] and tostring(interaction[property]):find(tostring(value)) then
+                    interaction:destroy()
+                    table.remove(store.Interactions, i)
+                end
+            else
+                if interaction[property] and ((optionName and interaction[property] == optionName) or (interaction[property] == value)) then
+                    interaction:destroy()
+                    table.remove(store.Interactions, i)
+                end
             end
         end
     end
 end
 
 ---remove non-networked entity interaction
-function interact.removeLocalEntity(entity)
-    removeByProperty('entity', entity)
+function interact.removeLocalEntity(entity, optionName)
+    removeByProperty('entity', entity, false, optionName)
 end
 
 ---remove networked entity interaction
-function interact.removeEntity(netId)
-    removeByProperty('netId', netId)
+function interact.removeEntity(netId, optionName)
+    removeByProperty('netId', netId, optionName)
 end
 
 ---remove an interaction by id
@@ -220,7 +379,7 @@ end
 
 ---remove global player interactions with id
 function interact.removeGlobalPlayer(id)
-    for i = #store.globalPlayer, 1, -1  do
+    for i = #store.globalPlayer, 1, -1 do
         local data = store.globalPlayer[i]
         if data.id == id then
             store.globalIds[id] = nil
@@ -232,7 +391,7 @@ end
 
 ---remove global ped interactions with id
 function interact.removeGlobalPed(id)
-    for i = #store.globalPed, 1, -1  do
+    for i = #store.globalPed, 1, -1 do
         local data = store.globalPed[i]
         if data.id == id then
             store.globalIds[id] = nil
@@ -244,7 +403,7 @@ end
 
 ---remove global vehicle interactions with id
 function interact.removeGlobalVehicle(id)
-    for i = #store.globalVehicle, 1, -1  do
+    for i = #store.globalVehicle, 1, -1 do
         local data = store.globalVehicle[i]
         if data.id == id then
             store.globalIds[id] = nil
@@ -252,4 +411,9 @@ function interact.removeGlobalVehicle(id)
             interact.removeById(id, true)
         end
     end
+end
+
+-- disable interactions
+function interact.disable(disable)
+    LocalPlayer.state.interactBusy = disable
 end

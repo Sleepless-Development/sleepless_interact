@@ -10,9 +10,13 @@ import { fetchNui } from "../utils/fetchNui";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { IconProp } from "@fortawesome/fontawesome-svg-core";
 
-type Option = { text: string; icon: IconProp; disable: boolean | null };
-export interface InteractionData {
+type Option = {
   id: string;
+  text: string;
+  icon: IconProp;
+  disable: boolean | null;
+};
+export interface InteractionData {
   options: Option[];
 }
 
@@ -20,7 +24,7 @@ const Interaction: React.FC<{
   interaction: InteractionData;
   color: string;
 }> = ({ interaction, color }) => {
-  const { id, options } = interaction;
+  const { options } = interaction;
   const [currentOption, setCurrentOption] = useState(0);
   const maxOptions = options.length;
   const lastActive = useRef<number | null>(null);
@@ -30,7 +34,7 @@ const Interaction: React.FC<{
       if (!options || options.length === 0) return;
 
       if (maxOptions == 0) return;
-      let indexChange = direction === "up" ? -1 : 1;
+      const indexChange = direction === "up" ? -1 : 1;
       let newOption = (currentOption + indexChange + maxOptions) % maxOptions;
 
       let tries = 0;
@@ -40,7 +44,10 @@ const Interaction: React.FC<{
       }
       lastActive.current = currentOption;
       setCurrentOption(newOption);
-      fetchNui("setCurrentTextOption", { index: newOption + 1 });
+      fetchNui("setCurrentTextOption", {
+        index: newOption + 1,
+        id: options[newOption].id,
+      });
     },
     [currentOption, options]
   );
@@ -50,7 +57,7 @@ const Interaction: React.FC<{
       updateOption("down");
     } else {
       setCurrentOption(0);
-      fetchNui("setCurrentTextOption", { index: 1 });
+      fetchNui("setCurrentTextOption", { index: 1, id: options[0].id });
     }
   }, [options]);
 

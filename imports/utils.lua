@@ -62,45 +62,36 @@ utils.wipeCacheForEntityKey = function(globalType, entityKey, id)
 end
 
 utils.loadInteractionDefaults = function(data, resource)
-    local idType = type(data.id)
-    assert(
-        idType == "string" or idType == 'number',
-        string.format('unexpected type for id. expected string or number. got %s', idType)
-    )
-
-    local optionsType = type(data.options)
-    assert(optionsType == "table" and lib.table.type(data.options) == 'array',
-        string.format('unexpected type for options. array expected. got %s',
-            (optionsType == "table" and lib.table.type(data.options)) or optionsType))
-
-
-    for i = 1, #data.options do --backwards compatibility
-        data.options[i].label = data.options[i].label or data.options[i].text or ''
-        data.options[i].remove = data.options[i].remove or data.options[i].destroy
-        data.options[i].onSelect = data.options[i].onSelect or data.options[i].action
-        data.options[i].text = nil
-        data.options[i].destroy = nil
-        data.options[i].action = nil
-    end
-
-
+    data.id             = data.id or data.name
+    data.label          = data.label or data.text or ''
+    data.remove         = data.remove or data.destroy
+    data.onSelect       = data.onSelect or data.action
+    data.text           = nil
+    data.destroy        = nil
+    data.action         = nil
     data.renderDistance = data.renderDistance or 5.0
-    data.activeDistance = data.activeDistance or 1.0
+    data.activeDistance = data.activeDistance or data.distance or 1.0
     data.cooldown       = data.cooldown or 1000
     data.resource       = data.resource or resource or 'sleepless_interact'
+    data.options        = nil
 
-    if type(data.bone) == 'table' then
+    local idType        = type(data.id)
+    assert(idType == "string",
+        string.format('unexpected type for id. string expected. got %s',
+            idType))
+
+    if type(data.bones) == 'table' then
         local entity = (data.netId and NetworkGetEntityFromNetworkId(data.netId)) or data.entity
         if DoesEntityExist(entity) then
             local foundBone = nil
-            for i = 1, #data.bone do
-                local bone = data.bone[i]
+            for i = 1, #data.bones do
+                local bone = data.bones[i]
                 if GetEntityBoneIndexByName(entity, bone) ~= -1 then
                     foundBone = bone
                     break
                 end
             end
-            data.bone = foundBone
+            data.bones = foundBone
         end
     end
 end
@@ -138,8 +129,6 @@ local function processEntity(entity, entType)
             end
         end
     end
-
-
 
     if store.globalModels[model] then
         for i = 1, #store.globalModels[model] do
@@ -181,8 +170,6 @@ utils.checkEntities = function()
         end
     end
 
-
-
     local vehicles = lib.getNearbyVehicles(coords, 4.0)
     if #vehicles > 0 then
         for i = 1, #vehicles do
@@ -192,8 +179,6 @@ utils.checkEntities = function()
         end
     end
 
-
-
     local players = lib.getNearbyPlayers(coords, 4.0, false)
     if #players > 0 then
         for i = 1, #players do
@@ -202,8 +187,6 @@ utils.checkEntities = function()
             processEntity(entity, 'player')
         end
     end
-
-
 
     local peds = lib.getNearbyPeds(coords, 4.0)
     if #peds > 0 then
@@ -220,8 +203,18 @@ local checkGroups = function(interactionGroups)
     if not interactionGroups then return true end
 
     for group, grade in pairs(Groups) do
-        if interactionGroups[group] and grade >= interactionGroups[group] then
-            return true
+        if type(interactionGroups) == "string" then
+            if interactionGroups == group then
+                return true
+            end
+        elseif type(interactionGroups) == "table" then
+            if table.type(interactionGroups) == "array" then
+                if interactionGroups[group] then
+                    return true
+                end
+            elseif interactionGroups[group] and grade >= interactionGroups[group] then
+                return true
+            end
         end
     end
 
@@ -272,45 +265,39 @@ local checkItems = function(items, any)
 end
 
 utils.checkOptions = function(interaction)
-    local disabledOptionsCount = 0
-    local optionsLength = #interaction.options
     local shouldUpdateUI = false
 
-    for i = 1, optionsLength do
-        local option = interaction.options[i]
-        local disabled = false
-        if option.canInteract then
-            local success, resp = pcall(option.canInteract, interaction.getEntity and interaction:getEntity(),
-                interaction.currentDistance, interaction.coords, interaction.id)
-            disabled = not success or not resp
-        end
+    local option = interaction
+    local disabled = false
 
-        if not disabled and option.groups then
-            disabled = not checkGroups(option.groups)
-        end
+    if option.canInteract then
+        local success, resp = pcall(option.canInteract, interaction.getEntity and interaction:getEntity(),
+            interaction.currentDistance, interaction:getCoords(), interaction.id)
 
-        if not disabled and option.items then
-            disabled = not checkItems(option.items, option.anyItem)
-        end
-
-        if interaction.DuiOptions[i] and disabled ~= interaction.DuiOptions[i].disable then
-            interaction.DuiOptions[i].disable = disabled
-            shouldUpdateUI = true
-        end
-
-        if disabled then
-            disabledOptionsCount += 1
-        end
+        disabled = not success or not resp
     end
 
-    if interaction.isActive and disabledOptionsCount < optionsLength and shouldUpdateUI then
+    if not disabled and option.groups then
+        disabled = not checkGroups(option.groups)
+    end
+
+    if not disabled and option.items then
+        disabled = not checkItems(option.items, option.anyItem)
+    end
+
+    if interaction.DuiOptions and disabled ~= interaction.DuiOptions.disable then
+        interaction.DuiOptions.disable = disabled
+        shouldUpdateUI = true
+    end
+
+    if interaction.isActive and not disabled and shouldUpdateUI then
         updateMenu('updateInteraction', {
             id = interaction.id,
-            options = interaction.action and {} or interaction.DuiOptions
+            options = interaction.action and {} or { interaction.DuiOptions }
         })
     end
 
-    return disabledOptionsCount < optionsLength
+    return not disabled
 end
 
 if store.ox_inv then

@@ -5,6 +5,7 @@ store.ox_inv = GetResourceState('ox_inventory'):find('start')
 
 ---@type Interaction | nil
 store.activeInteraction = nil
+store.activeInteractions = {}
 store.currentOptionIndex = 1
 store.menuBusy = false
 

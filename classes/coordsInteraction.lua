@@ -24,9 +24,7 @@ function CoordsInteraction:update(data)
 
     self.private.cooldown = data.cooldown
 
-    for i = 1, #self.options do
-        self.DuiOptions[i] = { text = self.options[i].label or self.options[i].text, icon = self.options[i].icon }
-    end
+    self.DuiOptions = { id = self.id, text = self.label or self.text, icon = self.icon }
 
     self.point:remove()
     self.coords = data.coords
@@ -60,6 +58,7 @@ function CoordsInteraction:createInteractPoint()
             coordInteraction.nearby(self)
         end
     end
+
     self.point = point
 end
 

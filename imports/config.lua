@@ -6,15 +6,14 @@
 ---@field showKeyBindBehavior "hold" | "toggle" sets the behavior of the show interactions key bind
 local config = {}
 
-config.color = vec4(28, 126, 214, 200)
+config.color = vec4(197, 27, 109, 200)
 
 config.defaultIndicatorSprite = { dict = 'shared', txt = 'emptydot_32' }
 
-config.useShowKeyBind = false
+config.useShowKeyBind = true
 
 config.defaultShowKeyBind = 'LMENU'
 
 config.showKeyBindBehavior = 'hold'
-
 
 return config

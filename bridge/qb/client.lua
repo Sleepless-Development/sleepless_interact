@@ -1,9 +1,15 @@
 local QBCore = exports['qb-core']:GetCoreObject()
 local Groups = {}
 local Player = {}
+local PlayerData = {}
 local utils = require 'imports.utils'
 local playerItems = utils.getItems()
 local ox_inv = GetResourceState('ox_inventory'):find('start')
+
+
+local function isDisabled()
+    return (PlayerData.metadata?.ishandcuffed or PlayerData.metadata?.isdead or PlayerData.metadata?.islaststand)
+end
 
 local function setPlayerItems(data)
     if not data or not data.items then return end
@@ -35,13 +41,16 @@ end
 
 RegisterNetEvent('QBCore:Player:SetPlayerData', function(playerData)
     if source == '' then return end
+    PlayerData = playerData
     updateJob(playerData.job)
     updateGang(playerData.gang)
     if not ox_inv then setPlayerItems(playerData) end
+
+    interact.disable(isDisabled())
 end)
 
 RegisterNetEvent('QBCore:Client:OnPlayerLoaded', function()
-    local PlayerData = QBCore.Functions.GetPlayerData()
+    PlayerData = QBCore.Functions.GetPlayerData()
 
     Groups = {
         [PlayerData.job.name] = PlayerData.job.grade.level,
@@ -56,18 +65,21 @@ RegisterNetEvent('QBCore:Client:OnPlayerLoaded', function()
 
     TriggerEvent('sleepless_interact:updateGroups', Groups)
     TriggerEvent('sleepless_interact:LoadDui')
+
+    interact.disable(isDisabled())
+
     BuilderLoop()
 end)
 
 RegisterNetEvent('QBCore:Client:OnPlayerUnload', function()
     Groups = table.wipe(Groups)
     Player = table.wipe(Player)
+    PlayerData = {}
 end)
-
 
 AddEventHandler('onResourceStart', function(resource)
     if resource == GetCurrentResourceName() then
-        local PlayerData = QBCore.Functions.GetPlayerData()
+        PlayerData = QBCore.Functions.GetPlayerData()
 
         Groups = {
             [PlayerData.job.name] = PlayerData.job.grade.level,
@@ -79,8 +91,11 @@ AddEventHandler('onResourceStart', function(resource)
         }
 
         if not ox_inv then setPlayerItems(PlayerData) end
-        
+
         TriggerEvent('sleepless_interact:updateGroups', Groups)
+
+        interact.disable(isDisabled())
+
         BuilderLoop()
     end
 end)

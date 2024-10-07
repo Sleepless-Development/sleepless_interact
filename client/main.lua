@@ -11,7 +11,7 @@ LocalPlayer.state.interactBusy = false
 
 lib.addKeybind({
     name = 'sleepless_interact:action',
-    description = 'Interact',
+    description = 'Interagir',
     defaultKey = 'E',
     onPressed = function(self)
         if store.activeInteraction then
@@ -56,23 +56,23 @@ local drawPrint = false
 
 local function drawLoop()
     lib.requestStreamedTextureDict(indicator.dict)
+
     while next(store.nearby) do
-        ---@type Interaction | nil
-        local newActive = nil
+        ---@type Interaction[]
+        local newActives = {}
+        local DUIOptions = {}
+        local alreadyDraw = false
+
         for i = 1, #store.nearby do
             local interaction = store.nearby[i]
             local active = false
 
-            if not newActive and interaction:shouldBeActive() and utils.checkOptions(interaction) then
-                newActive = interaction
+            if interaction:shouldBeActive() and utils.checkOptions(interaction) then
+                newActives[interaction.id] = interaction
                 active = true
-                if not store.activeInteraction or newActive.id ~= store.activeInteraction.id then
-                    store.menuBusy = true
-                    dui.updateMenu('updateInteraction', { id = newActive.id, options = interaction.DuiOptions })
-                    SetTimeout(100, function()
-                        store.menuBusy = false
-                    end)
-                end
+
+                DUIOptions[#DUIOptions + 1] = interaction.DuiOptions
+
                 dui.handleDuiControls()
             end
 
@@ -80,18 +80,37 @@ local function drawLoop()
                 interaction.isActive = active
             end
 
-            interaction:drawSprite()
+            if not active or (active and not alreadyDraw) then
+                alreadyDraw = true
+                interaction:drawSprite()
+            end
         end
 
-        if (not newActive and store.activeInteraction) or (newActive and store.activeInteraction and store.activeInteraction.id ~= newActive.id) then
-            store.activeInteraction.isActive = false
+
+        if #DUIOptions > 0 and not lib.table.matches(store.activeInteractions, newActives) then
+            store.menuBusy = true
+
+            dui.updateMenu('updateInteraction',
+                { options = DUIOptions })
+
+            SetTimeout(100, function()
+                store.menuBusy = false
+            end)
         end
 
-        if store.activeInteraction and not newActive then
+        local hasNext = next(newActives)
+
+        if (not hasNext and next(store.activeInteractions)) or (hasNext and not lib.table.matches(store.activeInteractions, newActives)) then
+            store.activeInteractions = {}
+        end
+
+        if store.activeInteraction and not hasNext then
             dui.updateMenu('updateInteraction', nil)
         end
 
-        store.activeInteraction = newActive
+        if newActives then
+            store.activeInteractions = newActives
+        end
 
         if drawPrint then
             drawPrint = false
@@ -100,7 +119,6 @@ local function drawLoop()
         Wait(0)
     end
     SetStreamedTextureDictAsNoLongerNeeded(indicator.dict)
-    store.activeInteraction = nil
     drawLoopRunning = false
 end
 
@@ -115,8 +133,10 @@ function BuilderLoop()
         else
             utils.checkEntities()
             local nearby = {}
+
             for i = 1, #store.Interactions do
                 local interaction = store.Interactions[i]
+
                 if interaction and interaction:shouldRender() and utils.checkOptions(interaction) then
                     nearby[#nearby + 1] = interaction
                 end

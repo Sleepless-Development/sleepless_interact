@@ -25,11 +25,22 @@ function Interaction:constructor(data)
     self.renderDistance = data.renderDistance
     self.activeDistance = data.activeDistance
     self.currentDistance = 1 / 0
-    self.options = data.options
     self.removeWhenDead = data.removeWhenDead
     self.isDestroyed = false
-    self.DuiOptions = {}
     self.sprite = data.sprite
+    self.label = data.label
+    self.text = data.text
+    self.icon = data.icon
+    self.groups = data.groups
+    self.items = data.items
+    self.anyItem = data.anyItem
+    self.remove = data.remove
+    self.canInteract = data.canInteract
+    self.onSelect = data.onSelect
+    self.export = data.export
+    self.event = data.event
+    self.serverEvent = data.serverEvent
+    self.command = data.command
 
     if data?.sprite?.dict then
         pcall(lib.requestStreamedTextureDict, data.sprite.dict)
@@ -40,10 +51,7 @@ function Interaction:constructor(data)
         cooldown = data.cooldown
     }
 
-    for i = 1, #self.options do
-        self.DuiOptions[i] = { text = self.options[i].label or self.options[i].text, icon = self.options[i].icon }
-    end
-
+    self.DuiOptions = { id = self.id, text = self.label or self.text, icon = self.icon }
     self.onStop = AddEventHandler('onResourceStop', function(resourceName)
         if data.resource == resourceName then
             interact.removeById(self.id)
@@ -64,7 +72,7 @@ function Interaction:handleInteract()
         self.entity = self:getEntity()
     end
 
-    local option = self.options[store.currentOptionIndex]
+    local option = self
 
     if option.action then
         option.action(self)
@@ -89,9 +97,12 @@ local ratio = GetAspectRatio(true)
 function Interaction:drawSprite()
     if self.isDestroyed then return end
     local coords = self:getCoords()
+
     SetDrawOrigin(coords.x, coords.y, coords.z)
+
     if self.isActive and not self:isOnCooldown(GetGameTimer()) then
         if not store.menuBusy then
+            -- print("DRAWING SPRITE")
             DrawInteractiveSprite(dui.txdName, dui.txtName, 0, 0, 1, 1, 0.0, 255, 255, 255, 255)
         end
     else

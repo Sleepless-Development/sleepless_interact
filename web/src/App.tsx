@@ -18,10 +18,19 @@ import { fetchNui } from "./utils/fetchNui";
     {
       action: "updateInteraction",
       data: {
-        id: "123123",
         options: [
-          { text: "do something", icon: "house", disable: false },
-          { text: "world2", icon: "house" },
+          {
+            disable: false,
+            icon: "car",
+            id: "ox:closetrunk",
+            text: "Fechar Porta Malas",
+          },
+          {
+            disable: false,
+            icon: "car",
+            id: "ox:closetrunk2",
+            text: "Fechar Porta Malas",
+          },
         ],
       },
     },
@@ -54,13 +63,7 @@ const App: React.FC = () => {
 
   return (
     <>
-      {interaction && (
-        <Interaction
-          key={interaction.id}
-          interaction={interaction}
-          color={color}
-        />
-      )}
+      {interaction && <Interaction interaction={interaction} color={color} />}
     </>
   );
 };
