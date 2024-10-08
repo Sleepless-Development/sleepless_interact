@@ -11,7 +11,7 @@ LocalPlayer.state.interactBusy = false
 
 lib.addKeybind({
     name = 'sleepless_interact:action',
-    description = 'Interagir',
+    description = 'Interact',
     defaultKey = 'E',
     onPressed = function(self)
         if store.activeInteraction then
@@ -57,6 +57,16 @@ local drawPrint = false
 local function drawLoop()
     lib.requestStreamedTextureDict(indicator.dict)
 
+    CreateThread(function()
+        while next(store.nearby) do
+            for i = 1, #store.nearby do
+                local interaction = store.nearby[i]
+                utils.checkOptions(interaction)
+            end
+            Wait(100)
+        end
+    end)
+
     while next(store.nearby) do
         ---@type Interaction[]
         local newActives = {}
@@ -67,8 +77,9 @@ local function drawLoop()
             local interaction = store.nearby[i]
             local active = false
 
-            if interaction:shouldBeActive() and utils.checkOptions(interaction) then
-                newActives[interaction.id] = interaction
+            if interaction:shouldBeActive() and not interaction.isDisabled then
+                newActive = interaction
+        
                 active = true
 
                 DUIOptions[#DUIOptions + 1] = interaction.DuiOptions
@@ -166,9 +177,6 @@ function BuilderLoop()
         Wait(500)
     end
     store.nearby = {}
-    -- store.activeInteraction = nil
-    -- store.activeInteractions = {}
-    -- dui.updateMenu('updateInteraction', nil)
 end
 
 RegisterNetEvent('onResourceStop', function(resourceName)

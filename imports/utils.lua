@@ -290,14 +290,16 @@ utils.checkOptions = function(interaction)
         shouldUpdateUI = true
     end
 
-    if interaction.isActive and not disabled and shouldUpdateUI then
+    interaction.isDisabled = disabledOptionsCount >= optionsLength
+
+    if interaction.isActive and disabledOptionsCount < optionsLength and shouldUpdateUI then
         updateMenu('updateInteraction', {
             id = interaction.id,
             options = interaction.action and {} or { interaction.DuiOptions }
         })
     end
 
-    return not disabled
+    return not interaction.isDisabled
 end
 
 if store.ox_inv then
