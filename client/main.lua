@@ -56,6 +56,18 @@ local drawPrint = false
 
 local function drawLoop()
     lib.requestStreamedTextureDict(indicator.dict)
+
+    CreateThread(function()
+        while next(store.nearby) do
+            for i = 1, #store.nearby do
+                local interaction = store.nearby[i]
+                utils.checkOptions(interaction)
+            end
+            Wait(100)
+        end
+    end)
+
+
     while next(store.nearby) do
         ---@type Interaction | nil
         local newActive = nil
@@ -63,7 +75,7 @@ local function drawLoop()
             local interaction = store.nearby[i]
             local active = false
 
-            if not newActive and interaction:shouldBeActive() and utils.checkOptions(interaction) then
+            if not newActive and interaction:shouldBeActive() and not interaction.isDisabled then
                 newActive = interaction
                 active = true
                 if not store.activeInteraction or newActive.id ~= store.activeInteraction.id then
