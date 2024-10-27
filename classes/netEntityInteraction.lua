@@ -7,6 +7,7 @@ local NetEntityInteraction = lib.class('NetEntityInteraction', LocalEntityIntera
 function NetEntityInteraction:constructor(data)
     self:super(data)
     self.netId = data.netId
+    self.private.entity = NetworkGetEntityFromNetworkId(self.netId)
 end
 
 function NetEntityInteraction:update(data)
@@ -38,14 +39,18 @@ function NetEntityInteraction:getEntity()
 end
 
 function NetEntityInteraction:verifyEntity()
-    if not self.isDestroyed and ((self.globalType and not NetworkDoesEntityExistWithNetworkId(self.netId)) or (self.removeWhenDead and IsEntityDead(NetworkGetEntityFromNetworkId(self.netId)))) then
-        self.isDestroyed = true
-        lib.print.warn(string.format('entity didnt exist with netid %s for interaction: %s. interaction removed', self.netId, self.id))
-        interact.removeById(self.id)
-        if self.globalType then
-            utils.wipeCacheForEntityKey(self.globalType, self.netId)
-        end
-        return false
+    local currentEntity = NetworkGetEntityFromNetworkId(self.netId)
+    
+    if not self.isDestroyed and ((self.globalType and not NetworkDoesEntityExistWithNetworkId(self.netId))
+        or (self.removeWhenDead and IsEntityDead(currentEntity))
+        or (self.private.entity ~= currentEntity)) then
+            self.isDestroyed = true
+            lib.print.warn(string.format('entity didnt exist with netid %s for interaction: %s. interaction removed', self.netId, self.id))
+            interact.removeById(self.id)
+            if self.globalType then
+                utils.wipeCacheForEntityKey(self.globalType, self.netId)
+            end
+            return false
     end
     return true
 end
