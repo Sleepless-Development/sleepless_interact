@@ -64,6 +64,8 @@ function Interaction:handleInteract()
         self.entity = self:getEntity()
     end
 
+    self.coords = self:getCoords()
+
     local option = self.options[store.currentOptionIndex]
 
     if option.action then
