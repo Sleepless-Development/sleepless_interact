@@ -3,7 +3,7 @@ use_experimental_fxv2_oal 'yes'
 game 'gta5'
 lua54 'yes'
 
-version '1.2.9'
+version '1.3.0'
 
 shared_script "@ox_lib/init.lua"
 
