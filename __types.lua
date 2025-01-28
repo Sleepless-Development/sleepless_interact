@@ -21,6 +21,7 @@
 
 ---@class Interaction
 ---@field id string unique identifier for the interaction
+---@field allowInVehicle boolean
 ---@field options InteractOption[]
 ---@field renderDistance number
 ---@field activeDistance number

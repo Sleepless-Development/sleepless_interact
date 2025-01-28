@@ -30,6 +30,7 @@ function Interaction:constructor(data)
     self.isDestroyed = false
     self.DuiOptions = {}
     self.sprite = data.sprite
+    self.allowInVehicle = data.allowInVehicle
 
     if data?.sprite?.dict then
         pcall(lib.requestStreamedTextureDict, data.sprite.dict)
@@ -136,6 +137,10 @@ function Interaction:destroy()
 
     RemoveEventHandler(self.onStop)
     store.InteractionIds[self.id] = nil
+end
+
+function Interaction:vehicleCheck()
+    return not cache.vehicle or (self.allowInVehicle and cache.vehicle)
 end
 
 function Interaction:getCoords() --abstract method

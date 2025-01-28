@@ -18,7 +18,7 @@ local globalTableMap = {
 }
 
 utils.shouldHideInteractions = function()
-    if IsNuiFocused() or LocalPlayer.state.interactBusy or (store.ox_lib and (lib.progressActive() or cache.vehicle)) or store.hidePerKeybind or LocalPlayer.state.invOpen then
+    if IsNuiFocused() or LocalPlayer.state.interactBusy or (store.ox_lib and lib.progressActive()) or store.hidePerKeybind or LocalPlayer.state.invOpen then
         return true
     end
     return false
@@ -88,6 +88,7 @@ utils.loadInteractionDefaults = function(data, resource)
     data.activeDistance = data.activeDistance or 1.0
     data.cooldown       = data.cooldown or 1000
     data.resource       = data.resource or resource or 'sleepless_interact'
+    data.allowInVehicle = data.allowInVehicle or false
 
     if type(data.bone) == 'table' then
         local entity = (data.netId and NetworkGetEntityFromNetworkId(data.netId)) or data.entity
@@ -285,12 +286,14 @@ utils.checkOptions = function(interaction)
             disabled = not success or not resp
         end
 
-        if not disabled and option.groups then
-            disabled = not checkGroups(option.groups)
-        end
+        if not disabled then
+            if option.groups then
+                disabled = not checkGroups(option.groups)
+            end
 
-        if not disabled and option.items then
-            disabled = not checkItems(option.items, option.anyItem)
+            if option.items then
+                disabled = not checkItems(option.items, option.anyItem)
+            end
         end
 
         if interaction.DuiOptions[i] and disabled ~= interaction.DuiOptions[i].disable then

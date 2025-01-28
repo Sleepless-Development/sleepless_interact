@@ -129,7 +129,7 @@ function BuilderLoop()
             local nearby = {}
             for i = 1, #store.Interactions do
                 local interaction = store.Interactions[i]
-                if interaction and interaction:shouldRender() and utils.checkOptions(interaction) then
+                if interaction and interaction:shouldRender() and interaction:vehicleCheck() and utils.checkOptions(interaction) then
                     nearby[#nearby + 1] = interaction
                 end
             end
@@ -147,7 +147,6 @@ function BuilderLoop()
 
             if builderPrint then
                 builderPrint = false
-                print('yes builder is running')
             end
         end
         Wait(500)
