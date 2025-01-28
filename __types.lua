@@ -1,7 +1,6 @@
 ---@class InteractOption
 ---@field label string
 ---@field icon string
----@field options InteractOption[]
 ---@field groups? string | string[] | table<string, number>
 ---@field items? string | string[] | table<string, number>
 ---@field anyItem? boolean

@@ -27,12 +27,14 @@ function interact.addCoords(data)
 
             if newInteraction.id then
                 table.insert(store.Interactions, newInteraction)
+                return newInteraction.id
             end
         end
     else
         local newInteraction = CoordsInteraction:new(data)
         if newInteraction.id then
             table.insert(store.Interactions, newInteraction)
+            return newInteraction.id
         end
     end
 end
@@ -59,6 +61,7 @@ function interact.addLocalEntity(data)
     local newInteraction = LocalEntityInteraction:new(data)
     if newInteraction.id then
         table.insert(store.Interactions, newInteraction)
+        return newInteraction.id
     end
 end
 
@@ -82,6 +85,7 @@ function interact.addEntity(data)
     local newInteraction = NetEntityInteraction:new(data)
     if newInteraction.id then
         table.insert(store.Interactions, newInteraction)
+        return newInteraction.id
     end
 end
 
@@ -93,12 +97,13 @@ function interact.addGlobalVehicle(data)
 
     if store.globalIds[data.id] then
         utils.updateGlobalInteraction('vehicle', data)
-        return
+        return data.id
     end
 
     store.globalIds[data.id] = true
 
     table.insert(store.globalVehicle, data)
+    return data.id
 end
 
 ---add global interaction for player
@@ -107,12 +112,13 @@ function interact.addGlobalPlayer(data)
 
     if store.globalIds[data.id] then
         utils.updateGlobalInteraction('player', data)
-        return
+        return data.id
     end
 
     store.globalIds[data.id] = true
 
     table.insert(store.globalPlayer, data)
+    return data.id
 end
 
 ---add global interaction for non-player ped
@@ -121,12 +127,13 @@ function interact.addGlobalPed(data)
 
     if store.globalIds[data.id] then
         utils.updateGlobalInteraction('ped', data)
-        return
+        return data.id
     end
 
     store.globalIds[data.id] = true
 
     table.insert(store.globalPed, data)
+    return data.id
 end
 
 ---add interaction for model(s)
@@ -137,7 +144,7 @@ function interact.addGlobalModel(data)
     if store.globalIds[data.id] then
         interact.removeGlobalModel(data.id)
         interact.addGlobalModel(data)
-        return
+        return data.id
     end
 
     store.globalIds[data.id] = true
@@ -166,6 +173,7 @@ function interact.addGlobalModel(data)
 
         table.insert(store.globalModels[interactionData.model], interactionData)
     end
+    return data.id
 end
 
 -- REMOVE INTERACTIONS
