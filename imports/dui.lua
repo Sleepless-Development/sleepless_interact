@@ -21,6 +21,7 @@ RegisterNuiCallback('setCurrentTextOption', function(data, cb)
 end)
 
 local function loadDui()
+    if dui.loaded then return end
     dui.DuiObject = CreateDui("https://cfx-nui-sleepless_interact/web/build/index.html", dui.screenW, dui.screenH)
     CreateRuntimeTextureFromDuiHandle(dui.txd, dui.txtName, GetDuiHandle(dui.DuiObject))
     while not dui.loaded do
