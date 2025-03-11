@@ -70,10 +70,11 @@ export function updateHighlight() {
     options[currentIndex].classList.add("highlighted");
 
     if (options[currentIndex].color) {
-      const {x,y,z,w} = options[currentIndex].color
-      const color = `rgb(${x}, ${y}, ${z}, ${w / 255})`
-      setDefaultColor(color)
+      const c = options[currentIndex].color
+      const color = `rgb(${c[0]}, ${c[1]}, ${c[2]}, ${c[3] / 255})`
       document.body.style.setProperty('--theme-color', color)
+    }else{
+      document.body.style.setProperty('--theme-color', defaultColor)
     }
   }
 }
