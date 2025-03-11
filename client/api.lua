@@ -173,9 +173,9 @@ function interact.addCoords(coords, options)
             typeError('coords', 'vector3', cType)
         end
 
-        local id = utils.makeIdFromCoords(coords)
+        local id = utils.makeIdFromCoords(c)
         store.coords[id] = store.coords[id] or {}
-        store.coordIds[id] = coords
+        store.coordIds[id] = c
         addOptions(store.coords[id], options, resource, nil, nil)
         ids[i] = id
     end
@@ -465,82 +465,4 @@ AddEventHandler('onClientResourceStop', function(resource)
             store.coordIds[id] = nil
         end
     end
-end)
-
-
-CreateThread(function()
-    -- local id = interact.addCoords(GetEntityCoords(cache.ped), {
-    --     {
-    --         label = 'FUCK',
-    --         holdTime = 1000,
-    --         onSelect = function()
-    --             print('HOLD')
-    --         end
-    --     },
-    --     {
-    --         label = 'FUCK 2',
-    --         onSelect = function()
-    --             print('non hold')
-    --         end
-    --     }
-    -- })
-
-
-    local id = interact.addCoords(GetOffsetFromEntityInWorldCoords(cache.ped, 0, 1, 0), {
-        {
-            label = 'FUCK',
-            holdTime = 1000,
-            onSelect = function()
-                print('HOLD')
-            end,
-            color = vec4(255, 0, 0, 200)
-        },
-        {
-            label = 'FUCK 2',
-            onSelect = function()
-                print('non hold')
-            end,
-            color = vec4(255, 165, 0, 200)
-        },
-        {
-            label = 'FUCK 3',
-            onSelect = function()
-                print('non hold')
-            end,
-            color = vec4(255, 255, 0, 200)
-        },
-        {
-            label = 'FUCK 4',
-            onSelect = function()
-                print('non hold')
-            end,
-            color = vec4(0, 0, 255, 200)
-        },
-        {
-            label = 'FUCK 5',
-            onSelect = function()
-                print('non hold')
-            end,
-            color = vec4(0, 255, 0, 200)
-        },
-        {
-            label = 'FUCK 6',
-            onSelect = function()
-                print('non hold')
-            end,
-            color = vec4(75, 0, 130, 200)
-        },
-        {
-            label = 'FUCK 7',
-            onSelect = function()
-                print('non hold')
-            end,
-            color = vec4(143, 0, 255, 200)
-        }
-    })
-
-    -- Wait(3500)
-
-
-    -- interact.removeCoords(id)
 end)
