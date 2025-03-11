@@ -19,7 +19,7 @@ local interact = setmetatable({
     __newindex = function(self, key, fn)
         rawset(self, key, fn)
 
-        if debug.getinfo(2, 'S').short_src:find('@sleepless_interact/api') then
+        if debug.getinfo(2, 'S').short_src:find('@sleepless_interact/client/api.lua') then
             exports(key, fn)
         end
     end
