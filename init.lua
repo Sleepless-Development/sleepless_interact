@@ -1,4 +1,3 @@
----Thanks linden https://github.com/overextended
 local export = exports.sleepless_interact
 
 local function call(self, index, ...)
@@ -20,7 +19,7 @@ local interact = setmetatable({
     __newindex = function(self, key, fn)
         rawset(self, key, fn)
 
-        if debug.getinfo(2, 'S').short_src:find('@sleepless_interact/exports') then
+        if debug.getinfo(2, 'S').short_src:find('@sleepless_interact/api') then
             exports(key, fn)
         end
     end

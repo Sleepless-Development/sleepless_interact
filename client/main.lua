@@ -1,197 +1,453 @@
-local utils = require 'imports.utils'
-local store = require 'imports.store'
-local dui = require 'imports.dui'
-local config = require 'imports.config'
-local indicator = config.defaultIndicatorSprite
+local dui = require 'client.modules.dui'
+local store = require 'client.modules.store'
+local config = require 'client.modules.config'
+local utils = require 'client.modules.utils'
 
+---@type boolean
 local drawLoopRunning = false
-local BuilderLoopRunning = false
 
-LocalPlayer.state.interactBusy = false
+local GetEntityCoords = GetEntityCoords
+local DrawSprite = DrawSprite
+local SetDrawOrigin = SetDrawOrigin
+local getNearbyObjects = lib.getNearbyObjects
+local getNearbyPlayers = lib.getNearbyPlayers
+local getNearbyVehicles = lib.getNearbyVehicles
+local getNearbyPeds = lib.getNearbyPeds
+local GetOffsetFromEntityInWorldCoords = GetOffsetFromEntityInWorldCoords
+local GetEntityBoneIndexByName = GetEntityBoneIndexByName
+local GetEntityBonePosition_2 = GetEntityBonePosition_2
+local GetModelDimensions = GetModelDimensions
+local NetworkGetEntityIsNetworked = NetworkGetEntityIsNetworked
+local NetworkGetNetworkIdFromEntity = NetworkGetNetworkIdFromEntity
+local GetEntityModel = GetEntityModel
 
+local r, g, b, a = table.unpack(config.themeColor)
+
+local pressed = false
 lib.addKeybind({
-    name = 'sleepless_interact:action',
+    name = 'interact_action',
     description = 'Interact',
     defaultKey = 'E',
     onPressed = function(self)
-        if store.activeInteraction then
-            store.activeInteraction:handleInteract()
+        if GetGameTimer() > store.cooldownEndTime then
+            if not next(store.current) then return end
+            pressed = true
+            dui.sendMessage("interact")
         end
+    end,
+    onReleased = function(self)
+        if not pressed then return end
+        pressed = false
+        dui.sendMessage("release")
     end,
 })
 
-store.hidePerKeybind = false
-local defaultShowKeyBind = config.defaultShowKeyBind
-local showKeyBindBehavior = config.showKeyBindBehavior
-local useShowKeyBind = config.useShowKeyBind
-if useShowKeyBind then
-    store.hidePerKeybind = true
-    lib.addKeybind({
-        name = 'sleepless_interact:toggle',
-        description = 'show interactions',
-        defaultKey = defaultShowKeyBind,
-        onPressed = function(self)
-            if cache.vehicle then return end
-            if showKeyBindBehavior == "toggle" then
-                store.hidePerKeybind = not store.hidePerKeybind
-                if store.hidePerKeybind then
-                    BuilderLoopRunning = false
-                else
-                    BuilderLoop()
-                end
-            else
-                store.hidePerKeybind = false
-                BuilderLoop()
-            end
-        end,
-        onReleased = function(self)
-            if showKeyBindBehavior == "toggle" or cache.vehicle then return end
-            store.hidePerKeybind = true
-            BuilderLoopRunning = false
-        end
-    })
+local modelCache, netIdCache, entCoordsCache = {}, {}, {}
+
+local function cachedEntityInfo(entity)
+    if modelCache[entity] then
+        return modelCache[entity], netIdCache[entity], entCoordsCache[entity]
+    end
+
+    local model = GetEntityModel(entity)
+    local netId = NetworkGetEntityIsNetworked(entity) and NetworkGetNetworkIdFromEntity(entity) or nil
+    local coords = GetEntityCoords(entity)
+    modelCache[entity] = model
+    netIdCache[entity] = netId
+    entCoordsCache[entity] = coords
+    return model, netId, coords
 end
 
-local drawPrint = false
+---@param options Option[]
+---@param entity number
+---@param distance number
+---@param coords vector3
+---@return nil | Option[], number | nil
+local function filterValidOptions(options, entity, distance, coords)
+    if not options then return nil end
 
-local function drawLoop()
-    lib.requestStreamedTextureDict(indicator.dict)
+    local totalOptions = 0
+    local hidden = 0
+    for _, _options in pairs(options) do
+        totalOptions += #_options
+        for i = 1, #_options do
+            local option = _options[i]
+            option.hide = false
 
-    CreateThread(function()
-        while next(store.nearby) do
-            for i = 1, #store.nearby do
-                local interaction = store.nearby[i]
-                utils.checkOptions(interaction)
-            end
-            Wait(100)
-        end
-    end)
-
-
-    while next(store.nearby) do
-        ---@type Interaction | nil
-        local newActive = nil
-        for i = 1, #store.nearby do
-            local interaction = store.nearby[i]
-            local active = false
-
-            if not newActive and interaction:shouldBeActive() and not interaction.isDisabled then
-                newActive = interaction
-                active = true
-                if not store.activeInteraction or newActive.id ~= store.activeInteraction.id then
-                    store.menuBusy = true
-                    dui.updateMenu('updateInteraction', { id = newActive.id, options = interaction.DuiOptions })
-                    SetTimeout(100, function()
-                        store.menuBusy = false
-                    end)
-                end
-                dui.handleDuiControls()
+            if not option.hide then
+                option.hide = distance > (option.distance or 2.0)
             end
 
-            if interaction.isActive ~= active then
-                interaction.isActive = active
+            if not option.hide and option.canInteract then
+                option.hide = not option.canInteract(entity, distance, coords, option.name)
             end
 
-            interaction:drawSprite()
-        end
+            if not option.hide and option.groups then
+                option.hide = not utils.hasPlayerGotGroup(option.groups)
+            end
 
-        if (not newActive and store.activeInteraction) or (newActive and store.activeInteraction and store.activeInteraction.id ~= newActive.id) then
-            store.activeInteraction.isActive = false
-        end
+            if not option.hide and option.items then
+                option.hide = not utils.hasPlayerGotItems(option.items, option.anyItem)
+            end
 
-        if store.activeInteraction and not newActive then
-            dui.updateMenu('updateInteraction', nil)
+            if option.hide then
+                hidden += 1
+            end
         end
-
-        store.activeInteraction = newActive
-
-        if drawPrint then
-            drawPrint = false
-            print('yes draw loop is running')
-        end
-        Wait(0)
     end
-    SetStreamedTextureDictAsNoLongerNeeded(indicator.dict)
-    store.activeInteraction = nil
+
+    if hidden >= totalOptions then
+        return nil
+    end
+
+    return options, totalOptions - hidden
+end
+
+---@param entity number
+---@param globalType string
+---@return Option[] | nil
+local function getOptionsForEntity(entity, globalType)
+    if not entity then return nil end
+
+    if IsPedAPlayer(entity) then
+        return {
+            global = store.players,
+        }
+    end
+
+    local model, netId = cachedEntityInfo(entity)
+
+    local options = {
+        global = #store[globalType] > 0 and store[globalType] or nil,
+        model = store.models[model],
+        entity = netId and store.entities[netId] or nil,
+        localEntity = store.localEntities[entity],
+    }
+
+    return next(options) and options or nil
+end
+
+---@param entity number
+---@param globalType string
+---@return table<string, Option[]> | nil
+local function getBoneOptionsForEntity(entity, globalType)
+    if not entity then return nil end
+
+    local model, netId = cachedEntityInfo(entity)
+
+    local boneOptions = {}
+
+    if store.bones[globalType] then
+        for boneId, options in pairs(store.bones[globalType]) do
+            boneOptions[boneId] = boneOptions[boneId] or {}
+            for i = 1, #options do
+                local opt = options[i]
+                table.insert(boneOptions[boneId], opt)
+            end
+        end
+    end
+
+    if store.bones.models and store.bones.models[model] then
+        for boneId, options in pairs(store.bones.models[model]) do
+            boneOptions[boneId] = boneOptions[boneId] or {}
+            for i = 1, #options do
+                local opt = options[i]
+                table.insert(boneOptions[boneId], opt)
+            end
+        end
+    end
+
+    if netId and store.bones.entities and store.bones.entities[netId] then
+        for boneId, options in pairs(store.bones.entities[netId]) do
+            boneOptions[boneId] = boneOptions[boneId] or {}
+            for i = 1, #options do
+                local opt = options[i]
+                table.insert(boneOptions[boneId], opt)
+            end
+        end
+    end
+
+    if not netId and store.bones.localEntities and store.bones.localEntities[entity] then
+        for boneId, options in pairs(store.bones.localEntities[entity]) do
+            boneOptions[boneId] = boneOptions[boneId] or {}
+            for i = 1, #options do
+                local opt = options[i]
+                table.insert(boneOptions[boneId], opt)
+            end
+        end
+    end
+
+    return next(boneOptions) and boneOptions or nil
+end
+
+---@param entity number
+---@param globalType string
+---@return table<string, Option[]> | nil
+local function getOffsetOptionsForEntity(entity, globalType)
+    if not entity then return nil end
+
+    local model, netId = cachedEntityInfo(entity)
+
+    local offsetOptions = {}
+
+    if store.offsets[globalType] then
+        for offsetStr, options in pairs(store.offsets[globalType]) do
+            offsetOptions[offsetStr] = offsetOptions[offsetStr] or {}
+            for i = 1, #options do
+                local opt = options[i]
+                table.insert(offsetOptions[offsetStr], opt)
+            end
+        end
+    end
+
+    if store.offsets.models and store.offsets.models[model] then
+        for offsetStr, options in pairs(store.offsets.models[model]) do
+            offsetOptions[offsetStr] = offsetOptions[offsetStr] or {}
+            for i = 1, #options do
+                local opt = options[i]
+                table.insert(offsetOptions[offsetStr], opt)
+            end
+        end
+    end
+
+    if netId and store.offsets.entities and store.offsets.entities[netId] then
+        for offsetStr, options in pairs(store.offsets.entities[netId]) do
+            offsetOptions[offsetStr] = offsetOptions[offsetStr] or {}
+            for i = 1, #options do
+                local opt = options[i]
+                table.insert(offsetOptions[offsetStr], opt)
+            end
+        end
+    end
+
+    if not netId and store.offsets.localEntities and store.offsets.localEntities[entity] then
+        for offsetStr, options in pairs(store.offsets.localEntities[entity]) do
+            offsetOptions[offsetStr] = offsetOptions[offsetStr] or {}
+            for i = 1, #options do
+                local opt = options[i]
+                table.insert(offsetOptions[offsetStr], opt)
+            end
+        end
+    end
+
+    return next(offsetOptions) and offsetOptions or nil
+end
+
+---@param coords vector3
+---@return NearbyItem[]
+local function checkNearbyEntities(coords)
+    local valid = {}
+    local num = 0
+
+    local function processEntities(entities, globalType)
+        for i = 1, #entities do
+            local ent = entities[i]
+            local entity = ent.object or ent.vehicle or ent.ped
+            local model, netId, entCoords = cachedEntityInfo(entity)
+
+            local options = getOptionsForEntity(entity, globalType)
+            local boneOptions = getBoneOptionsForEntity(entity, globalType)
+            local offsetOptions = getOffsetOptionsForEntity(entity, globalType)
+
+
+            if options then
+                num = num + 1
+                valid[num] = {
+                    entity = entity,
+                    currentDistance = #(coords - entCoords),
+                    options = options
+                }
+            end
+
+            if boneOptions then
+                for boneId, _options in pairs(boneOptions) do
+                    local boneIndex = GetEntityBoneIndexByName(entity, boneId)
+                    if boneIndex ~= -1 then
+                        local boneCoords = GetEntityBonePosition_2(entity, boneIndex)
+                        num = num + 1
+                        valid[num] = {
+                            entity = entity,
+                            bone = boneId,
+                            coords = boneCoords,
+                            currentDistance = #(coords - boneCoords),
+                            options = { options = _options }
+                        }
+                    end
+                end
+            end
+
+            if offsetOptions then
+                for offsetStr, _options in pairs(offsetOptions) do
+                    local x, y, z, offsetType = utils.getCoordsAndTypeFromOffsetId(offsetStr)
+                    if x and y and z and offsetType then
+                        ---@diagnostic disable-next-line: param-type-mismatch
+                        local offset = vec3(tonumber(x), tonumber(y), tonumber(z))
+                        local worldPos
+
+                        if offsetType == "offset" then
+                            local min, max = GetModelDimensions(model)
+                            offset = (max - min) * offset + min
+                        end
+
+                        worldPos = GetOffsetFromEntityInWorldCoords(entity, offset.x, offset.y, offset.z)
+
+                        num = num + 1
+                        valid[num] = {
+                            entity = entity,
+                            offset = offsetStr,
+                            coords = worldPos,
+                            currentDistance = #(coords - worldPos),
+                            options = { offset = _options }
+                        }
+                    end
+                end
+            end
+        end
+    end
+
+    processEntities(getNearbyObjects(coords, 15.0), 'objects')
+    processEntities(getNearbyVehicles(coords, 4.0), 'vehicles')
+    processEntities(getNearbyPlayers(coords, 4.0, false), 'players')
+    processEntities(getNearbyPeds(coords, 4.0), 'peds')
+
+    return valid
+end
+
+---@param coords vector3
+---@param update NearbyItem[]
+---@return NearbyItem[]
+local function checkNearbyCoords(coords, update)
+    for id, _coords in pairs(store.coordIds) do
+        local dist = #(coords - _coords)
+        if dist < config.maxInteractDistance then
+            update[#update + 1] = {
+                coords = _coords,
+                currentDistance = dist,
+                coordId = id,
+                options = { coords = store.coords[id] }
+            }
+        end
+    end
+    return update
+end
+
+local aspectRatio = GetAspectRatio(true)
+local function drawLoop()
+    if drawLoopRunning then return end
+    drawLoopRunning = true
+
+    lib.requestStreamedTextureDict('shared')
+    local lastClosestItem, lastValidCount = nil, 0
+
+    while #store.nearby > 0 do
+        Wait(0)
+        local foundValid = false
+
+        local playerCoords = GetEntityCoords(cache.ped)
+
+        for i = 1, #store.nearby do
+            local item = store.nearby[i]
+            local coords = utils.getDrawCoordsForInteract(item)
+
+            if coords then
+                SetDrawOrigin(coords.x, coords.y, coords.z)
+                local validOpts, validCount
+                if not foundValid then
+                    validOpts, validCount = filterValidOptions(item.options, item.entity, item.currentDistance, coords)
+                end
+
+                if not foundValid and validOpts and validCount > 0 then
+                    foundValid = true
+
+                    DrawSprite(dui.instance.dictName, dui.instance.txtName, 0.0, 0.0, 1.0, 1.0, 0.0, 255, 255, 255, 255)
+                    local newClosestId = item.bone or item.offset or item.entity or item.coordId
+                    if lastClosestItem ~= newClosestId or lastValidCount ~= validCount then
+                        local resetIndex = lastClosestItem ~= newClosestId
+                        lastClosestItem = newClosestId
+                        lastValidCount = validCount --[[@as number]]
+                        store.current = {
+                            options = validOpts,
+                            entity = item.entity,
+                            distance = item.currentDistance,
+                            coords = coords,
+                            index = 1,
+                        }
+                        dui.sendMessage('setOptions', { options = validOpts, resetIndex = resetIndex })
+                    end
+                else
+                    local distance = #(playerCoords - coords)
+                    if distance < config.maxInteractDistance then
+                        local distanceRatio = math.min(0.5 + (0.25 * (distance / 10.0)), 1.0)
+                        local scale = 0.025 * distanceRatio
+                        DrawSprite('shared', 'emptydot_32', 0.0, 0.0, scale, scale * aspectRatio, 0.0, r, g, b, a)
+                    end
+                end
+
+                ClearDrawOrigin()
+            end
+        end
+
+        if not foundValid and next(store.current) then
+            store.current = {}
+            lastClosestItem = nil
+        end
+    end
+
     drawLoopRunning = false
 end
 
-local builderPrint = false
-
-function BuilderLoop()
-    if BuilderLoopRunning then return end
-    BuilderLoopRunning = true
-    while BuilderLoopRunning do
-        if utils.shouldHideInteractions() then
+local function BuilderLoop()
+    while true do
+        if LocalPlayer.state.hideInteract then
             store.nearby = {}
         else
-            utils.checkEntities()
-            local nearby = {}
-            for i = 1, #store.Interactions do
-                local interaction = store.Interactions[i]
-                if interaction and interaction:shouldRender() and interaction:vehicleCheck() and utils.checkOptions(interaction) then
-                    nearby[#nearby + 1] = interaction
-                end
-            end
+            local coords = GetEntityCoords(cache.ped)
+            local update = checkNearbyEntities(coords)
+            update = checkNearbyCoords(coords, update)
+            store.nearby = update
 
-            table.sort(nearby, function(a, b)
+            table.sort(store.nearby, function(a, b)
                 return a.currentDistance < b.currentDistance
             end)
 
-            store.nearby = nearby
-
             if #store.nearby > 0 and not drawLoopRunning then
-                drawLoopRunning = true
                 CreateThread(drawLoop)
             end
-
-            if builderPrint then
-                builderPrint = false
-            end
         end
-        Wait(500)
+        Wait(1000)
     end
-    store.nearby = {}
 end
 
-RegisterNetEvent('onResourceStop', function(resourceName)
-    for i = #store.globalVehicle, 1, -1 do
-        local data = store.globalVehicle[i]
-        if data.resource == resourceName then
-            store.globalIds[data.id] = nil
-            table.remove(store.globalVehicle, i)
-        end
-    end
 
 
-    for i = #store.globalVehicle, 1, -1 do
-        local data = store.globalVehicle[i]
-        if data.resource == resourceName then
-            store.globalIds[data.id] = nil
-            table.remove(store.globalVehicle, i)
-        end
-    end
+RegisterNUICallback('select', function(data, cb)
+    cb(1)
+    local currentTime = GetGameTimer()
+    if currentTime > store.cooldownEndTime then
+        local option = store.current.options[data[1]][data[2]]
+        if option then
+            -- Trigger the action
+            if option.onSelect then
+                option.onSelect(utils.getResponse(option))
+            elseif option.export then
+                exports[option.resource][option.export](nil, utils.getResponse(option))
+            elseif option.event then
+                TriggerEvent(option.event, utils.getResponse(option))
+            elseif option.serverEvent then
+                TriggerServerEvent(option.serverEvent, utils.getResponse(option, true))
+            elseif option.command then
+                ExecuteCommand(option.command)
+            end
+            local cooldown = option.cooldown or 1500
+            store.cooldownEndTime = currentTime + cooldown
 
-
-    for i = #store.globalVehicle, 1, -1 do
-        local data = store.globalVehicle[i]
-        if data.resource == resourceName then
-            store.globalIds[data.id] = nil
-            table.remove(store.globalVehicle, i)
+            if cooldown > 0 then
+                dui.sendMessage('setCooldown', true)
+                Wait(cooldown)
+                dui.sendMessage('setCooldown', false)
+            end
         end
     end
 end)
 
-
-RegisterCommand('checkInteractions', function(source, args, raw)
-    print('==========================================================================================')
-    lib.print.info('number of ALL interactions:', #store.Interactions)
-    lib.print.info('number of NEARBY interactions:', #store.nearby)
-    lib.print.info('is builder running?', BuilderLoopRunning)
-    builderPrint = true
-    Wait(1000)
-    lib.print.info('is draw running?', drawLoopRunning)
-    drawPrint = true
-    lib.print.info(msgpack.unpack(msgpack.pack(store)))
-    print('==========================================================================================')
-end)
+CreateThread(BuilderLoop)

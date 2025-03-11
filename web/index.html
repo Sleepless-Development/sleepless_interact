@@ -1,11 +1,82 @@
-<html lang="en">
+<html>
   <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/src/favicon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free/css/all.min.css" />
+    <link href="style.css" rel="stylesheet" type="text/css" />
   </head>
   <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
+    <div id="container">
+      <div id="interact-container">
+        <div id="interact-progress"></div>
+        <div id="interact-key">E</div>
+      </div>
+
+      <div id="options-wrapper">
+        <div class="option-container">
+          <div class="animated-background"></div>
+          <i class="fas fa-hand-paper fa-fw option-icon"></i>
+          <p class="option-label">Option 1</p>
+        </div>
+
+        <div class="option-container">
+          <div class="animated-background"></div>
+          <i class="fas fa-hand-paper fa-fw option-icon"></i>
+          <p class="option-label">Option 2</p>
+        </div>
+
+        <div class="option-container">
+          <div class="animated-background"></div>
+          <i class="fas fa-hand-paper fa-fw option-icon"></i>
+          <p class="option-label">Option 3 (hold)</p>
+        </div>
+
+        <div class="option-container">
+          <div class="animated-background"></div>
+          <i class="fas fa-hand-paper fa-fw option-icon"></i>
+          <p class="option-label">Option 4</p>
+        </div>
+
+        <div class="option-container">
+          <div class="animated-background"></div>
+          <i class="fas fa-hand-paper fa-fw option-icon"></i>
+          <p class="option-label">Option 5</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- <script>
+      let currentIndex = 0;
+      const optionsWrapper = document.getElementById("options-wrapper");
+      const options = optionsWrapper.querySelectorAll(".option-container");
+
+      // Function to update the highlighted option
+      function updateHighlight() {
+        options.forEach(option => option.classList.remove("highlighted"));
+        options[currentIndex].classList.add("highlighted");
+      }
+
+      // Since setCurrentIndex isn’t defined, I’ll assume it’s meant to update currentIndex
+      function setCurrentIndex(newIndex) {
+        currentIndex = newIndex;
+        return currentIndex; // Return for assignment compatibility
+      }
+
+      // Wheel event listener
+      window.addEventListener("wheel", (event) => {
+        if (options.length === 0) return;
+
+        if (event.deltaY > 0) {
+          // Scroll down: increment index
+          currentIndex = setCurrentIndex((currentIndex + 1) % options.length);
+        } else {
+          // Scroll up: decrement index with wrap-around
+          currentIndex = setCurrentIndex((currentIndex - 1 + options.length) % options.length);
+        }
+        updateHighlight();
+      });
+
+      // Initialize with the first option highlighted
+      updateHighlight();
+    </script> -->
+    <script defer type="module" src="js/main.js"></script>
   </body>
 </html>
