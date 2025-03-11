@@ -50,7 +50,7 @@ jobs:
           mkdir -p ./temp/sleepless_interact
           mkdir -p ./temp/sleepless_interact/web
           cp ./{README.md,LICENSE,fxmanifest.lua,init.lua,_types.lua} ./temp/sleepless_interact
-          cp -r ./{client, web} ./temp/sleepless_interact
+          cp -r ./{client,web} ./temp/sleepless_interact
           cd ./temp && zip -r ../sleepless_interact.zip ./sleepless_interact
 
       - name: Create Release
