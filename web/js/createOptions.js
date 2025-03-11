@@ -6,7 +6,19 @@ export function createOptions(type, data, id) {
   if (data.hide) return;
 
   const option = document.createElement("div");
-  const iconElement = `<i class="fa-fw ${data.icon} option-icon" ${
+  
+  let iconClasses = "fa-fw";
+  
+  if (data.icon) {
+    if  (data.icon.includes("fa-")) {
+      iconClasses += ` ${data.icon}`;
+    } else {
+      iconClasses += ` fa-solid fa-${data.icon}`;
+    }
+  }
+
+
+  const iconElement = `<i class="${iconClasses} option-icon" ${
     data.iconColor ? `style="color:${data.iconColor} !important"` : ""
   }></i>`;
 
