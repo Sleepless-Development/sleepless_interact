@@ -3,10 +3,6 @@ local store = require 'client.modules.store'
 local config = require 'client.modules.config'
 local utils = require 'client.modules.utils'
 
-require 'client.compat.qtarget'
-require 'client.compat.ox_target'
-require 'client.compat.interact'
-
 ---@type boolean
 local drawLoopRunning = false
 
@@ -484,15 +480,11 @@ local function BuilderLoop()
     end
 end
 
-
-
 RegisterNUICallback('select', function(data, cb)
-    cb(1)
     local currentTime = GetGameTimer()
-    if currentTime > store.cooldownEndTime then
-        local option = store.current.options[data[1]][data[2]]
+    if store.current.options and currentTime > (store.cooldownEndTime or 0) then
+        local option = store.current.options?[data[1]]?[data[2]]
         if option then
-            -- Trigger the action
             if option.onSelect then
                 option.onSelect(utils.getResponse(option))
             elseif option.export then
@@ -506,7 +498,6 @@ RegisterNUICallback('select', function(data, cb)
             end
             local cooldown = option.cooldown or 1500
             store.cooldownEndTime = currentTime + cooldown
-
             if cooldown > 0 then
                 dui.sendMessage('setCooldown', true)
                 Wait(cooldown)
@@ -514,6 +505,12 @@ RegisterNUICallback('select', function(data, cb)
             end
         end
     end
+    cb(1)
 end)
 
 CreateThread(BuilderLoop)
+
+
+require 'client.compat.qtarget'
+require 'client.compat.ox_target'
+require 'client.compat.interact'

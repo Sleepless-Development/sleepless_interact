@@ -21,6 +21,8 @@ export function setCurrentIndex(newIndex) {
 export function onSelect() {
   const options = optionsWrapper.querySelectorAll(".option-container");
   const option = options[currentIndex];
+
+  if (!option) return;
   
   if (option.holdTime) {
     startHold(option);
@@ -34,6 +36,8 @@ function completeHold(option) {
   
   const options = optionsWrapper.querySelectorAll(".option-container");
   const currentOption = options[currentIndex];
+
+  if (!currentOption) return;
   
   // Verify it's still the same option
   if (currentOption === option) {
