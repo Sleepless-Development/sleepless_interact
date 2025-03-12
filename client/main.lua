@@ -106,7 +106,6 @@ local function filterValidOptions(options, entity, distance, coords)
     local hideCompletely = options['global'] ~= nil
 
     for category, _options in pairs(options) do
-
         local validCategoryOptions = {}
         for i = 1, #_options do
             local option = _options[i]
@@ -400,6 +399,9 @@ local function drawLoop()
     local nearbyData = {}
     local playerCoords
 
+    local entityStartCoords = {}
+    local movingEntity = {}
+
     CreateThread(function()
         while drawLoopRunning do
             Wait(150)
@@ -415,8 +417,17 @@ local function drawLoop()
                 local item = store.nearby[i]
                 local coords = utils.getDrawCoordsForInteract(item)
                 if coords then
+                    if not entityStartCoords[item.entity] then
+                        entityStartCoords[item.entity] = coords
+                    end
+
+                    if coords ~= entityStartCoords then
+                        movingEntity[item.entity] = true
+                    end
+
                     local distance = #(playerCoords - coords)
-                    local validOpts, validCount, hideCompletely = filterValidOptions(item.options, item.entity, distance, coords)
+                    local validOpts, validCount, hideCompletely = filterValidOptions(item.options, item.entity, distance,
+                        coords)
                     nearbyData[i] = {
                         item = item,
                         coords = coords,
@@ -438,7 +449,7 @@ local function drawLoop()
             local data = nearbyData[i]
             if data and data.coords and not data.hideCompletely then
                 local item = data.item
-                local coords =  utils.getDrawCoordsForInteract(item)
+                local coords = (not movingEntity[item.entity] and data.coords) or utils.getDrawCoordsForInteract(item)
 
                 SetDrawOrigin(coords.x, coords.y, coords.z)
 
