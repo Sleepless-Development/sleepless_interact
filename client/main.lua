@@ -417,12 +417,14 @@ local function drawLoop()
                 local item = store.nearby[i]
                 local coords = utils.getDrawCoordsForInteract(item)
                 if coords then
-                    if not entityStartCoords[item.entity] then
-                        entityStartCoords[item.entity] = coords
-                    end
+                    if item.entity then
+                        if not entityStartCoords[item.entity] then
+                            entityStartCoords[item.entity] = coords
+                        end
 
-                    if coords ~= entityStartCoords then
-                        movingEntity[item.entity] = true
+                        if coords ~= entityStartCoords then
+                            movingEntity[item.entity] = true
+                        end
                     end
 
                     local distance = #(playerCoords - coords)
@@ -449,7 +451,7 @@ local function drawLoop()
             local data = nearbyData[i]
             if data and data.coords and not data.hideCompletely then
                 local item = data.item
-                local coords = (not movingEntity[item.entity] and data.coords) or utils.getDrawCoordsForInteract(item)
+                local coords = (item.entity and not movingEntity[item.entity] and data.coords) or utils.getDrawCoordsForInteract(item)
 
                 SetDrawOrigin(coords.x, coords.y, coords.z)
 
