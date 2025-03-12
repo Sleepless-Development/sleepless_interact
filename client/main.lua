@@ -71,7 +71,6 @@ if config.useShowKeyBind then
             else
                 hidePerKeybind = false
             end
-
         end,
         onReleased = function(self)
             if config.showKeyBindBehavior == "toggle" then return end
@@ -98,45 +97,56 @@ end
 ---@param entity number
 ---@param distance number
 ---@param coords vector3
----@return nil | Option[], number | nil
+---@return nil | table<string, Option[]>, number | nil
 local function filterValidOptions(options, entity, distance, coords)
     if not options then return nil end
 
-    local totalOptions = 0
-    local hidden = 0
-    for _, _options in pairs(options) do
-        totalOptions += #_options
+    local validOptions = {}
+    local totalValid = 0
+
+    -- Iterate through each category (global, model, entity, etc.)
+    for category, _options in pairs(options) do
+        local validCategoryOptions = {}
         for i = 1, #_options do
             local option = _options[i]
-            option.hide = false
+            local hide = false
 
-            if not option.hide then
-                option.hide = distance > (option.distance or 2.0)
+            -- Check conditions for hiding
+            if not hide then
+                hide = distance > (option.distance or 2.0)
             end
 
-            if not option.hide and option.canInteract then
-                option.hide = not option.canInteract(entity, distance, coords, option.name)
+            if not hide and option.groups then
+                hide = not utils.hasPlayerGotGroup(option.groups)
             end
 
-            if not option.hide and option.groups then
-                option.hide = not utils.hasPlayerGotGroup(option.groups)
+            if not hide and option.items then
+                hide = not utils.hasPlayerGotItems(option.items, option.anyItem)
             end
 
-            if not option.hide and option.items then
-                option.hide = not utils.hasPlayerGotItems(option.items, option.anyItem)
+            if not hide and option.canInteract then
+                hide = not option.canInteract(entity, distance, coords, option.name)
             end
 
-            if option.hide then
-                hidden += 1
+            -- If not hidden, add to valid options
+            if not hide then
+                validCategoryOptions[#validCategoryOptions + 1] = option
+                totalValid = totalValid + 1
             end
+        end
+
+        -- Only include category if it has valid options
+        if #validCategoryOptions > 0 then
+            validOptions[category] = validCategoryOptions
         end
     end
 
-    if hidden >= totalOptions then
+    -- Return nil if no valid options
+    if totalValid == 0 then
         return nil
     end
 
-    return options, totalOptions - hidden
+    return validOptions, totalValid
 end
 
 ---@param entity number
@@ -345,7 +355,7 @@ local function checkNearbyEntities(coords)
         end
     end
 
-    processEntities(getNearbyObjects(coords, 15.0), 'objects')
+    processEntities(getNearbyObjects(coords, 4.0), 'objects')
     processEntities(getNearbyVehicles(coords, 4.0), 'vehicles')
     processEntities(getNearbyPlayers(coords, 4.0, false), 'players')
     processEntities(getNearbyPeds(coords, 4.0), 'peds')
@@ -372,6 +382,14 @@ local function checkNearbyCoords(coords, update)
     return update
 end
 
+
+local function shouldHideInteract()
+    if IsNuiFocused() or LocalPlayer.state.hideInteract or (lib and lib.progressActive()) or hidePerKeybind or LocalPlayer.state.invOpen then
+        return true
+    end
+    return false
+end
+
 local aspectRatio = GetAspectRatio(true)
 local function drawLoop()
     if drawLoopRunning then return end
@@ -385,6 +403,12 @@ local function drawLoop()
     CreateThread(function()
         while drawLoopRunning do
             Wait(100)
+
+            if shouldHideInteract() then
+                table.wipe(store.nearby)
+                break
+            end
+
             playerCoords = GetEntityCoords(cache.ped)
             nearbyData = {}
             for i = 1, #store.nearby do
@@ -405,11 +429,10 @@ local function drawLoop()
         end
     end)
 
-    -- Main drawing loop
     while #store.nearby > 0 do
         Wait(0)
         local foundValid = false
-        
+
         for i = 1, #store.nearby do
             local data = nearbyData[i]
             if data and data.coords then
@@ -420,6 +443,7 @@ local function drawLoop()
 
                 if not foundValid and data.validOpts and data.validCount > 0 then
                     foundValid = true
+
                     DrawSprite(dui.instance.dictName, dui.instance.txtName, 0.0, 0.0, 1.0, 1.0, 0.0, 255, 255, 255, 255)
                     local newClosestId = item.bone or item.offset or item.entity or item.coordId
                     if lastClosestItem ~= newClosestId or lastValidCount ~= data.validCount then
@@ -454,12 +478,12 @@ local function drawLoop()
         end
     end
 
-    drawLoopRunning = false -- Stop the slow thread when the draw loop ends
+    drawLoopRunning = false
 end
 
 local function BuilderLoop()
     while true do
-        if LocalPlayer.state.hideInteract or hidePerKeybind then
+        if shouldHideInteract() then
             table.wipe(store.nearby)
         else
             local coords = GetEntityCoords(cache.ped)
