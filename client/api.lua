@@ -180,9 +180,6 @@ function interact.addCoords(coords, options)
         ids[i] = id
     end
 
-
-
-
     return (#ids == 1 and ids[1]) or ids
 end
 

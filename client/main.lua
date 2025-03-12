@@ -97,21 +97,21 @@ end
 ---@param entity number
 ---@param distance number
 ---@param coords vector3
----@return nil | table<string, Option[]>, number | nil
+---@return nil | table<string, Option[]>, number | nil, boolean | nil
 local function filterValidOptions(options, entity, distance, coords)
     if not options then return nil end
 
     local validOptions = {}
     local totalValid = 0
+    local hideCompletely = options['global'] ~= nil
 
-    -- Iterate through each category (global, model, entity, etc.)
     for category, _options in pairs(options) do
+
         local validCategoryOptions = {}
         for i = 1, #_options do
             local option = _options[i]
             local hide = false
 
-            -- Check conditions for hiding
             if not hide then
                 hide = distance > (option.distance or 2.0)
             end
@@ -128,25 +128,25 @@ local function filterValidOptions(options, entity, distance, coords)
                 hide = not option.canInteract(entity, distance, coords, option.name)
             end
 
-            -- If not hidden, add to valid options
             if not hide then
                 validCategoryOptions[#validCategoryOptions + 1] = option
                 totalValid = totalValid + 1
             end
         end
 
-        -- Only include category if it has valid options
         if #validCategoryOptions > 0 then
+            if hideCompletely then
+                hideCompletely = false
+            end
             validOptions[category] = validCategoryOptions
         end
     end
 
-    -- Return nil if no valid options
     if totalValid == 0 then
-        return nil
+        return nil, nil, hideCompletely
     end
 
-    return validOptions, totalValid
+    return validOptions, totalValid, hideCompletely
 end
 
 ---@param entity number
@@ -402,7 +402,7 @@ local function drawLoop()
 
     CreateThread(function()
         while drawLoopRunning do
-            Wait(100)
+            Wait(150)
 
             if shouldHideInteract() then
                 table.wipe(store.nearby)
@@ -416,10 +416,11 @@ local function drawLoop()
                 local coords = utils.getDrawCoordsForInteract(item)
                 if coords then
                     local distance = #(playerCoords - coords)
-                    local validOpts, validCount = filterValidOptions(item.options, item.entity, distance, coords)
+                    local validOpts, validCount, hideCompletely = filterValidOptions(item.options, item.entity, distance, coords)
                     nearbyData[i] = {
                         item = item,
                         coords = coords,
+                        hideCompletely = hideCompletely,
                         distance = distance,
                         validOpts = validOpts,
                         validCount = validCount
@@ -435,9 +436,9 @@ local function drawLoop()
 
         for i = 1, #store.nearby do
             local data = nearbyData[i]
-            if data and data.coords then
+            if data and data.coords and not data.hideCompletely then
                 local item = data.item
-                local coords = data.coords
+                local coords =  utils.getDrawCoordsForInteract(item)
 
                 SetDrawOrigin(coords.x, coords.y, coords.z)
 
@@ -533,8 +534,3 @@ RegisterNUICallback('select', function(data, cb)
 end)
 
 CreateThread(BuilderLoop)
-
-
-require 'client.compat.qtarget'
-require 'client.compat.ox_target'
-require 'client.compat.interact'

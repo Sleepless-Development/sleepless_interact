@@ -11,6 +11,7 @@ shared_scripts {
 }
 
 client_scripts {
+	'client/compat/init.lua',
 	'init.lua',
 	'client/*.lua',
 }
@@ -19,9 +20,12 @@ files {
 	'web/**',
 	'client/modules/*.lua',
 	'client/framework/*.lua',
-	'client/compat/*.lua'
+	'client/compat/resources/*.lua'
 }
 
 provides {
-    'ox_target'
+	'ox_target',
+	'qtarget'
 }
+
+dependency 'ox_lib'

@@ -15,7 +15,7 @@ window.addEventListener("message", (event) => {
 
     case "setOptions": {
       optionsWrapper.innerHTML = "";
-      
+
       if (event.data.value.options) {
         for (const type in event.data.value.options) {
           event.data.value.options[type].forEach((data, id) => {
