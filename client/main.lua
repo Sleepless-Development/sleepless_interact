@@ -418,7 +418,7 @@ local function drawLoop()
 
                 SetDrawOrigin(coords.x, coords.y, coords.z)
 
-                if not foundValid and data.validCount > 0 then
+                if not foundValid and data.validCount and data.validCount > 0 then
                     foundValid = true
                     DrawSprite(dui.instance.dictName, dui.instance.txtName, 0.0, 0.0, 1.0, 1.0, 0.0, 255, 255, 255, 255)
                     local newClosestId = item.bone or item.offset or item.entity or item.coordId
