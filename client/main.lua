@@ -42,20 +42,56 @@ lib.addKeybind({
     end,
 })
 
-local modelCache, netIdCache, entCoordsCache = {}, {}, {}
+
+local hidePerKeybind = config.showKeyBindBehavior == "hold"
+if config.useShowKeyBind then
+    lib.addKeybind({
+        name = 'sleepless_interact:toggle',
+        description = 'show interactions',
+        defaultKey = config.defaultShowKeyBind,
+        onPressed = function(self)
+            if cache.vehicle then return end
+            if config.showKeyBindBehavior == "toggle" then
+                hidePerKeybind = not hidePerKeybind
+
+                if hidePerKeybind then
+                    table.wipe(store.nearby)
+                    lib.notify({
+                        title = 'Interact',
+                        description = 'Disabled',
+                        type = 'warning'
+                    })
+                else
+                    lib.notify({
+                        title = 'Interact',
+                        description = 'Enabled',
+                        type = 'success'
+                    })
+                end
+            else
+                hidePerKeybind = false
+            end
+
+        end,
+        onReleased = function(self)
+            if config.showKeyBindBehavior == "toggle" then return end
+            hidePerKeybind = true
+        end
+    })
+end
+
+local modelCache, netIdCache = {}, {}
 
 local function cachedEntityInfo(entity)
     if modelCache[entity] then
-        return modelCache[entity], netIdCache[entity], entCoordsCache[entity]
+        return modelCache[entity], netIdCache[entity]
     end
 
     local model = GetEntityModel(entity)
     local netId = NetworkGetEntityIsNetworked(entity) and NetworkGetNetworkIdFromEntity(entity) or nil
-    local coords = GetEntityCoords(entity)
     modelCache[entity] = model
     netIdCache[entity] = netId
-    entCoordsCache[entity] = coords
-    return model, netId, coords
+    return model, netId
 end
 
 ---@param options Option[]
@@ -243,8 +279,8 @@ local function checkNearbyEntities(coords)
         for i = 1, #entities do
             local ent = entities[i]
             local entity = ent.object or ent.vehicle or ent.ped
-            local model, netId, entCoords = cachedEntityInfo(entity)
-
+            local model = cachedEntityInfo(entity)
+            local entCoords = GetEntityCoords(entity)
             local options = getOptionsForEntity(entity, globalType)
             local boneOptions = getBoneOptionsForEntity(entity, globalType)
             local offsetOptions = getOffsetOptionsForEntity(entity, globalType)
@@ -254,7 +290,9 @@ local function checkNearbyEntities(coords)
                 num = num + 1
                 valid[num] = {
                     entity = entity,
+                    coords = entCoords,
                     currentDistance = #(coords - entCoords),
+                    currentScreenDistance = utils.getScreenDistanceSquared(entCoords),
                     options = options
                 }
             end
@@ -270,6 +308,7 @@ local function checkNearbyEntities(coords)
                             bone = boneId,
                             coords = boneCoords,
                             currentDistance = #(coords - boneCoords),
+                            currentScreenDistance = utils.getScreenDistanceSquared(boneCoords),
                             options = { options = _options }
                         }
                     end
@@ -297,6 +336,7 @@ local function checkNearbyEntities(coords)
                             offset = offsetStr,
                             coords = worldPos,
                             currentDistance = #(coords - worldPos),
+                            currentScreenDistance = utils.getScreenDistanceSquared(worldPos),
                             options = { offset = _options }
                         }
                     end
@@ -323,6 +363,7 @@ local function checkNearbyCoords(coords, update)
             update[#update + 1] = {
                 coords = _coords,
                 currentDistance = dist,
+                currentScreenDistance = utils.getScreenDistanceSquared(_coords),
                 coordId = id,
                 options = { coords = store.coords[id] }
             }
@@ -338,41 +379,61 @@ local function drawLoop()
 
     lib.requestStreamedTextureDict('shared')
     local lastClosestItem, lastValidCount = nil, 0
+    local nearbyData = {}
+    local playerCoords
 
+    CreateThread(function()
+        while drawLoopRunning do
+            Wait(100)
+            playerCoords = GetEntityCoords(cache.ped)
+            nearbyData = {}
+            for i = 1, #store.nearby do
+                local item = store.nearby[i]
+                local coords = utils.getDrawCoordsForInteract(item)
+                if coords then
+                    local distance = #(playerCoords - coords)
+                    local validOpts, validCount = filterValidOptions(item.options, item.entity, distance, coords)
+                    nearbyData[i] = {
+                        item = item,
+                        coords = coords,
+                        distance = distance,
+                        validOpts = validOpts,
+                        validCount = validCount
+                    }
+                end
+            end
+        end
+    end)
+
+    -- Main drawing loop
     while #store.nearby > 0 do
         Wait(0)
         local foundValid = false
-
-        local playerCoords = GetEntityCoords(cache.ped)
-
+        
         for i = 1, #store.nearby do
-            local item = store.nearby[i]
-            local coords = utils.getDrawCoordsForInteract(item)
+            local data = nearbyData[i]
+            if data and data.coords then
+                local item = data.item
+                local coords = data.coords
 
-            if coords then
                 SetDrawOrigin(coords.x, coords.y, coords.z)
-                local validOpts, validCount
-                if not foundValid then
-                    validOpts, validCount = filterValidOptions(item.options, item.entity, item.currentDistance, coords)
-                end
 
-                if not foundValid and validOpts and validCount > 0 then
+                if not foundValid and data.validCount > 0 then
                     foundValid = true
-
                     DrawSprite(dui.instance.dictName, dui.instance.txtName, 0.0, 0.0, 1.0, 1.0, 0.0, 255, 255, 255, 255)
                     local newClosestId = item.bone or item.offset or item.entity or item.coordId
-                    if lastClosestItem ~= newClosestId or lastValidCount ~= validCount then
+                    if lastClosestItem ~= newClosestId or lastValidCount ~= data.validCount then
                         local resetIndex = lastClosestItem ~= newClosestId
                         lastClosestItem = newClosestId
-                        lastValidCount = validCount --[[@as number]]
+                        lastValidCount = data.validCount
                         store.current = {
-                            options = validOpts,
+                            options = data.validOpts,
                             entity = item.entity,
-                            distance = item.currentDistance,
+                            distance = data.distance,
                             coords = coords,
                             index = 1,
                         }
-                        dui.sendMessage('setOptions', { options = validOpts, resetIndex = resetIndex })
+                        dui.sendMessage('setOptions', { options = data.validOpts, resetIndex = resetIndex })
                     end
                 else
                     local distance = #(playerCoords - coords)
@@ -393,21 +454,22 @@ local function drawLoop()
         end
     end
 
-    drawLoopRunning = false
+    drawLoopRunning = false -- Stop the slow thread when the draw loop ends
 end
 
 local function BuilderLoop()
     while true do
-        if LocalPlayer.state.hideInteract then
-            store.nearby = {}
+        if LocalPlayer.state.hideInteract or hidePerKeybind then
+            table.wipe(store.nearby)
         else
             local coords = GetEntityCoords(cache.ped)
             local update = checkNearbyEntities(coords)
             update = checkNearbyCoords(coords, update)
+
             store.nearby = update
 
             table.sort(store.nearby, function(a, b)
-                return a.currentDistance < b.currentDistance
+                return a.currentScreenDistance < b.currentScreenDistance
             end)
 
             if #store.nearby > 0 and not drawLoopRunning then
