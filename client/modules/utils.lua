@@ -160,6 +160,17 @@ function utils.hasPlayerGotItems(filter, hasAny)
     return not hasAny
 end
 
+---@param coords vector3
+---@return number
+function utils.getScreenDistanceSquared(coords)
+    local success, screenX, screenY = GetScreenCoordFromWorldCoord(coords.x, coords.y, coords.z)
+    if not success then return math.huge end
+
+    local dx = screenX - 0.5
+    local dy = screenY - 0.5
+    return dx * dx + dy * dy
+end
+
 SetTimeout(0, function()
     if GetResourceState('ox_inventory'):find('start') then
         setmetatable(playerItems, {
