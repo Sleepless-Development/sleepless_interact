@@ -3,6 +3,10 @@ local store = require 'client.modules.store'
 local config = require 'client.modules.config'
 local utils = require 'client.modules.utils'
 
+require 'client.compat.qtarget'
+require 'client.compat.ox_target'
+require 'client.compat.interact'
+
 ---@type boolean
 local drawLoopRunning = false
 
@@ -418,7 +422,7 @@ local function drawLoop()
 
                 SetDrawOrigin(coords.x, coords.y, coords.z)
 
-                if not foundValid and data.validCount > 0 then
+                if not foundValid and data.validOpts and data.validCount > 0 then
                     foundValid = true
                     DrawSprite(dui.instance.dictName, dui.instance.txtName, 0.0, 0.0, 1.0, 1.0, 0.0, 255, 255, 255, 255)
                     local newClosestId = item.bone or item.offset or item.entity or item.coordId

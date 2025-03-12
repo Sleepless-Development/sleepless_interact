@@ -19,6 +19,7 @@ files {
 	'web/**',
 	'client/modules/*.lua',
 	'client/framework/*.lua',
+	'client/compat/*.lua'
 }
 
 provides {
