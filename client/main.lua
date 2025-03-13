@@ -164,9 +164,9 @@ local function getOptionsForEntity(entity, globalType)
 
     local options = {
         global = #store[globalType] > 0 and store[globalType] or nil,
-        model = store.models[model],
-        entity = netId and store.entities[netId] or nil,
-        localEntity = store.localEntities[entity],
+        model = (store.models[model] ~= nil and #store.models[model] > 0 and store.models[model]) or nil,
+        entity = (netId and store.entities[netId] ~= nil and #store.entities[netId] > 0 and store.entities[netId]) or nil,
+        localEntity = (store.localEntities[entity] ~= nil and #store.localEntities[entity] > 0 and store.localEntities[entity]) or nil,
     }
 
     return next(options) and options or nil
@@ -274,7 +274,6 @@ local function getOffsetOptionsForEntity(entity, globalType)
             end
         end
     end
-
     return next(offsetOptions) and offsetOptions or nil
 end
 
@@ -395,7 +394,7 @@ local function drawLoop()
     drawLoopRunning = true
 
     lib.requestStreamedTextureDict('shared')
-    local lastClosestItem, lastValidCount = nil, 0
+    local lastClosestItem, lastValidCount, lastValidOptions = nil, 0, nil
     local nearbyData = {}
     local playerCoords
 
@@ -430,9 +429,20 @@ local function drawLoop()
                     local distance = #(playerCoords - coords)
                     local validOpts, validCount, hideCompletely = filterValidOptions(item.options, item.entity, distance,
                         coords)
+                    local id = item.bone or item.offset or item.entity or item.coordId
+                    local shouldUpdate = false
+
+                    if id == lastClosestItem then
+                        if lastValidOptions then
+                            shouldUpdate = not lib.table.matches(validOpts, lastValidOptions)
+                        end
+                        lastValidOptions = validOpts
+                    end
+
                     nearbyData[i] = {
                         item = item,
                         coords = coords,
+                        shouldUpdate = shouldUpdate,
                         hideCompletely = hideCompletely,
                         distance = distance,
                         validOpts = validOpts,
@@ -451,7 +461,8 @@ local function drawLoop()
             local data = nearbyData[i]
             if data and data.coords and not data.hideCompletely then
                 local item = data.item
-                local coords = (item.entity and not movingEntity[item.entity] and data.coords) or utils.getDrawCoordsForInteract(item)
+                local coords = (item.entity and not movingEntity[item.entity] and data.coords) or
+                    utils.getDrawCoordsForInteract(item)
 
                 SetDrawOrigin(coords.x, coords.y, coords.z)
 
@@ -460,7 +471,7 @@ local function drawLoop()
 
                     DrawSprite(dui.instance.dictName, dui.instance.txtName, 0.0, 0.0, 1.0, 1.0, 0.0, 255, 255, 255, 255)
                     local newClosestId = item.bone or item.offset or item.entity or item.coordId
-                    if lastClosestItem ~= newClosestId or lastValidCount ~= data.validCount then
+                    if data.shouldUpdate or lastClosestItem ~= newClosestId or lastValidCount ~= data.validCount then
                         local resetIndex = lastClosestItem ~= newClosestId
                         lastClosestItem = newClosestId
                         lastValidCount = data.validCount
