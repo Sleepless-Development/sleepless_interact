@@ -134,8 +134,6 @@ local function convert(options)
     return options
 end
 
-local interact = require 'client.interact'
-
 exportHandler('AddBoxZone', function(name, center, length, width, options, targetoptions)
     local coordsId = interact.addCoords(center, convert(targetoptions))
 
