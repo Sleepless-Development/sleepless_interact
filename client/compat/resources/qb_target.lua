@@ -311,9 +311,9 @@ exportHandler('RemoveGlobalPlayer', function(labels)
 end)
 
 exportHandler('AddEntityZone', function()
-    lib.print.warn('AddEntityZone is not supported by ox_target - try using addEntity/addLocalEntity.')
+    lib.print.warn('AddEntityZone is not supported by sleepless_interact - try using addEntity/addLocalEntity.')
 end)
 
 exportHandler('RemoveTargetBone', function()
-    lib.print.warn('RemoveTargetBone is not supported by ox_target.')
+    lib.print.warn('RemoveTargetBone is not supported by sleepless_interact.')
 end)
