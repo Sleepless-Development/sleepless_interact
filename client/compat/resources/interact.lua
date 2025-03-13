@@ -100,25 +100,3 @@ end)
 exportHandler('RemoveGlobalPlayerInteraction', function(id)
     interact.removeGlobalPlayer(id)
 end)
-
-
-
--- local id = exports.interact:AddInteraction({
---     coords = GetEntityCoords(cache.ped),
---     distance = 8.0,           -- optional
---     interactDst = 1.0,        -- optional
---     id = 'myCoolUniqueId',    -- needed for removing interactions
---     name = 'interactionName', -- optional
---     options = {
---         {
---             label = 'Hello World!',
---             action = function(entity, coords, args)
---                 print(entity, coords, json.encode(args))
---             end,
---         },
---     }
--- })
-
--- SetTimeout(3000, function()
---     exports.interact:RemoveInteraction(id)
--- end)

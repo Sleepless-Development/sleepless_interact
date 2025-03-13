@@ -13,7 +13,6 @@ local function disableTargeting(state)
 end
 
 local function addGlobalObject(options)
-    print('pass through global', GetInvokingResource())
     interact.addGlobalObject(options)
 end
 
