@@ -162,6 +162,10 @@ function interact.addCoords(coords, options)
         coords = { coords }
     end
 
+    if coordsType == "table" and coords.x ~= nil then
+        coords = { vector3(coords.x, coords.y, coords.z) }
+    end
+
     local resource = GetInvokingResource()
     options = checkOptions(options)
     local ids = {}
