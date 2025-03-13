@@ -158,12 +158,12 @@ function interact.addCoords(coords, options)
         typeError('coords', 'vector3 or vector3[]', coordsType)
     end
 
-    if coordsType ~= "table" then
-        coords = { coords }
-    end
-
     if coordsType == "table" and coords.x ~= nil then
         coords = { vector3(coords.x, coords.y, coords.z) }
+    end
+
+    if coordsType ~= "table" then
+        coords = { coords }
     end
 
     local resource = GetInvokingResource()
@@ -180,7 +180,7 @@ function interact.addCoords(coords, options)
         local id = utils.makeIdFromCoords(c)
         store.coords[id] = store.coords[id] or {}
         store.coordIds[id] = c
-        addOptions(store.coords[id], options, resource, nil, nil)
+        addOptions(store.coords[id], table.clone(options), resource, nil, nil)
         ids[i] = id
     end
 
@@ -273,7 +273,7 @@ function interact.addModel(arr, options)
         store.models[model] = store.models[model] or {}
         store.bones.models[model] = store.bones.models[model] or {}
         store.offsets.models[model] = store.offsets.models[model] or {}
-        addOptions(store.models[model], options, resource, store.bones.models[model], store.offsets.models[model])
+        addOptions(store.models[model], table.clone(options), resource, store.bones.models[model], store.offsets.models[model])
     end
 end
 
@@ -309,8 +309,7 @@ function interact.addEntity(arr, options)
             store.entities[netId] = store.entities[netId] or {}
             store.bones.entities[netId] = store.bones.entities[netId] or {}
             store.offsets.entities[netId] = store.offsets.entities[netId] or {}
-            addOptions(store.entities[netId], options, resource, store.bones.entities[netId],
-                store.offsets.entities[netId])
+            addOptions(store.entities[netId], table.clone(options), resource, store.bones.entities[netId], store.offsets.entities[netId])
         end
     end
 end
@@ -347,8 +346,7 @@ function interact.addLocalEntity(arr, options)
             store.localEntities[entityId] = store.localEntities[entityId] or {}
             store.bones.localEntities[entityId] = store.bones.localEntities[entityId] or {}
             store.offsets.localEntities[entityId] = store.offsets.localEntities[entityId] or {}
-            addOptions(store.localEntities[entityId], options, resource, store.bones.localEntities[entityId],
-                store.offsets.localEntities[entityId])
+            addOptions(store.localEntities[entityId], table.clone(options), resource, store.bones.localEntities[entityId], store.offsets.localEntities[entityId])
         else
             print(('No entity with id "%s" exists.'):format(entityId))
         end
@@ -364,8 +362,7 @@ function interact.removeLocalEntity(arr, options)
     for i = 1, #arr do
         local entityId = arr[i]
         if store.localEntities[entityId] then
-            removeTarget(store.localEntities[entityId], options, resource, store.bones.localEntities[entityId],
-                store.offsets.localEntities[entityId])
+            removeTarget(store.localEntities[entityId], options, resource, store.bones.localEntities[entityId], store.offsets.localEntities[entityId])
             if #store.localEntities[entityId] == 0 and (not store.bones.localEntities[entityId] or next(store.bones.localEntities[entityId]) == nil) and (not store.offsets.localEntities[entityId] or next(store.offsets.localEntities[entityId]) == nil) then
                 store.localEntities[entityId] = nil
                 store.bones.localEntities[entityId] = nil
