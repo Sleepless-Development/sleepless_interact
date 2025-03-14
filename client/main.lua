@@ -164,7 +164,7 @@ local function getOptionsForEntity(entity, globalType)
     local model, netId = cachedEntityInfo(entity)
 
     local options = {
-        global = #store[globalType] > 0 and store[globalType] or nil,
+        global = (store[globalType] ~= nil and #store[globalType] > 0 and store[globalType]) or nil,
         model = (store.models[model] ~= nil and #store.models[model] > 0 and store.models[model]) or nil,
         entity = (netId and store.entities[netId] ~= nil and #store.entities[netId] > 0 and store.entities[netId]) or nil,
         localEntity = (store.localEntities[entity] ~= nil and #store.localEntities[entity] > 0 and store.localEntities[entity]) or nil,
@@ -484,7 +484,6 @@ local function drawLoop()
                         dui.sendMessage('setOptions', { options = data.validOpts, resetIndex = resetIndex })
                     end
                 else
-                    -- lib.print.info(item)
                     local distance = #(playerCoords - coords)
                     if distance < config.maxInteractDistance and item.currentScreenDistance < math.huge then
                         local distanceRatio = math.min(0.5 + (0.25 * (distance / 10.0)), 1.0)
