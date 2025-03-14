@@ -124,7 +124,8 @@ local function filterValidOptions(options, entity, distance, coords)
             end
 
             if not hide and option.canInteract then
-                hide = not option.canInteract(entity, distance, coords, option.name)
+                local success, resp = pcall(option.canInteract, entity, distance, coords, option.name)
+                hide = not success or not resp
             end
 
             if not hide then
@@ -317,7 +318,7 @@ local function checkNearbyEntities(coords)
                             coords = boneCoords,
                             currentDistance = #(coords - boneCoords),
                             currentScreenDistance = utils.getScreenDistanceSquared(boneCoords),
-                            options = { options = _options }
+                            options = { boneId = _options }
                         }
                     end
                 end
@@ -403,8 +404,6 @@ local function drawLoop()
 
     CreateThread(function()
         while drawLoopRunning do
-            Wait(150)
-
             if shouldHideInteract() then
                 table.wipe(store.nearby)
                 break
@@ -427,8 +426,7 @@ local function drawLoop()
                     end
 
                     local distance = #(playerCoords - coords)
-                    local validOpts, validCount, hideCompletely = filterValidOptions(item.options, item.entity, distance,
-                        coords)
+                    local validOpts, validCount, hideCompletely = filterValidOptions(item.options, item.entity, distance, coords)
                     local id = item.bone or item.offset or item.entity or item.coordId
                     local shouldUpdate = false
 
@@ -450,6 +448,7 @@ local function drawLoop()
                     }
                 end
             end
+            Wait(150)
         end
     end)
 
@@ -485,8 +484,9 @@ local function drawLoop()
                         dui.sendMessage('setOptions', { options = data.validOpts, resetIndex = resetIndex })
                     end
                 else
+                    -- lib.print.info(item)
                     local distance = #(playerCoords - coords)
-                    if distance < config.maxInteractDistance then
+                    if distance < config.maxInteractDistance and item.currentScreenDistance < math.huge then
                         local distanceRatio = math.min(0.5 + (0.25 * (distance / 10.0)), 1.0)
                         local scale = 0.025 * distanceRatio
                         DrawSprite('shared', 'emptydot_32', 0.0, 0.0, scale, scale * aspectRatio, 0.0, r, g, b, a)
