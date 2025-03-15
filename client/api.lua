@@ -581,24 +581,9 @@ end
 
 AddEventHandler('onClientResourceStop', function(resource)
     removeResourceOptions(store.peds, resource)
-    if store.peds and #store.peds == 0 then
-        store.peds = nil
-    end
-
     removeResourceOptions(store.vehicles, resource)
-    if store.vehicles and #store.vehicles == 0 then
-        store.vehicles = nil
-    end
-
     removeResourceOptions(store.objects, resource)
-    if store.objects and #store.objects == 0 then
-        store.objects = nil
-    end
-
     removeResourceOptions(store.players, resource)
-    if store.players and #store.players == 0 then
-        store.players = nil
-    end
 
     for boneId, options in pairs(store.bones.peds or {}) do
         removeResourceOptions(options, resource)
