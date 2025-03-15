@@ -200,7 +200,12 @@ function interact.addCoords(coords, options)
     for i = 1, #coords do
         local c = coords[i]
         local cType = type(c)
-        if cType ~= 'vector3' and cType ~= 'vector4' then
+
+        if cType == 'vector4' then
+            c = vec3(c.x, c.y, c.z)
+        end
+
+        if cType ~= 'vector3' then
             typeError('coords', 'vector3', cType)
         end
 
