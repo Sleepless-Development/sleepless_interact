@@ -248,6 +248,7 @@ end
 --- Adds options globally for all peds.
 ---@param options Option | Option[] A single option or array of options.
 function interact.addGlobalPed(options)
+    store.peds = store.peds or {}
     addOptions(store.peds, options, GetInvokingResource(), store.bones.peds, store.offsets.peds)
 end
 
