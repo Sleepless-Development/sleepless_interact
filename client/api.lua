@@ -508,7 +508,7 @@ function interact.addLocalEntity(arr, options)
             store.offsets.localEntities[entityId] = store.offsets.localEntities[entityId] or {}
             addOptions(store.localEntities[entityId], table.clone(options), resource, store.bones.localEntities[entityId], store.offsets.localEntities[entityId])
         else
-            lib.print.warn(('No entity with id "%s" exists.'):format(entityId))
+            lib.print.warn(("No entity with id '%s' exists in %s."):format(entityId, resource))
         end
     end
 end
