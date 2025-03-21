@@ -35,16 +35,18 @@ end
 ---@param showWarning? boolean Whether to show a warning when replacing options.
 local function removeOptions(target, remove, resource, showWarning)
     if type(remove) ~= 'table' then remove = { remove } end
+
+    local removeSet = {}
+    for i = 1, #remove do
+        removeSet[remove[i]] = true
+    end
+
     for i = #target, 1, -1 do
         local option = target[i]
-        if option.resource == resource then
-            for j = #remove, 1, -1 do
-                if option.name == remove[j] then
-                    table.remove(target, i)
-                    if showWarning then
-                        utils.warn(("Replacing existing target option '%s'."):format(option.name))
-                    end
-                end
+        if option.resource == resource and removeSet[option.name] then
+            table.remove(target, i)
+            if showWarning then
+                lib.print.warn(("Replacing existing target option '%s'."):format(option.name))
             end
         end
     end
@@ -78,6 +80,18 @@ local function addOptions(target, options, resource, bonesTarget, offsetsTarget)
         if option.offset or option.offsetAbsolute then
             local offsetKey = option.offset and 'offset' or 'offsetAbsolute'
             local offset = option[offsetKey]
+
+            local offsetType = type(offset)
+
+            if offsetType == 'table' and offset.x and offset.y and offset.z then
+                offset = vec3(offset.x, offset.y, offset.z)
+            end
+
+            if offsetType ~= 'table' and offsetType ~= 'vector3' then
+                typeError('offset', 'vector3', offsetType)
+            end
+
+
             local offsetStr = utils.makeOffsetIdFromCoords(offset, offsetKey)
 
             if offsetsTarget and offsetStr then
@@ -111,6 +125,14 @@ local function addOptions(target, options, resource, bonesTarget, offsetsTarget)
         removeOptions(target, checkNames, resource, true)
     end
 
+    if bonesTarget and not next(bonesTarget) then
+        bonesTarget = nil
+    end
+
+    if offsetsTarget and not next(offsetsTarget) then
+        offsetsTarget = nil
+    end
+
     for i = 1, #options do
         local option = options[i]
         table.insert(target, option)
@@ -125,12 +147,17 @@ end
 ---@param offsetsTarget OptionsMap|nil The offset options map to update, if applicable.
 local function removeTarget(target, remove, resource, bonesTarget, offsetsTarget)
     if type(remove) ~= 'table' then remove = { remove } end
-    removeOptions(target, remove, resource)
+
+    if target then
+        removeOptions(target, remove, resource)
+    end
+
     if bonesTarget then
         for _, options in pairs(bonesTarget) do
             removeOptions(options, remove, resource)
         end
     end
+
     if offsetsTarget then
         for _, options in pairs(offsetsTarget) do
             removeOptions(options, remove, resource)
@@ -154,8 +181,12 @@ end
 ---@return string | string[] ids The ID of the added coordinate options.
 function interact.addCoords(coords, options)
     local coordsType = type(coords)
-    if coordsType ~= 'table' and coordsType ~= 'vector3' then
+    if coordsType ~= 'table' and coordsType ~= 'vector3' and coordsType ~= 'vector4' then
         typeError('coords', 'vector3 or vector3[]', coordsType)
+    end
+
+    if coordsType == "table" and coords.x and coords.y and coords.z then
+        coords = { vector3(coords.x, coords.y, coords.z) }
     end
 
     if coordsType ~= "table" then
@@ -169,6 +200,11 @@ function interact.addCoords(coords, options)
     for i = 1, #coords do
         local c = coords[i]
         local cType = type(c)
+
+        if cType == 'vector4' then
+            c = vec3(c.x, c.y, c.z)
+        end
+
         if cType ~= 'vector3' then
             typeError('coords', 'vector3', cType)
         end
@@ -176,12 +212,9 @@ function interact.addCoords(coords, options)
         local id = utils.makeIdFromCoords(c)
         store.coords[id] = store.coords[id] or {}
         store.coordIds[id] = c
-        addOptions(store.coords[id], options, resource, nil, nil)
+        addOptions(store.coords[id], table.clone(options), resource, nil, nil)
         ids[i] = id
     end
-
-
-
 
     return (#ids == 1 and ids[1]) or ids
 end
@@ -222,6 +255,28 @@ end
 ---@param options string | string[] A single option name or array of names to remove.
 function interact.removeGlobalPed(options)
     removeTarget(store.peds, options, GetInvokingResource(), store.bones.peds, store.offsets.peds)
+
+    if store.bones.peds then
+        for boneId, boneOptions in pairs(store.bones.peds) do
+            if #boneOptions == 0 then
+                store.bones.peds[boneId] = nil
+            end
+        end
+        if not next(store.bones.peds) then
+            store.bones.peds = nil
+        end
+    end
+
+    if store.offsets.peds then
+        for offsetStr, offsetOptions in pairs(store.offsets.peds) do
+            if #offsetOptions == 0 then
+                store.offsets.peds[offsetStr] = nil
+            end
+        end
+        if not next(store.offsets.peds) then
+            store.offsets.peds = nil
+        end
+    end
 end
 
 --- Adds options globally for all vehicles.
@@ -234,6 +289,28 @@ end
 ---@param options string | string[] A single option name or array of names to remove.
 function interact.removeGlobalVehicle(options)
     removeTarget(store.vehicles, options, GetInvokingResource(), store.bones.vehicles, store.offsets.vehicles)
+
+    if store.bones.vehicles then
+        for boneId, boneOptions in pairs(store.bones.vehicles) do
+            if #boneOptions == 0 then
+                store.bones.vehicles[boneId] = nil
+            end
+        end
+        if not next(store.bones.vehicles) then
+            store.bones.vehicles = nil
+        end
+    end
+
+    if store.offsets.vehicles then
+        for offsetStr, offsetOptions in pairs(store.offsets.vehicles) do
+            if #offsetOptions == 0 then
+                store.offsets.vehicles[offsetStr] = nil
+            end
+        end
+        if not next(store.offsets.vehicles) then
+            store.offsets.vehicles = nil
+        end
+    end
 end
 
 --- Adds options globally for all objects.
@@ -246,6 +323,28 @@ end
 ---@param options string | string[] A single option name or array of names to remove.
 function interact.removeGlobalObject(options)
     removeTarget(store.objects, options, GetInvokingResource(), store.bones.objects, store.offsets.objects)
+
+    if store.bones.objects then
+        for boneId, boneOptions in pairs(store.bones.objects) do
+            if #boneOptions == 0 then
+                store.bones.objects[boneId] = nil
+            end
+        end
+        if not next(store.bones.objects) then
+            store.bones.objects = nil
+        end
+    end
+
+    if store.offsets.objects then
+        for offsetStr, offsetOptions in pairs(store.offsets.objects) do
+            if #offsetOptions == 0 then
+                store.offsets.objects[offsetStr] = nil
+            end
+        end
+        if not next(store.offsets.objects) then
+            store.offsets.objects = nil
+        end
+    end
 end
 
 --- Adds options globally for all players.
@@ -258,6 +357,28 @@ end
 ---@param options string | string[] A single option name or array of names to remove.
 function interact.removeGlobalPlayer(options)
     removeTarget(store.players, options, GetInvokingResource(), store.bones.players, store.offsets.players)
+
+    if store.bones.players then
+        for boneId, boneOptions in pairs(store.bones.players) do
+            if #boneOptions == 0 then
+                store.bones.players[boneId] = nil
+            end
+        end
+        if not next(store.bones.players) then
+            store.bones.players = nil
+        end
+    end
+
+    if store.offsets.players then
+        for offsetStr, offsetOptions in pairs(store.offsets.players) do
+            if #offsetOptions == 0 then
+                store.offsets.players[offsetStr] = nil
+            end
+        end
+        if not next(store.offsets.players) then
+            store.offsets.players = nil
+        end
+    end
 end
 
 --- Adds options for specific models.
@@ -272,7 +393,7 @@ function interact.addModel(arr, options)
         store.models[model] = store.models[model] or {}
         store.bones.models[model] = store.bones.models[model] or {}
         store.offsets.models[model] = store.offsets.models[model] or {}
-        addOptions(store.models[model], options, resource, store.bones.models[model], store.offsets.models[model])
+        addOptions(store.models[model], table.clone(options), resource, store.bones.models[model], store.offsets.models[model])
     end
 end
 
@@ -287,10 +408,31 @@ function interact.removeModel(arr, options)
         model = tonumber(model) or joaat(model)
         if store.models[model] then
             removeTarget(store.models[model], options, resource, store.bones.models[model], store.offsets.models[model])
-            if #store.models[model] == 0 and (not store.bones.models[model] or next(store.bones.models[model]) == nil) and (not store.offsets.models[model] or next(store.offsets.models[model]) == nil) then
+
+            if store.models[model] and #store.models[model] == 0 then
                 store.models[model] = nil
-                store.bones.models[model] = nil
-                store.offsets.models[model] = nil
+            end
+
+            if store.bones.models[model] then
+                for boneId, boneOptions in pairs(store.bones.models[model]) do
+                    if #boneOptions == 0 then
+                        store.bones.models[model][boneId] = nil
+                    end
+                end
+                if not next(store.bones.models[model]) then
+                    store.bones.models[model] = nil
+                end
+            end
+
+            if store.offsets.models[model] then
+                for offsetStr, offsetOptions in pairs(store.offsets.models[model]) do
+                    if #offsetOptions == 0 then
+                        store.offsets.models[model][offsetStr] = nil
+                    end
+                end
+                if not next(store.offsets.models[model]) then
+                    store.offsets.models[model] = nil
+                end
             end
         end
     end
@@ -308,8 +450,7 @@ function interact.addEntity(arr, options)
             store.entities[netId] = store.entities[netId] or {}
             store.bones.entities[netId] = store.bones.entities[netId] or {}
             store.offsets.entities[netId] = store.offsets.entities[netId] or {}
-            addOptions(store.entities[netId], options, resource, store.bones.entities[netId],
-                store.offsets.entities[netId])
+            addOptions(store.entities[netId], table.clone(options), resource, store.bones.entities[netId], store.offsets.entities[netId])
         end
     end
 end
@@ -322,12 +463,31 @@ function interact.removeEntity(arr, options)
     local resource = GetInvokingResource()
     for i = 1, #arr do
         local netId = arr[i]
-        if store.entities[netId] then
-            removeTarget(store.entities[netId], options, resource, store.bones.entities[netId],
-                store.offsets.entities[netId])
-            if #store.entities[netId] == 0 and (not store.bones.entities[netId] or next(store.bones.entities[netId]) == nil) and (not store.offsets.entities[netId] or next(store.offsets.entities[netId]) == nil) then
-                store.entities[netId] = nil
+
+        removeTarget(store.entities[netId], options, resource, store.bones.entities[netId], store.offsets.entities[netId])
+
+        if store.entities[netId] and #store.entities[netId] == 0 then
+            store.entities[netId] = nil
+        end
+
+        if store.bones.entities[netId] then
+            for boneId, boneOptions in pairs(store.bones.entities[netId]) do
+                if #boneOptions == 0 then
+                    store.bones.entities[netId][boneId] = nil
+                end
+            end
+            if not next(store.bones.entities[netId]) then
                 store.bones.entities[netId] = nil
+            end
+        end
+
+        if store.offsets.entities[netId] then
+            for offsetStr, offsetOptions in pairs(store.offsets.entities[netId]) do
+                if #offsetOptions == 0 then
+                    store.offsets.entities[netId][offsetStr] = nil
+                end
+            end
+            if not next(store.offsets.entities[netId]) then
                 store.offsets.entities[netId] = nil
             end
         end
@@ -346,10 +506,9 @@ function interact.addLocalEntity(arr, options)
             store.localEntities[entityId] = store.localEntities[entityId] or {}
             store.bones.localEntities[entityId] = store.bones.localEntities[entityId] or {}
             store.offsets.localEntities[entityId] = store.offsets.localEntities[entityId] or {}
-            addOptions(store.localEntities[entityId], options, resource, store.bones.localEntities[entityId],
-                store.offsets.localEntities[entityId])
+            addOptions(store.localEntities[entityId], table.clone(options), resource, store.bones.localEntities[entityId], store.offsets.localEntities[entityId])
         else
-            print(('No entity with id "%s" exists.'):format(entityId))
+            lib.print.warn(("No entity with id '%s' exists in %s."):format(entityId, resource))
         end
     end
 end
@@ -362,12 +521,32 @@ function interact.removeLocalEntity(arr, options)
     local resource = GetInvokingResource()
     for i = 1, #arr do
         local entityId = arr[i]
-        if store.localEntities[entityId] then
-            removeTarget(store.localEntities[entityId], options, resource, store.bones.localEntities[entityId],
-                store.offsets.localEntities[entityId])
-            if #store.localEntities[entityId] == 0 and (not store.bones.localEntities[entityId] or next(store.bones.localEntities[entityId]) == nil) and (not store.offsets.localEntities[entityId] or next(store.offsets.localEntities[entityId]) == nil) then
-                store.localEntities[entityId] = nil
+
+        removeTarget(store.localEntities[entityId], options, resource, store.bones.localEntities[entityId], store.offsets.localEntities[entityId])
+
+
+        if store.localEntities[entityId] and #store.localEntities[entityId] == 0 then
+            store.localEntities[entityId] = nil
+        end
+
+        if store.bones.localEntities[entityId] then
+            for boneId, boneOptions in pairs(store.bones.localEntities[entityId]) do
+                if #boneOptions == 0 then
+                    store.bones.localEntities[entityId][boneId] = nil
+                end
+            end
+            if not next(store.bones.localEntities[entityId]) then
                 store.bones.localEntities[entityId] = nil
+            end
+        end
+
+        if store.offsets.localEntities[entityId] then
+            for offsetStr, offsetOptions in pairs(store.offsets.localEntities[entityId]) do
+                if #offsetOptions == 0 then
+                    store.offsets.localEntities[entityId][offsetStr] = nil
+                end
+            end
+            if not next(store.offsets.localEntities[entityId]) then
                 store.offsets.localEntities[entityId] = nil
             end
         end
@@ -392,6 +571,7 @@ end)
 ---@param target Option[] The array to clean up.
 ---@param resource string The resource whose options should be removed.
 local function removeResourceOptions(target, resource)
+    if not target then return end
     for i = #target, 1, -1 do
         if target[i].resource == resource then
             table.remove(target, i)
@@ -404,57 +584,177 @@ AddEventHandler('onClientResourceStop', function(resource)
     removeResourceOptions(store.vehicles, resource)
     removeResourceOptions(store.objects, resource)
     removeResourceOptions(store.players, resource)
-    for _, options in pairs(store.bones.peds) do removeResourceOptions(options, resource) end
-    for _, options in pairs(store.bones.vehicles) do removeResourceOptions(options, resource) end
-    for _, options in pairs(store.bones.objects) do removeResourceOptions(options, resource) end
-    for _, options in pairs(store.bones.players) do removeResourceOptions(options, resource) end
-    for _, options in pairs(store.offsets.peds) do removeResourceOptions(options, resource) end
-    for _, options in pairs(store.offsets.vehicles) do removeResourceOptions(options, resource) end
-    for _, options in pairs(store.offsets.objects) do removeResourceOptions(options, resource) end
-    for _, options in pairs(store.offsets.players) do removeResourceOptions(options, resource) end
+
+    for boneId, options in pairs(store.bones.peds or {}) do
+        removeResourceOptions(options, resource)
+        if #options == 0 then
+            store.bones.peds[boneId] = nil
+        end
+    end
+    if store.bones.peds and not next(store.bones.peds) then
+        store.bones.peds = nil
+    end
+
+    for boneId, options in pairs(store.bones.vehicles or {}) do
+        removeResourceOptions(options, resource)
+        if #options == 0 then
+            store.bones.vehicles[boneId] = nil
+        end
+    end
+    if store.bones.vehicles and not next(store.bones.vehicles) then
+        store.bones.vehicles = nil
+    end
+
+    for boneId, options in pairs(store.bones.objects or {}) do
+        removeResourceOptions(options, resource)
+        if #options == 0 then
+            store.bones.objects[boneId] = nil
+        end
+    end
+    if store.bones.objects and not next(store.bones.objects) then
+        store.bones.objects = nil
+    end
+
+    for boneId, options in pairs(store.bones.players or {}) do
+        removeResourceOptions(options, resource)
+        if #options == 0 then
+            store.bones.players[boneId] = nil
+        end
+    end
+    if store.bones.players and not next(store.bones.players) then
+        store.bones.players = nil
+    end
+
+    for offsetStr, options in pairs(store.offsets.peds or {}) do
+        removeResourceOptions(options, resource)
+        if #options == 0 then
+            store.offsets.peds[offsetStr] = nil
+        end
+    end
+    if store.offsets.peds and not next(store.offsets.peds) then
+        store.offsets.peds = nil
+    end
+
+    for offsetStr, options in pairs(store.offsets.vehicles or {}) do
+        removeResourceOptions(options, resource)
+        if #options == 0 then
+            store.offsets.vehicles[offsetStr] = nil
+        end
+    end
+    if store.offsets.vehicles and not next(store.offsets.vehicles) then
+        store.offsets.vehicles = nil
+    end
+
+    for offsetStr, options in pairs(store.offsets.objects or {}) do
+        removeResourceOptions(options, resource)
+        if #options == 0 then
+            store.offsets.objects[offsetStr] = nil
+        end
+    end
+    if store.offsets.objects and not next(store.offsets.objects) then
+        store.offsets.objects = nil
+    end
+
+    for offsetStr, options in pairs(store.offsets.players or {}) do
+        removeResourceOptions(options, resource)
+        if #options == 0 then
+            store.offsets.players[offsetStr] = nil
+        end
+    end
+    if store.offsets.players and not next(store.offsets.players) then
+        store.offsets.players = nil
+    end
 
     for model, options in pairs(store.models) do
         removeResourceOptions(options, resource)
-        for _, boneOptions in pairs(store.bones.models[model] or {}) do
-            removeResourceOptions(boneOptions, resource)
-        end
-        for _, offsetOptions in pairs(store.offsets.models[model] or {}) do
-            removeResourceOptions(offsetOptions, resource)
-        end
-        if #options == 0 and (not store.bones.models[model] or next(store.bones.models[model]) == nil) and (not store.offsets.models[model] or next(store.offsets.models[model]) == nil) then
+        if #options == 0 then
             store.models[model] = nil
-            store.bones.models[model] = nil
-            store.offsets.models[model] = nil
+        end
+
+        if store.bones.models[model] then
+            for boneId, boneOptions in pairs(store.bones.models[model]) do
+                removeResourceOptions(boneOptions, resource)
+                if #boneOptions == 0 then
+                    store.bones.models[model][boneId] = nil
+                end
+            end
+            if not next(store.bones.models[model]) then
+                store.bones.models[model] = nil
+            end
+        end
+
+        if store.offsets.models[model] then
+            for offsetStr, offsetOptions in pairs(store.offsets.models[model]) do
+                removeResourceOptions(offsetOptions, resource)
+                if #offsetOptions == 0 then
+                    store.offsets.models[model][offsetStr] = nil
+                end
+            end
+            if not next(store.offsets.models[model]) then
+                store.offsets.models[model] = nil
+            end
         end
     end
 
     for netId, options in pairs(store.entities) do
         removeResourceOptions(options, resource)
-        for _, boneOptions in pairs(store.bones.entities[netId] or {}) do
-            removeResourceOptions(boneOptions, resource)
-        end
-        for _, offsetOptions in pairs(store.offsets.entities[netId] or {}) do
-            removeResourceOptions(offsetOptions, resource)
-        end
-        if #options == 0 and (not store.bones.entities[netId] or next(store.bones.entities[netId]) == nil) and (not store.offsets.entities[netId] or next(store.offsets.entities[netId]) == nil) then
+        if #options == 0 then
             store.entities[netId] = nil
-            store.bones.entities[netId] = nil
-            store.offsets.entities[netId] = nil
+        end
+
+        if store.bones.entities[netId] then
+            for boneId, boneOptions in pairs(store.bones.entities[netId]) do
+                removeResourceOptions(boneOptions, resource)
+                if #boneOptions == 0 then
+                    store.bones.entities[netId][boneId] = nil
+                end
+            end
+            if not next(store.bones.entities[netId]) then
+                store.bones.entities[netId] = nil
+            end
+        end
+
+        if store.offsets.entities[netId] then
+            for offsetStr, offsetOptions in pairs(store.offsets.entities[netId]) do
+                removeResourceOptions(offsetOptions, resource)
+                if #offsetOptions == 0 then
+                    store.offsets.entities[netId][offsetStr] = nil
+                end
+            end
+            if not next(store.offsets.entities[netId]) then
+                store.offsets.entities[netId] = nil
+            end
         end
     end
 
     for entityId, options in pairs(store.localEntities) do
         removeResourceOptions(options, resource)
-        for _, boneOptions in pairs(store.bones.localEntities[entityId] or {}) do
-            removeResourceOptions(boneOptions, resource)
-        end
-        for _, offsetOptions in pairs(store.offsets.localEntities[entityId] or {}) do
-            removeResourceOptions(offsetOptions, resource)
-        end
-        if #options == 0 and (not store.bones.localEntities[entityId] or next(store.bones.localEntities[entityId]) == nil) and (not store.offsets.localEntities[entityId] or next(store.offsets.localEntities[entityId]) == nil) then
+        if #options == 0 then
             store.localEntities[entityId] = nil
-            store.bones.localEntities[entityId] = nil
-            store.offsets.localEntities[entityId] = nil
+        end
+
+        if store.bones.localEntities[entityId] then
+            for boneId, boneOptions in pairs(store.bones.localEntities[entityId]) do
+                removeResourceOptions(boneOptions, resource)
+                if #boneOptions == 0 then
+                    store.bones.localEntities[entityId][boneId] = nil
+                end
+            end
+            if not next(store.bones.localEntities[entityId]) then
+                store.bones.localEntities[entityId] = nil
+            end
+        end
+
+        if store.offsets.localEntities[entityId] then
+            for offsetStr, offsetOptions in pairs(store.offsets.localEntities[entityId]) do
+                removeResourceOptions(offsetOptions, resource)
+                if #offsetOptions == 0 then
+                    store.offsets.localEntities[entityId][offsetStr] = nil
+                end
+            end
+            if not next(store.offsets.localEntities[entityId]) then
+                store.offsets.localEntities[entityId] = nil
+            end
         end
     end
 

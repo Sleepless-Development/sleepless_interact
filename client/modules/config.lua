@@ -11,7 +11,7 @@ config.themeColor = { 28, 100, 184, 200 } --- r, g, b, a
 config.IndicatorSprite = { dict = 'shared', txt = 'emptydot_32' }
 
 -- boolean true/false use a keybind to show and hide the interactions
-config.useShowKeyBind = true
+config.useShowKeyBind = false
 
 -- string default key mapping for the show interactions keybind
 config.defaultShowKeyBind = 'LMENU'

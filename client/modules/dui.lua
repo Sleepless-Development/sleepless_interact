@@ -5,8 +5,6 @@ local dui = {}
 local screenW, screenH = GetActualScreenResolution()
 local controlsRunning = false
 
-local r, g, b, a = table.unpack(config.themeColor)
-
 function dui.register()
     if dui.instance then
         dui.instance:remove()

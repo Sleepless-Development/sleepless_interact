@@ -84,6 +84,8 @@ local GetEntityModel = GetEntityModel
 
 ---@param item NearbyItem
 function utils.getDrawCoordsForInteract(item)
+    if not item then return vec3(0, 0, 0) end
+
     if item.coordId then
         return item.coords
     end
