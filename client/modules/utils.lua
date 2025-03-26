@@ -47,7 +47,7 @@ function utils.convertToVector(coords)
     return coords
 end
 
----@param option Option The interaction option.
+---@param option InteractOption The interaction option.
 ---@param server boolean|nil Whether to prepare the response for server-side use.
 ---@return InteractResponse response The response table with context from the current interaction.
 function utils.getResponse(option, server)
