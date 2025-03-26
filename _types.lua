@@ -1,5 +1,5 @@
 --- Represents an interaction option with various properties.
----@class Option
+---@class InteractOption
 ---@field label string The display label for the option.
 ---@field icon? string The icon associated with the option.
 ---@field iconColor? string The css color for the icon
@@ -19,7 +19,7 @@
 ---@field command? string Command to execute
 
 ---@class NearbyItem
----@field options Option[]
+---@field options InteractOption[]
 ---@field currentDistance number
 ---@field entity? number
 ---@field bone? string
@@ -46,27 +46,27 @@
 ---@field coordsId? string ID of the coordinate, if applicable.
 ---@field coords? vector3 Coordinates of the interaction point.
 ---@field distance number Distance from the player to the interaction point.
----@field options table<string, Option[]> Options grouped by category (e.g., "global", "model")
+---@field options table<string, InteractOption[]> Options grouped by category (e.g., "global", "model")
 
 --- A table mapping string keys (e.g., bone IDs or offset IDs) to arrays of options.
 ---@class OptionsMap
----@field [string] Option[]
+---@field [string] InteractOption[]
 
 --- A table mapping model hashes (numbers) to arrays of options.
 ---@class ModelOptions
----@field [number] Option[]
+---@field [number] InteractOption[]
 
 --- A table mapping network IDs (numbers) to arrays of options.
 ---@class EntityOptions
----@field [number] Option[]
+---@field [number] InteractOption[]
 
 --- A table mapping local entity IDs (numbers) to arrays of options.
 ---@class LocalEntityOptions
----@field [number] Option[]nsArray
+---@field [number] InteractOption[]nsArray
 
 --- A table mapping coordinate IDs (strings) to arrays of options.
 ---@class CoordOptions
----@field [string] Option[]
+---@field [string] InteractOption[]
 
 --- A table mapping coordinate IDs (strings) to their vector3 positions.
 ---@class CoordIds
@@ -94,10 +94,10 @@
 
 --- The main store module structure for organizing interaction options.
 ---@class Store
----@field peds Option[] Options for all peds globally.
----@field vehicles Option[] Options for all vehicles globally.
----@field objects Option[] Options for all objects globally.
----@field players Option[] Options for all players globally.
+---@field peds InteractOption[] Options for all peds globally.
+---@field vehicles InteractOption[] Options for all vehicles globally.
+---@field objects InteractOption[] Options for all objects globally.
+---@field players InteractOption[] Options for all players globally.
 ---@field models ModelOptions Options for specific models, keyed by model hash.
 ---@field entities EntityOptions Options for networked entities, keyed by netId.
 ---@field localEntities LocalEntityOptions Options for local entities, keyed by entityId.
