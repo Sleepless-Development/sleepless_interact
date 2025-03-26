@@ -4,6 +4,7 @@
 ---@field icon? string The icon associated with the option.
 ---@field iconColor? string The css color for the icon
 ---@field distance? number The maximum distance at which the option is available.
+---@field holdTime? number Makes the option a press and hold and sets how long it should be held for. (miliseconds)
 ---@field canInteract? fun(entity: number, distance: number, coords: vector3, name: string): boolean? A function to determine if the option can be interacted with.
 ---@field name? string A unique identifier for the option.
 ---@field resource? string The resource that registered the option.
