@@ -532,7 +532,7 @@ RegisterNUICallback('select', function(data, cb)
         local option = store.current.options?[data[1]]?[data[2]]
         if option then
             if option.onSelect then
-                option.onSelect(utils.getResponse(option))
+                option.onSelect(option.qtarget and store.current.entity or utils.getResponse(option))
             elseif option.export then
                 exports[option.resource][option.export](nil, utils.getResponse(option))
             elseif option.event then
