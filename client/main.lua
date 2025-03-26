@@ -488,7 +488,7 @@ local function drawLoop()
                     if distance < config.maxInteractDistance and item.currentScreenDistance < math.huge then
                         local distanceRatio = math.min(0.5 + (0.25 * (distance / 10.0)), 1.0)
                         local scale = 0.025 * distanceRatio
-                        DrawSprite('shared', 'emptydot_32', 0.0, 0.0, scale, scale * aspectRatio, 0.0, r, g, b, a)
+                        DrawSprite(config.IndicatorSprite.dict, config.IndicatorSprite.txt, 0.0, 0.0, scale, scale * aspectRatio, 0.0, r, g, b, a)
                     end
                 end
 
