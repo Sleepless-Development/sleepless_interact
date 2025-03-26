@@ -50,7 +50,6 @@ if config.useShowKeyBind then
         description = 'show interactions',
         defaultKey = config.defaultShowKeyBind,
         onPressed = function(self)
-            if cache.vehicle then return end
             if config.showKeyBindBehavior == "toggle" then
                 hidePerKeybind = not hidePerKeybind
 
