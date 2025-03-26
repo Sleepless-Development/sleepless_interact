@@ -10,8 +10,8 @@ local function typeError(variable, expected, received)
 end
 
 --- Validates and normalizes an options table into an array.
----@param options Option | Option[] A single option table or an array of option tables.
----@return Option[] options An array of options.
+---@param options InteractOption | InteractOption[] A single option table or an array of option tables.
+---@return InteractOption[] options An array of options.
 local function checkOptions(options)
     local optionsType = type(options)
     if optionsType ~= 'table' then
@@ -29,7 +29,7 @@ local function checkOptions(options)
 end
 
 --- Removes options from a target array based on names and resource.
----@param target Option[] The array of options to modify.
+---@param target InteractOption[] The array of options to modify.
 ---@param remove string | string[] A single option name or array of names to remove.
 ---@param resource string The resource owning the options.
 ---@param showWarning? boolean Whether to show a warning when replacing options.
@@ -53,8 +53,8 @@ local function removeOptions(target, remove, resource, showWarning)
 end
 
 --- Adds options to a target array, handling bones and offsets if present.
----@param target Option[] The array to add options to.
----@param options Option | Option[] A single option or array of options to add.
+---@param target InteractOption[] The array to add options to.
+---@param options InteractOption | InteractOption[] A single option or array of options to add.
 ---@param resource string The resource registering the options.
 ---@param bonesTarget OptionsMap|nil The bone options map to update, if applicable.
 ---@param offsetsTarget OptionsMap|nil The offset options map to update, if applicable.
@@ -125,14 +125,6 @@ local function addOptions(target, options, resource, bonesTarget, offsetsTarget)
         removeOptions(target, checkNames, resource, true)
     end
 
-    if bonesTarget and not next(bonesTarget) then
-        bonesTarget = nil
-    end
-
-    if offsetsTarget and not next(offsetsTarget) then
-        offsetsTarget = nil
-    end
-
     for i = 1, #options do
         local option = options[i]
         table.insert(target, option)
@@ -140,7 +132,7 @@ local function addOptions(target, options, resource, bonesTarget, offsetsTarget)
 end
 
 --- Removes options from a target and its associated bones and offsets.
----@param target Option[] The array to remove options from.
+---@param target InteractOption[] The array to remove options from.
 ---@param remove string | string[] A single option name or array of names to remove.
 ---@param resource string The resource owning the options.
 ---@param bonesTarget OptionsMap|nil The bone options map to update, if applicable.
@@ -177,7 +169,7 @@ end
 
 --- Adds options to a specific coordinate location.
 ---@param coords vector3 | vector3[] The world coordinates for the options.
----@param options Option | Option[] A single option or array of options.
+---@param options InteractOption | InteractOption[] A single option or array of options.
 ---@return string | string[] ids The ID of the added coordinate options.
 function interact.addCoords(coords, options)
     local coordsType = type(coords)
@@ -246,7 +238,7 @@ function interact.removeCoords(id, options, suppressWarning)
 end
 
 --- Adds options globally for all peds.
----@param options Option | Option[] A single option or array of options.
+---@param options InteractOption | InteractOption[] A single option or array of options.
 function interact.addGlobalPed(options)
     addOptions(store.peds, options, GetInvokingResource(), store.bones.peds, store.offsets.peds)
 end
@@ -280,7 +272,7 @@ function interact.removeGlobalPed(options)
 end
 
 --- Adds options globally for all vehicles.
----@param options Option[] A single option or array of options.
+---@param options InteractOption[] A single option or array of options.
 function interact.addGlobalVehicle(options)
     addOptions(store.vehicles, options, GetInvokingResource(), store.bones.vehicles, store.offsets.vehicles)
 end
@@ -314,7 +306,7 @@ function interact.removeGlobalVehicle(options)
 end
 
 --- Adds options globally for all objects.
----@param options Option | Option[] A single option or array of options.
+---@param options InteractOption | InteractOption[] A single option or array of options.
 function interact.addGlobalObject(options)
     addOptions(store.objects, options, GetInvokingResource(), store.bones.objects, store.offsets.objects)
 end
@@ -348,7 +340,7 @@ function interact.removeGlobalObject(options)
 end
 
 --- Adds options globally for all players.
----@param options Option | Option[] A single option or array of options.
+---@param options InteractOption | InteractOption[] A single option or array of options.
 function interact.addGlobalPlayer(options)
     addOptions(store.players, options, GetInvokingResource(), store.bones.players, store.offsets.players)
 end
@@ -383,7 +375,7 @@ end
 
 --- Adds options for specific models.
 ---@param arr number | string | (number | string)[] A single model (hash or name) or array of models.
----@param options Option | Option[] A single option or array of options.
+---@param options InteractOption | InteractOption[] A single option or array of options.
 function interact.addModel(arr, options)
     if type(arr) ~= 'table' then arr = { arr } end
     local resource = GetInvokingResource()
@@ -440,7 +432,7 @@ end
 
 --- Adds options for specific networked entities.
 ---@param arr number | number[] A single netId or array of netIds.
----@param options Option | Option[] A single option or array of options.
+---@param options InteractOption | InteractOption[] A single option or array of options.
 function interact.addEntity(arr, options)
     if type(arr) ~= 'table' then arr = { arr } end
     local resource = GetInvokingResource()
@@ -496,7 +488,7 @@ end
 
 --- Adds options for specific local entities.
 ---@param arr number | number[] A single entityId or array of entityIds.
----@param options Option | Option[] A single option or array of options.
+---@param options InteractOption | InteractOption[] A single option or array of options.
 function interact.addLocalEntity(arr, options)
     if type(arr) ~= 'table' then arr = { arr } end
     local resource = GetInvokingResource()
@@ -568,7 +560,7 @@ CreateThread(function()
 end)
 
 --- Removes all options associated with a specific resource from a target array.
----@param target Option[] The array to clean up.
+---@param target InteractOption[] The array to clean up.
 ---@param resource string The resource whose options should be removed.
 local function removeResourceOptions(target, resource)
     if not target then return end
@@ -591,18 +583,12 @@ AddEventHandler('onClientResourceStop', function(resource)
             store.bones.peds[boneId] = nil
         end
     end
-    if store.bones.peds and not next(store.bones.peds) then
-        store.bones.peds = nil
-    end
 
     for boneId, options in pairs(store.bones.vehicles or {}) do
         removeResourceOptions(options, resource)
         if #options == 0 then
             store.bones.vehicles[boneId] = nil
         end
-    end
-    if store.bones.vehicles and not next(store.bones.vehicles) then
-        store.bones.vehicles = nil
     end
 
     for boneId, options in pairs(store.bones.objects or {}) do
@@ -611,18 +597,12 @@ AddEventHandler('onClientResourceStop', function(resource)
             store.bones.objects[boneId] = nil
         end
     end
-    if store.bones.objects and not next(store.bones.objects) then
-        store.bones.objects = nil
-    end
 
     for boneId, options in pairs(store.bones.players or {}) do
         removeResourceOptions(options, resource)
         if #options == 0 then
             store.bones.players[boneId] = nil
         end
-    end
-    if store.bones.players and not next(store.bones.players) then
-        store.bones.players = nil
     end
 
     for offsetStr, options in pairs(store.offsets.peds or {}) do
@@ -631,18 +611,12 @@ AddEventHandler('onClientResourceStop', function(resource)
             store.offsets.peds[offsetStr] = nil
         end
     end
-    if store.offsets.peds and not next(store.offsets.peds) then
-        store.offsets.peds = nil
-    end
 
     for offsetStr, options in pairs(store.offsets.vehicles or {}) do
         removeResourceOptions(options, resource)
         if #options == 0 then
             store.offsets.vehicles[offsetStr] = nil
         end
-    end
-    if store.offsets.vehicles and not next(store.offsets.vehicles) then
-        store.offsets.vehicles = nil
     end
 
     for offsetStr, options in pairs(store.offsets.objects or {}) do
@@ -651,18 +625,12 @@ AddEventHandler('onClientResourceStop', function(resource)
             store.offsets.objects[offsetStr] = nil
         end
     end
-    if store.offsets.objects and not next(store.offsets.objects) then
-        store.offsets.objects = nil
-    end
 
     for offsetStr, options in pairs(store.offsets.players or {}) do
         removeResourceOptions(options, resource)
         if #options == 0 then
             store.offsets.players[offsetStr] = nil
         end
-    end
-    if store.offsets.players and not next(store.offsets.players) then
-        store.offsets.players = nil
     end
 
     for model, options in pairs(store.models) do
