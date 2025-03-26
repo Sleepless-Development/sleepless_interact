@@ -93,35 +93,34 @@ local function cachedEntityInfo(entity)
     return model, netId
 end
 
----@param options Option[]
+---@param options InteractOption[]
 ---@param entity number
 ---@param distance number
 ---@param coords vector3
----@return nil | table<string, Option[]>, number | nil, boolean | nil
+---@return nil | table<string, InteractOption[]>, number | nil, boolean | nil
 local function filterValidOptions(options, entity, distance, coords)
     if not options then return nil end
-
     local validOptions = {}
     local totalValid = 0
-    local hideCompletely = options['global'] ~= nil
+    local hasGlobal = options['global'] ~= nil
+    local hasNonGlobal = false
 
     for category, _options in pairs(options) do
+        if category ~= 'global' then
+            hasNonGlobal = true
+        end
+
         local validCategoryOptions = {}
+
         for i = 1, #_options do
             local option = _options[i]
             local hide = false
 
-            if not hide then
-                hide = distance > (option.distance or 2.0)
-            end
+            if not hide then hide = distance > (option.distance or 2.0) end
 
-            if not hide and option.groups then
-                hide = not utils.hasPlayerGotGroup(option.groups)
-            end
+            if not hide and option.groups then hide = not utils.hasPlayerGotGroup(option.groups) end
 
-            if not hide and option.items then
-                hide = not utils.hasPlayerGotItems(option.items, option.anyItem)
-            end
+            if not hide and option.items then hide = not utils.hasPlayerGotItems(option.items, option.anyItem) end
 
             if not hide and option.canInteract then
                 local success, resp = pcall(option.canInteract, entity, distance, coords, option.name)
@@ -135,12 +134,11 @@ local function filterValidOptions(options, entity, distance, coords)
         end
 
         if #validCategoryOptions > 0 then
-            if hideCompletely then
-                hideCompletely = false
-            end
             validOptions[category] = validCategoryOptions
         end
     end
+
+    local hideCompletely = hasGlobal and not hasNonGlobal and totalValid == 0
 
     if totalValid == 0 then
         return nil, nil, hideCompletely
@@ -151,7 +149,7 @@ end
 
 ---@param entity number
 ---@param globalType string
----@return Option[] | nil
+---@return InteractOption[] | nil
 local function getOptionsForEntity(entity, globalType)
     if not entity then return nil end
 
@@ -175,107 +173,106 @@ end
 
 ---@param entity number
 ---@param globalType string
----@return table<string, Option[]> | nil
+---@return table<string, InteractOption[]> | nil
 local function getBoneOptionsForEntity(entity, globalType)
     if not entity then return nil end
-
     local model, netId = cachedEntityInfo(entity)
-
     local boneOptions = {}
+    local hasOptions = false
 
     if store.bones[globalType] then
         for boneId, options in pairs(store.bones[globalType]) do
-            boneOptions[boneId] = boneOptions[boneId] or {}
-            for i = 1, #options do
-                local opt = options[i]
-                table.insert(boneOptions[boneId], opt)
+            if #options > 0 then
+                boneOptions[boneId] = boneOptions[boneId] or {}
+                boneOptions[boneId].global = options
+                hasOptions = true
             end
         end
     end
 
     if store.bones.models and store.bones.models[model] then
         for boneId, options in pairs(store.bones.models[model]) do
-            boneOptions[boneId] = boneOptions[boneId] or {}
-            for i = 1, #options do
-                local opt = options[i]
-                table.insert(boneOptions[boneId], opt)
+            if #options > 0 then
+                boneOptions[boneId] = boneOptions[boneId] or {}
+                boneOptions[boneId].model = options
+                hasOptions = true
             end
         end
     end
 
     if netId and store.bones.entities and store.bones.entities[netId] then
         for boneId, options in pairs(store.bones.entities[netId]) do
-            boneOptions[boneId] = boneOptions[boneId] or {}
-            for i = 1, #options do
-                local opt = options[i]
-                table.insert(boneOptions[boneId], opt)
+            if #options > 0 then
+                boneOptions[boneId] = boneOptions[boneId] or {}
+                boneOptions[boneId].entity = options
+                hasOptions = true
             end
         end
     end
 
     if not netId and store.bones.localEntities and store.bones.localEntities[entity] then
         for boneId, options in pairs(store.bones.localEntities[entity]) do
-            boneOptions[boneId] = boneOptions[boneId] or {}
-            for i = 1, #options do
-                local opt = options[i]
-                table.insert(boneOptions[boneId], opt)
+            if #options > 0 then
+                boneOptions[boneId] = boneOptions[boneId] or {}
+                boneOptions[boneId].localEntity = options
+                hasOptions = true
             end
         end
     end
 
-    return next(boneOptions) and boneOptions or nil
+    return hasOptions and boneOptions or nil
 end
 
 ---@param entity number
 ---@param globalType string
----@return table<string, Option[]> | nil
+---@return table<string, InteractOption[]> | nil
 local function getOffsetOptionsForEntity(entity, globalType)
     if not entity then return nil end
-
     local model, netId = cachedEntityInfo(entity)
-
     local offsetOptions = {}
+    local hasOptions = false
 
     if store.offsets[globalType] then
         for offsetStr, options in pairs(store.offsets[globalType]) do
-            offsetOptions[offsetStr] = offsetOptions[offsetStr] or {}
-            for i = 1, #options do
-                local opt = options[i]
-                table.insert(offsetOptions[offsetStr], opt)
+            if #options > 0 then
+                offsetOptions[offsetStr] = offsetOptions[offsetStr] or {}
+                offsetOptions[offsetStr].global = options
+                hasOptions = true
             end
         end
     end
 
     if store.offsets.models and store.offsets.models[model] then
         for offsetStr, options in pairs(store.offsets.models[model]) do
-            offsetOptions[offsetStr] = offsetOptions[offsetStr] or {}
-            for i = 1, #options do
-                local opt = options[i]
-                table.insert(offsetOptions[offsetStr], opt)
+            if #options > 0 then
+                offsetOptions[offsetStr] = offsetOptions[offsetStr] or {}
+                offsetOptions[offsetStr].model = options
+                hasOptions = true
             end
         end
     end
 
     if netId and store.offsets.entities and store.offsets.entities[netId] then
         for offsetStr, options in pairs(store.offsets.entities[netId]) do
-            offsetOptions[offsetStr] = offsetOptions[offsetStr] or {}
-            for i = 1, #options do
-                local opt = options[i]
-                table.insert(offsetOptions[offsetStr], opt)
+            if #options > 0 then
+                offsetOptions[offsetStr] = offsetOptions[offsetStr] or {}
+                offsetOptions[offsetStr].entity = options
+                hasOptions = true
             end
         end
     end
 
     if not netId and store.offsets.localEntities and store.offsets.localEntities[entity] then
         for offsetStr, options in pairs(store.offsets.localEntities[entity]) do
-            offsetOptions[offsetStr] = offsetOptions[offsetStr] or {}
-            for i = 1, #options do
-                local opt = options[i]
-                table.insert(offsetOptions[offsetStr], opt)
+            if #options > 0 then
+                offsetOptions[offsetStr] = offsetOptions[offsetStr] or {}
+                offsetOptions[offsetStr].localEntity = options
+                hasOptions = true
             end
         end
     end
-    return next(offsetOptions) and offsetOptions or nil
+
+    return hasOptions and offsetOptions or nil
 end
 
 ---@param coords vector3
@@ -318,7 +315,7 @@ local function checkNearbyEntities(coords)
                             coords = boneCoords,
                             currentDistance = #(coords - boneCoords),
                             currentScreenDistance = utils.getScreenDistanceSquared(boneCoords),
-                            options = { boneId = _options }
+                            options = _options
                         }
                     end
                 end
@@ -328,17 +325,13 @@ local function checkNearbyEntities(coords)
                 for offsetStr, _options in pairs(offsetOptions) do
                     local x, y, z, offsetType = utils.getCoordsAndTypeFromOffsetId(offsetStr)
                     if x and y and z and offsetType then
-                        ---@diagnostic disable-next-line: param-type-mismatch
                         local offset = vec3(tonumber(x), tonumber(y), tonumber(z))
                         local worldPos
-
                         if offsetType == "offset" then
                             local min, max = GetModelDimensions(model)
                             offset = (max - min) * offset + min
                         end
-
                         worldPos = GetOffsetFromEntityInWorldCoords(entity, offset.x, offset.y, offset.z)
-
                         num = num + 1
                         valid[num] = {
                             entity = entity,
@@ -346,7 +339,7 @@ local function checkNearbyEntities(coords)
                             coords = worldPos,
                             currentDistance = #(coords - worldPos),
                             currentScreenDistance = utils.getScreenDistanceSquared(worldPos),
-                            options = { offset = _options }
+                            options = _options
                         }
                     end
                 end
@@ -413,7 +406,9 @@ local function drawLoop()
             nearbyData = {}
             for i = 1, #store.nearby do
                 local item = store.nearby[i]
+
                 local coords = utils.getDrawCoordsForInteract(item)
+
                 if coords then
                     if item.entity then
                         if not entityStartCoords[item.entity] then
@@ -458,10 +453,10 @@ local function drawLoop()
 
         for i = 1, #store.nearby do
             local data = nearbyData[i]
+
             if data and data.coords and not data.hideCompletely then
                 local item = data.item
-                local coords = (item.entity and not movingEntity[item.entity] and data.coords) or
-                    utils.getDrawCoordsForInteract(item)
+                local coords = (item.entity and not movingEntity[item.entity] and data.coords) or utils.getDrawCoordsForInteract(item)
 
                 SetDrawOrigin(coords.x, coords.y, coords.z)
 
@@ -486,9 +481,9 @@ local function drawLoop()
                 else
                     local distance = #(playerCoords - coords)
                     if distance < config.maxInteractDistance and item.currentScreenDistance < math.huge then
-                        local distanceRatio = math.min(0.5 + (0.25 * (distance / 10.0)), 1.0)
-                        local scale = 0.025 * distanceRatio
-                        DrawSprite('shared', 'emptydot_32', 0.0, 0.0, scale, scale * aspectRatio, 0.0, r, g, b, a)
+                    local distanceRatio = math.min(0.5 + (0.25 * (distance / 10.0)), 1.0)
+                    local scale = 0.025 * distanceRatio
+                    DrawSprite('shared', 'emptydot_32', 0.0, 0.0, scale, scale * aspectRatio, 0.0, r, g, b, a)
                     end
                 end
 
