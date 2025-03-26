@@ -115,6 +115,10 @@ local function filterValidOptions(options, entity, distance, coords)
             local option = _options[i]
             local hide = false
 
+            if not hide and not option.allowInVehicle and cache.vehicle then
+                hide = true
+            end
+
             if not hide then hide = distance > (option.distance or 2.0) end
 
             if not hide and option.groups then hide = not utils.hasPlayerGotGroup(option.groups) end

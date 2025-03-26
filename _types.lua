@@ -12,6 +12,7 @@
 ---@field offsetAbsolute? vector3 An absolute offset in world coordinates.
 ---@field color? number[] 4 numbers in an array that will be used for rgba and will overwrite the theme color for that option.
 ---@field bones? string | string[] An array of bone IDs associated with the option.
+---@field allowInVehicle? boolean marks the option as being able to be used inside a vehicle.
 ---@field onSelect? fun(data: InteractResponse) A function to execute when the option is selected.
 ---@field cooldown? number number of miliseconds the interact system should cooldown for after this option is selected. prevents spam.
 ---@field export? string Optional export function name
