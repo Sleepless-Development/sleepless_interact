@@ -75,6 +75,15 @@ local function addOptions(target, options, resource, bonesTarget, offsetsTarget)
             if option.onSelect then
                 option.onSelect = msgpack.unpack(msgpack.pack(option.onSelect))
             end
+            if option.onActive then
+                option.onActive = msgpack.unpack(msgpack.pack(option.onActive))
+            end
+            if option.onInactive then
+                option.onInactive = msgpack.unpack(msgpack.pack(option.onInactive))
+            end
+            if option.whileActive then
+                option.whileActive = msgpack.unpack(msgpack.pack(option.whileActive))
+            end
         end
 
         if option.offset or option.offsetAbsolute then

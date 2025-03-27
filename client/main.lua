@@ -385,6 +385,8 @@ local function shouldHideInteract()
     return false
 end
 
+local activeOptions = {}
+
 local aspectRatio = GetAspectRatio(true)
 local function drawLoop()
     if drawLoopRunning then return end
@@ -432,6 +434,42 @@ local function drawLoop()
                         if lastValidOptions then
                             shouldUpdate = not lib.table.matches(validOpts, lastValidOptions)
                         end
+
+                        if shouldUpdate and validOpts then
+
+                            local newOptions = {}
+
+                            for j = 1, #validOpts do
+                                local opt = validOpts[j]
+                                newOptions[opt] = true
+                                activeOptions[opt] = true
+                                local resp = (opt.onActive or opt.whileActive ) and utils.getResponse(opt)
+
+                                if opt.onActive and not activeOptions[opt] then
+                                    pcall(opt.onActive, resp)
+                                end
+
+                                
+                                if opt.whileActive then
+                                    CreateThread(function ()
+                                        while activeOptions[opt] do
+                                            pcall(opt.whileActive, resp)
+                                            Wait(0)
+                                        end
+                                    end)
+                                end
+
+                            end
+
+                            for j = 1, #lastValidOptions do
+                                local opt = lastValidOptions[j]
+                                if opt.onInactive and not newOptions[opt] and activeOptions[opt] then
+                                    pcall(opt.onInactive, utils.getResponse(opt))
+                                    activeOptions[opt] = nil
+                                end
+                            end
+                        end
+
                         lastValidOptions = validOpts
                     end
 

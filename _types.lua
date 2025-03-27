@@ -19,6 +19,9 @@
 ---@field event? string Client-side event to trigger
 ---@field serverEvent? string Server-side event to trigger
 ---@field command? string Command to execute
+---@field onActive? fun(data: InteractResponse) A function to execute when the option is active.
+---@field onInactive? fun(data: InteractResponse) A function to execute when the option was active and is now inactive.
+---@field whileActive? fun(data: InteractResponse) A function to execute while the option is active on a loop.
 
 ---@class NearbyItem
 ---@field options InteractOption[]
