@@ -434,43 +434,6 @@ local function drawLoop()
                         if lastValidOptions then
                             shouldUpdate = not lib.table.matches(validOpts, lastValidOptions)
                         end
-
-                        if shouldUpdate and validOpts then
-
-                            local newOptions = {}
-
-                            for j = 1, #validOpts do
-                                local opt = validOpts[j]
-                                newOptions[opt] = true
-                                activeOptions[opt] = true
-                                local resp = (opt.onActive or opt.whileActive ) and utils.getResponse(opt)
-
-                                if opt.onActive and not activeOptions[opt] then
-                                    pcall(opt.onActive, resp)
-                                end
-
-                                
-                                if opt.whileActive then
-                                    CreateThread(function ()
-                                        while activeOptions[opt] do
-                                            pcall(opt.whileActive, resp)
-                                            Wait(0)
-                                        end
-                                    end)
-                                end
-
-                            end
-
-                            for j = 1, #lastValidOptions do
-                                local opt = lastValidOptions[j]
-                                if opt.onInactive and not newOptions[opt] and activeOptions[opt] then
-                                    pcall(opt.onInactive, utils.getResponse(opt))
-                                    activeOptions[opt] = nil
-                                end
-                            end
-                        end
-
-                        lastValidOptions = validOpts
                     end
 
                     nearbyData[i] = {
@@ -507,9 +470,52 @@ local function drawLoop()
                     DrawSprite(dui.instance.dictName, dui.instance.txtName, 0.0, 0.0, 1.0, 1.0, 0.0, 255, 255, 255, 255)
                     local newClosestId = item.bone or item.offset or item.entity or item.coordId
                     if data.shouldUpdate or lastClosestItem ~= newClosestId or lastValidCount ~= data.validCount then
+                        local newOptions = {}
+
+                        if data.validOpts then
+                            for _, opts in pairs(data.validOpts) do
+                                for j = 1, #opts do
+                                    local opt = opts[j]
+                                    newOptions[opt] = true
+                                    if not activeOptions[opt] then
+                                        activeOptions[opt] = true
+                                        local resp = (opt.onActive or opt.whileActive) and utils.getResponse(opt)
+
+                                        if opt.onActive then
+                                            pcall(opt.onActive, resp)
+                                        end
+
+                                        if opt.whileActive then
+                                            CreateThread(function()
+                                                while activeOptions[opt] do
+                                                    pcall(opt.whileActive, resp)
+                                                    Wait(0)
+                                                end
+                                            end)
+                                        end
+                                    end
+                                end
+                            end
+                        end
+
+                        if lastValidOptions then
+                            for _, opts in pairs(lastValidOptions) do
+                                for j = 1, #opts do
+                                    local opt = opts[j]
+
+                                    if opt.onInactive and not newOptions[opt] and activeOptions[opt] then
+                                        pcall(opt.onInactive, utils.getResponse(opt))
+                                        activeOptions[opt] = nil
+                                    end
+                                end
+                            end
+                        end
+
                         local resetIndex = lastClosestItem ~= newClosestId
                         lastClosestItem = newClosestId
                         lastValidCount = data.validCount
+                        lastValidOptions = data.validOpts
+
                         store.current = {
                             options = data.validOpts,
                             entity = item.entity,
@@ -522,9 +528,9 @@ local function drawLoop()
                 else
                     local distance = #(playerCoords - coords)
                     if distance < config.maxInteractDistance and item.currentScreenDistance < math.huge then
-                    local distanceRatio = math.min(0.5 + (0.25 * (distance / 10.0)), 1.0)
-                    local scale = 0.025 * distanceRatio
-                    DrawSprite('shared', 'emptydot_32', 0.0, 0.0, scale, scale * aspectRatio, 0.0, r, g, b, a)
+                        local distanceRatio = math.min(0.5 + (0.25 * (distance / 10.0)), 1.0)
+                        local scale = 0.025 * distanceRatio
+                        DrawSprite('shared', 'emptydot_32', 0.0, 0.0, scale, scale * aspectRatio, 0.0, r, g, b, a)
                     end
                 end
 
@@ -533,6 +539,16 @@ local function drawLoop()
         end
 
         if not foundValid and next(store.current) then
+            for _, opts in pairs(store.current.options) do
+                for j = 1, #opts do
+                    local opt = opts[j]
+
+                    if opt.onInactive and activeOptions[opt] then
+                        pcall(opt.onInactive, utils.getResponse(opt))
+                        activeOptions[opt] = nil
+                    end
+                end
+            end
             store.current = {}
             lastClosestItem = nil
         end
