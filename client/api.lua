@@ -30,23 +30,26 @@ end
 
 --- Removes options from a target array based on names and resource.
 ---@param target InteractOption[] The array of options to modify.
----@param remove string | string[] A single option name or array of names to remove.
+---@param remove? string | string[] A single option name or array of names to remove. If nil, removes all options for the resource.
 ---@param resource string The resource owning the options.
----@param showWarning? boolean Whether to show a warning when replacing options.
-local function removeOptions(target, remove, resource, showWarning)
-    if type(remove) ~= 'table' then remove = { remove } end
-
-    local removeSet = {}
-    for i = 1, #remove do
-        removeSet[remove[i]] = true
-    end
-
-    for i = #target, 1, -1 do
-        local option = target[i]
-        if option.resource == resource and removeSet[option.name] then
-            table.remove(target, i)
-            if showWarning then
-                lib.print.warn(("Replacing existing target option '%s'."):format(option.name))
+local function removeOptions(target, remove, resource)
+    if remove then
+        if type(remove) ~= 'table' then remove = { remove } end
+        local removeSet = {}
+        for i = 1, #remove do
+            removeSet[remove[i]] = true
+        end
+        for i = #target, 1, -1 do
+            local option = target[i]
+            if option.resource == resource and removeSet[option.name] then
+                table.remove(target, i)
+            end
+        end
+    else
+        -- Remove all options for the resource
+        for i = #target, 1, -1 do
+            if target[i].resource == resource then
+                table.remove(target, i)
             end
         end
     end
@@ -89,7 +92,6 @@ local function addOptions(target, options, resource, bonesTarget, offsetsTarget)
         if option.offset or option.offsetAbsolute then
             local offsetKey = option.offset and 'offset' or 'offsetAbsolute'
             local offset = option[offsetKey]
-
             local offsetType = type(offset)
 
             if offsetType == 'table' and offset.x and offset.y and offset.z then
@@ -100,13 +102,12 @@ local function addOptions(target, options, resource, bonesTarget, offsetsTarget)
                 typeError('offset', 'vector3', offsetType)
             end
 
-
             local offsetStr = utils.makeOffsetIdFromCoords(offset, offsetKey)
 
             if offsetsTarget and offsetStr then
                 offsetsTarget[offsetStr] = offsetsTarget[offsetStr] or {}
                 if option.name then
-                    removeOptions(offsetsTarget[offsetStr], { option.name }, resource, true)
+                    removeOptions(offsetsTarget[offsetStr], { option.name }, resource)
                 end
                 table.insert(offsetsTarget[offsetStr], table.remove(options, i))
             end
@@ -121,7 +122,7 @@ local function addOptions(target, options, resource, bonesTarget, offsetsTarget)
                 local boneId = option.bones[j]
                 bonesTarget[boneId] = bonesTarget[boneId] or {}
                 if option.name then
-                    removeOptions(bonesTarget[boneId], { option.name }, resource, true)
+                    removeOptions(bonesTarget[boneId], { option.name }, resource)
                 end
                 table.insert(bonesTarget[boneId], boneOptions)
             end
@@ -131,24 +132,21 @@ local function addOptions(target, options, resource, bonesTarget, offsetsTarget)
     end
 
     if checkNames[1] then
-        removeOptions(target, checkNames, resource, true)
+        removeOptions(target, checkNames, resource)
     end
 
     for i = 1, #options do
-        local option = options[i]
-        table.insert(target, option)
+        table.insert(target, options[i])
     end
 end
 
 --- Removes options from a target and its associated bones and offsets.
 ---@param target InteractOption[] The array to remove options from.
----@param remove string | string[] A single option name or array of names to remove.
+---@param remove? string | string[] A single option name or array of names to remove. If nil, removes all options for the resource.
 ---@param resource string The resource owning the options.
 ---@param bonesTarget OptionsMap|nil The bone options map to update, if applicable.
 ---@param offsetsTarget OptionsMap|nil The offset options map to update, if applicable.
 local function removeTarget(target, remove, resource, bonesTarget, offsetsTarget)
-    if type(remove) ~= 'table' then remove = { remove } end
-
     if target then
         removeOptions(target, remove, resource)
     end
@@ -220,27 +218,19 @@ function interact.addCoords(coords, options)
     return (#ids == 1 and ids[1]) or ids
 end
 
---- Removes options from a coordinate location or the entire coordinate.
+--- Removes options from a coordinate location.
 ---@param id string The coordinate ID to modify.
----@param options? string | string[] Specific option names to remove, or nil to remove all.
----@param suppressWarning? boolean Whether to suppress warnings if the ID doesn't exist.
-function interact.removeCoords(id, options, suppressWarning)
+---@param remove? string | string[] Specific option names to remove, or nil to remove all for the resource.
+function interact.removeCoords(id, remove)
     if not store.coords[id] then
-        if not suppressWarning then
-            warn(('attempted to remove a coord that does not exist (id: %s)'):format(id))
-        end
+        warn(('attempted to remove a coord that does not exist (id: %s)'):format(id))
         return
     end
 
     local resource = GetInvokingResource()
+    removeOptions(store.coords[id], remove, resource)
 
-    if options then
-        removeOptions(store.coords[id], options, resource)
-        if #store.coords[id] == 0 then
-            store.coords[id] = nil
-            store.coordIds[id] = nil
-        end
-    else
+    if #store.coords[id] == 0 then
         store.coords[id] = nil
         store.coordIds[id] = nil
     end
@@ -253,9 +243,11 @@ function interact.addGlobalPed(options)
 end
 
 --- Removes options globally from all peds.
----@param options string | string[] A single option name or array of names to remove.
-function interact.removeGlobalPed(options)
-    removeTarget(store.peds, options, GetInvokingResource(), store.bones.peds, store.offsets.peds)
+---@param remove? string | string[] A single option name or array of names to remove, or nil to remove all for the resource.
+function interact.removeGlobalPed(remove)
+    if not remove then return end
+
+    removeTarget(store.peds, remove, GetInvokingResource(), store.bones.peds, store.offsets.peds)
 
     if store.bones.peds then
         for boneId, boneOptions in pairs(store.bones.peds) do
@@ -281,15 +273,17 @@ function interact.removeGlobalPed(options)
 end
 
 --- Adds options globally for all vehicles.
----@param options InteractOption[] A single option or array of options.
+---@param options InteractOption | InteractOption[] A single option or array of options.
 function interact.addGlobalVehicle(options)
     addOptions(store.vehicles, options, GetInvokingResource(), store.bones.vehicles, store.offsets.vehicles)
 end
 
 --- Removes options globally from all vehicles.
----@param options string | string[] A single option name or array of names to remove.
-function interact.removeGlobalVehicle(options)
-    removeTarget(store.vehicles, options, GetInvokingResource(), store.bones.vehicles, store.offsets.vehicles)
+---@param remove? string | string[] A single option name or array of names to remove, or nil to remove all for the resource.
+function interact.removeGlobalVehicle(remove)
+    if not remove then return end
+    
+    removeTarget(store.vehicles, remove, GetInvokingResource(), store.bones.vehicles, store.offsets.vehicles)
 
     if store.bones.vehicles then
         for boneId, boneOptions in pairs(store.bones.vehicles) do
@@ -321,9 +315,11 @@ function interact.addGlobalObject(options)
 end
 
 --- Removes options globally from all objects.
----@param options string | string[] A single option name or array of names to remove.
-function interact.removeGlobalObject(options)
-    removeTarget(store.objects, options, GetInvokingResource(), store.bones.objects, store.offsets.objects)
+---@param remove? string | string[] A single option name or array of names to remove, or nil to remove all for the resource.
+function interact.removeGlobalObject(remove)
+    if not remove then return end
+
+    removeTarget(store.objects, remove, GetInvokingResource(), store.bones.objects, store.offsets.objects)
 
     if store.bones.objects then
         for boneId, boneOptions in pairs(store.bones.objects) do
@@ -355,9 +351,11 @@ function interact.addGlobalPlayer(options)
 end
 
 --- Removes options globally from all players.
----@param options string | string[] A single option name or array of names to remove.
-function interact.removeGlobalPlayer(options)
-    removeTarget(store.players, options, GetInvokingResource(), store.bones.players, store.offsets.players)
+---@param remove? string | string[] A single option name or array of names to remove, or nil to remove all for the resource.
+function interact.removeGlobalPlayer(remove)
+    if not remove then return end
+
+    removeTarget(store.players, remove, GetInvokingResource(), store.bones.players, store.offsets.players)
 
     if store.bones.players then
         for boneId, boneOptions in pairs(store.bones.players) do
@@ -383,13 +381,13 @@ function interact.removeGlobalPlayer(options)
 end
 
 --- Adds options for specific models.
----@param arr number | string | (number | string)[] A single model (hash or name) or array of models.
+---@param models number | string | (number | string)[] A single model (hash or name) or array of models.
 ---@param options InteractOption | InteractOption[] A single option or array of options.
-function interact.addModel(arr, options)
-    if type(arr) ~= 'table' then arr = { arr } end
+function interact.addModel(models, options)
+    if type(models) ~= 'table' then models = { models } end
     local resource = GetInvokingResource()
-    for i = 1, #arr do
-        local model = arr[i]
+    for i = 1, #models do
+        local model = models[i]
         model = tonumber(model) or joaat(model)
         store.models[model] = store.models[model] or {}
         store.bones.models[model] = store.bones.models[model] or {}
@@ -399,16 +397,16 @@ function interact.addModel(arr, options)
 end
 
 --- Removes options from specific models.
----@param arr number | string | (number | string)[] A single model (hash or name) or array of models.
----@param options string | string[] A single option name or array of names to remove.
-function interact.removeModel(arr, options)
-    if type(arr) ~= 'table' then arr = { arr } end
+---@param models number | string | (number | string)[] A single model (hash or name) or array of models.
+---@param remove? string | string[] A single option name or array of names to remove, or nil to remove all for the resource.
+function interact.removeModel(models, remove)
+    if type(models) ~= 'table' then models = { models } end
     local resource = GetInvokingResource()
-    for i = 1, #arr do
-        local model = arr[i]
+    for i = 1, #models do
+        local model = models[i]
         model = tonumber(model) or joaat(model)
         if store.models[model] then
-            removeTarget(store.models[model], options, resource, store.bones.models[model], store.offsets.models[model])
+            removeTarget(store.models[model], remove, resource, store.bones.models[model], store.offsets.models[model])
 
             if store.models[model] and #store.models[model] == 0 then
                 store.models[model] = nil
@@ -440,13 +438,13 @@ function interact.removeModel(arr, options)
 end
 
 --- Adds options for specific networked entities.
----@param arr number | number[] A single netId or array of netIds.
+---@param netIds number | number[] A single netId or array of netIds.
 ---@param options InteractOption | InteractOption[] A single option or array of options.
-function interact.addEntity(arr, options)
-    if type(arr) ~= 'table' then arr = { arr } end
+function interact.addEntity(netIds, options)
+    if type(netIds) ~= 'table' then netIds = { netIds } end
     local resource = GetInvokingResource()
-    for i = 1, #arr do
-        local netId = arr[i]
+    for i = 1, #netIds do
+        local netId = netIds[i]
         if NetworkDoesNetworkIdExist(netId) then
             store.entities[netId] = store.entities[netId] or {}
             store.bones.entities[netId] = store.bones.entities[netId] or {}
@@ -457,15 +455,14 @@ function interact.addEntity(arr, options)
 end
 
 --- Removes options from specific networked entities.
----@param arr number | number[] A single netId or array of netIds.
----@param options string | string[] A single option name or array of names to remove.
-function interact.removeEntity(arr, options)
-    if type(arr) ~= 'table' then arr = { arr } end
+---@param netIds number | number[] A single netId or array of netIds.
+---@param remove? string | string[] A single option name or array of names to remove, or nil to remove all for the resource.
+function interact.removeEntity(netIds, remove)
+    if type(netIds) ~= 'table' then netIds = { netIds } end
     local resource = GetInvokingResource()
-    for i = 1, #arr do
-        local netId = arr[i]
-
-        removeTarget(store.entities[netId], options, resource, store.bones.entities[netId], store.offsets.entities[netId])
+    for i = 1, #netIds do
+        local netId = netIds[i]
+        removeTarget(store.entities[netId], remove, resource, store.bones.entities[netId], store.offsets.entities[netId])
 
         if store.entities[netId] and #store.entities[netId] == 0 then
             store.entities[netId] = nil
@@ -496,13 +493,13 @@ function interact.removeEntity(arr, options)
 end
 
 --- Adds options for specific local entities.
----@param arr number | number[] A single entityId or array of entityIds.
+---@param entityIds number | number[] A single entityId or array of entityIds.
 ---@param options InteractOption | InteractOption[] A single option or array of options.
-function interact.addLocalEntity(arr, options)
-    if type(arr) ~= 'table' then arr = { arr } end
+function interact.addLocalEntity(entityIds, options)
+    if type(entityIds) ~= 'table' then entityIds = { entityIds } end
     local resource = GetInvokingResource()
-    for i = 1, #arr do
-        local entityId = arr[i]
+    for i = 1, #entityIds do
+        local entityId = entityIds[i]
         if DoesEntityExist(entityId) then
             store.localEntities[entityId] = store.localEntities[entityId] or {}
             store.bones.localEntities[entityId] = store.bones.localEntities[entityId] or {}
@@ -515,16 +512,14 @@ function interact.addLocalEntity(arr, options)
 end
 
 --- Removes options from specific local entities.
----@param arr number | number[] A single entityId or array of entityIds.
----@param options string | string[] A single option name or array of names to remove.
-function interact.removeLocalEntity(arr, options)
-    if type(arr) ~= 'table' then arr = { arr } end
+---@param entityIds number | number[] A single entityId or array of entityIds.
+---@param remove? string | string[] A single option name or array of names to remove, or nil to remove all for the resource.
+function interact.removeLocalEntity(entityIds, remove)
+    if type(entityIds) ~= 'table' then entityIds = { entityIds } end
     local resource = GetInvokingResource()
-    for i = 1, #arr do
-        local entityId = arr[i]
-
-        removeTarget(store.localEntities[entityId], options, resource, store.bones.localEntities[entityId], store.offsets.localEntities[entityId])
-
+    for i = 1, #entityIds do
+        local entityId = entityIds[i]
+        removeTarget(store.localEntities[entityId], remove, resource, store.bones.localEntities[entityId], store.offsets.localEntities[entityId])
 
         if store.localEntities[entityId] and #store.localEntities[entityId] == 0 then
             store.localEntities[entityId] = nil
