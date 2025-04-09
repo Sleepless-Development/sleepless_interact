@@ -202,6 +202,7 @@ function interact.addCoords(coords, options)
 
         if cType == 'vector4' then
             c = vec3(c.x, c.y, c.z)
+            cType = type(c)
         end
 
         if cType ~= 'vector3' then
