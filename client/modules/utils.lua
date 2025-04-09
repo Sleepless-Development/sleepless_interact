@@ -196,6 +196,8 @@ SetTimeout(0, function()
         require 'client.framework.qbx'
     elseif GetResourceState('ND_Core'):find('start') then
         require 'client.framework.nd'
+    elseif GetResourceState('qb-core'):find('start') then
+        require 'client.framework.qb'
     end
 end)
 
