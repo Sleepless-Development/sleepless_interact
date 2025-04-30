@@ -23,4 +23,9 @@ files {
 	'client/compat/resources/*.lua'
 }
 
+provides {
+	'ox_target',
+	'qtarget'
+}
+
 dependency 'ox_lib'
