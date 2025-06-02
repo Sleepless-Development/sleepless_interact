@@ -392,7 +392,7 @@ local function drawLoop()
     if drawLoopRunning then return end
     drawLoopRunning = true
 
-    lib.requestStreamedTextureDict('shared')
+    lib.requestStreamedTextureDict(config.IndicatorSprite.dict)
     local lastClosestItem, lastValidCount, lastValidOptions = nil, 0, nil
     local nearbyData = {}
     local playerCoords
