@@ -32,6 +32,7 @@ export function createOptions(type, data, id) {
   option.color = data.color;
   option.targetId = id;
   option.holdTime = data.holdTime || 0; // Default to 0 if no holdtime
+  option.hideButton = data.hideButton || false;
 
   optionsWrapper.appendChild(option);
 

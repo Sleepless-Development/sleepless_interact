@@ -1,12 +1,20 @@
 import { fetchNui } from "./fetchNui.js";
 const optionsWrapper = document.getElementById("options-wrapper");
 const progressElement = document.getElementById("interact-progress");
+const interactButton = document.getElementById("interact-container");
 
 let currentIndex = 0;
 let isHolding = false;
 let holdStartTime = null;
 let holdTimeout = null;
 let defaultColor = null;
+
+export function checkHideButton() {
+  const options = optionsWrapper.querySelectorAll(".option-container");
+  const option = options[currentIndex];
+
+  interactButton.style.visibility = option && option.hideButton ? "hidden" : "visible";
+}
 
 export function setDefaultColor(color) {
   defaultColor = color;
@@ -15,6 +23,7 @@ export function setDefaultColor(color) {
 
 export function setCurrentIndex(newIndex) {
   currentIndex = newIndex;
+  checkHideButton();
   return currentIndex;
 }
 
@@ -23,9 +32,10 @@ export function onSelect() {
   const option = options[currentIndex];
 
   if (!option) return;
-  
+
   if (option.holdTime) {
     startHold(option);
+    fetchNui("startHoldAnim", [option.targetType, option.targetId]);
   } else {
     fetchNui("select", [option.targetType, option.targetId]);
   }
@@ -33,25 +43,28 @@ export function onSelect() {
 
 function completeHold(option) {
   if (!isHolding) return;
-  
+
   const options = optionsWrapper.querySelectorAll(".option-container");
   const currentOption = options[currentIndex];
 
   if (!currentOption) return;
-  
+
   // Verify it's still the same option
   if (currentOption === option) {
     fetchNui("select", [option.targetType, option.targetId]);
   }
-  resetHold();
 }
 
 export function resetHold() {
+  if (!isHolding) return;
+
   isHolding = false;
   holdStartTime = null;
   clearTimeout(holdTimeout);
   progressElement.style.transition = "none";
   progressElement.style.height = "0";
+
+  fetchNui("endHoldAnim");
 }
 
 function startHold(option) {
@@ -70,22 +83,22 @@ function startHold(option) {
 export function updateHighlight() {
   const options = optionsWrapper.querySelectorAll(".option-container");
   if (options.length > 0) {
-    options.forEach(option => option.classList.remove("highlighted"));
+    options.forEach((option) => option.classList.remove("highlighted"));
     options[currentIndex].classList.add("highlighted");
 
     if (options[currentIndex].color) {
-      const c = options[currentIndex].color
-      const color = `rgb(${c[0]}, ${c[1]}, ${c[2]}, ${c[3] / 255})`
-      document.body.style.setProperty('--theme-color', color)
-    }else{
-      document.body.style.setProperty('--theme-color', defaultColor)
+      const c = options[currentIndex].color;
+      const color = `rgb(${c[0]}, ${c[1]}, ${c[2]}, ${c[3] / 255})`;
+      document.body.style.setProperty("--theme-color", color);
+    } else {
+      document.body.style.setProperty("--theme-color", defaultColor);
     }
   }
 }
 
 window.addEventListener("wheel", (event) => {
   if (isHolding) return;
-  
+
   const options = optionsWrapper.querySelectorAll(".option-container");
   if (options.length === 0) return;
 
@@ -101,5 +114,3 @@ window.addEventListener("wheel", (event) => {
 });
 
 updateHighlight();
-
-
