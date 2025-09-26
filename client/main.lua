@@ -2,6 +2,7 @@ local dui = require 'client.modules.dui'
 local store = require 'client.modules.store'
 local config = require 'client.modules.config'
 local utils = require 'client.modules.utils'
+local animation = require 'client.modules.animation'
 
 ---@type boolean
 local drawLoopRunning = false
@@ -22,6 +23,24 @@ local NetworkGetNetworkIdFromEntity = NetworkGetNetworkIdFromEntity
 local GetEntityModel = GetEntityModel
 
 local r, g, b, a = table.unpack(config.themeColor)
+
+
+RegisterNUICallback('startHoldAnim', function(data, cb)
+    local option = store.current.options?[data[1]]?[data[2]]
+
+    cb('ok')
+
+    if not option or not option.anim then
+        return
+    end
+
+    animation.playAnim(option.anim, option.prop)
+end)
+
+RegisterNUICallback('endHoldAnim', function(data, cb)
+    animation.stopAnim()
+    cb('ok')
+end)
 
 local pressed = false
 lib.addKeybind({
@@ -119,6 +138,7 @@ local function filterValidOptions(options, entity, distance, coords)
                 hide = true
             end
 
+
             if not hide then hide = distance > (option.distance or 2.0) end
 
             if not hide and option.groups then hide = not utils.hasPlayerGotGroup(option.groups) end
@@ -134,6 +154,8 @@ local function filterValidOptions(options, entity, distance, coords)
                 validCategoryOptions[#validCategoryOptions + 1] = option
                 totalValid = totalValid + 1
             end
+
+            option.hideButton = not option.onSelect and not option.event and not option.export and not option.serverEvent and not option.command
         end
 
         if #validCategoryOptions > 0 then
@@ -350,10 +372,10 @@ local function checkNearbyEntities(coords)
         end
     end
 
-    processEntities(getNearbyObjects(coords, 4.0), 'objects')
-    processEntities(getNearbyVehicles(coords, 4.0), 'vehicles')
-    processEntities(getNearbyPlayers(coords, 4.0, false), 'players')
-    processEntities(getNearbyPeds(coords, 4.0), 'peds')
+    processEntities(getNearbyObjects(coords, 10.0), 'objects')
+    processEntities(getNearbyVehicles(coords, 10.0, true), 'vehicles')
+    processEntities(getNearbyPlayers(coords, 10.0, false), 'players')
+    processEntities(getNearbyPeds(coords, 10.0), 'peds')
 
     return valid
 end
@@ -392,7 +414,8 @@ local function drawLoop()
     if drawLoopRunning then return end
     drawLoopRunning = true
 
-    lib.requestStreamedTextureDict('shared')
+    lib.requestStreamedTextureDict(config.IndicatorSprite.dict)
+
     local lastClosestItem, lastValidCount, lastValidOptions = nil, 0, nil
     local nearbyData = {}
     local playerCoords
@@ -528,9 +551,9 @@ local function drawLoop()
                 else
                     local distance = #(playerCoords - coords)
                     if distance < config.maxInteractDistance and item.currentScreenDistance < math.huge then
-                        local distanceRatio = math.min(0.5 + (0.25 * (distance / 10.0)), 1.0)
+                        local distanceRatio = math.max(1.0 - (distance / 10.0), 0.0)
                         local scale = 0.025 * distanceRatio
-                        DrawSprite(config.IndicatorSprite.dict, config.IndicatorSprite.txt, 0.0, 0.0, scale, scale * aspectRatio, 0.0, r, g, b, a)
+                        DrawSprite(config.IndicatorSprite.dict, config.IndicatorSprite.txt, 0.0, 0.0, scale, scale * aspectRatio, 45.0, r, g, b, 255)
                     end
                 end
 
@@ -553,6 +576,8 @@ local function drawLoop()
             lastClosestItem = nil
         end
     end
+
+    SetStreamedTextureDictAsNoLongerNeeded(config.IndicatorSprite.dict)
 
     drawLoopRunning = false
 end

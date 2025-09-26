@@ -109,7 +109,7 @@ local function addOptions(target, options, resource, bonesTarget, offsetsTarget)
                 if option.name then
                     removeOptions(offsetsTarget[offsetStr], { option.name }, resource)
                 end
-                table.insert(offsetsTarget[offsetStr], table.remove(options, i))
+                table.insert(offsetsTarget[offsetStr], 1, table.remove(options, i))
             end
         elseif option.bones and bonesTarget then
             if type(option.bones) ~= "table" then
@@ -124,7 +124,7 @@ local function addOptions(target, options, resource, bonesTarget, offsetsTarget)
                 if option.name then
                     removeOptions(bonesTarget[boneId], { option.name }, resource)
                 end
-                table.insert(bonesTarget[boneId], boneOptions)
+                table.insert(bonesTarget[boneId], 1, boneOptions)
             end
         elseif option.name then
             checkNames[#checkNames + 1] = option.name
@@ -256,9 +256,6 @@ function interact.removeGlobalPed(remove)
                 store.bones.peds[boneId] = nil
             end
         end
-        if not next(store.bones.peds) then
-            store.bones.peds = nil
-        end
     end
 
     if store.offsets.peds then
@@ -266,9 +263,6 @@ function interact.removeGlobalPed(remove)
             if #offsetOptions == 0 then
                 store.offsets.peds[offsetStr] = nil
             end
-        end
-        if not next(store.offsets.peds) then
-            store.offsets.peds = nil
         end
     end
 end
@@ -283,7 +277,7 @@ end
 ---@param remove? string | string[] A single option name or array of names to remove, or nil to remove all for the resource.
 function interact.removeGlobalVehicle(remove)
     if not remove then return end
-    
+
     removeTarget(store.vehicles, remove, GetInvokingResource(), store.bones.vehicles, store.offsets.vehicles)
 
     if store.bones.vehicles then
@@ -292,9 +286,6 @@ function interact.removeGlobalVehicle(remove)
                 store.bones.vehicles[boneId] = nil
             end
         end
-        if not next(store.bones.vehicles) then
-            store.bones.vehicles = nil
-        end
     end
 
     if store.offsets.vehicles then
@@ -302,9 +293,6 @@ function interact.removeGlobalVehicle(remove)
             if #offsetOptions == 0 then
                 store.offsets.vehicles[offsetStr] = nil
             end
-        end
-        if not next(store.offsets.vehicles) then
-            store.offsets.vehicles = nil
         end
     end
 end
@@ -328,9 +316,6 @@ function interact.removeGlobalObject(remove)
                 store.bones.objects[boneId] = nil
             end
         end
-        if not next(store.bones.objects) then
-            store.bones.objects = nil
-        end
     end
 
     if store.offsets.objects then
@@ -338,9 +323,6 @@ function interact.removeGlobalObject(remove)
             if #offsetOptions == 0 then
                 store.offsets.objects[offsetStr] = nil
             end
-        end
-        if not next(store.offsets.objects) then
-            store.offsets.objects = nil
         end
     end
 end
@@ -364,9 +346,6 @@ function interact.removeGlobalPlayer(remove)
                 store.bones.players[boneId] = nil
             end
         end
-        if not next(store.bones.players) then
-            store.bones.players = nil
-        end
     end
 
     if store.offsets.players then
@@ -374,9 +353,6 @@ function interact.removeGlobalPlayer(remove)
             if #offsetOptions == 0 then
                 store.offsets.players[offsetStr] = nil
             end
-        end
-        if not next(store.offsets.players) then
-            store.offsets.players = nil
         end
     end
 end
@@ -639,10 +615,7 @@ AddEventHandler('onClientResourceStop', function(resource)
     end
 
     for model, options in pairs(store.models) do
-        removeResourceOptions(options, resource)
-        if #options == 0 then
-            store.models[model] = nil
-        end
+        local stillHasOptions = false
 
         if store.bones.models[model] then
             for boneId, boneOptions in pairs(store.bones.models[model]) do
@@ -653,6 +626,8 @@ AddEventHandler('onClientResourceStop', function(resource)
             end
             if not next(store.bones.models[model]) then
                 store.bones.models[model] = nil
+            else
+                stillHasOptions = true
             end
         end
 
@@ -665,15 +640,19 @@ AddEventHandler('onClientResourceStop', function(resource)
             end
             if not next(store.offsets.models[model]) then
                 store.offsets.models[model] = nil
+            else
+                stillHasOptions = true
             end
+        end
+
+        removeResourceOptions(options, resource)
+        if #options == 0 and not stillHasOptions then
+            store.models[model] = nil
         end
     end
 
     for netId, options in pairs(store.entities) do
-        removeResourceOptions(options, resource)
-        if #options == 0 then
-            store.entities[netId] = nil
-        end
+        local stillHasOptions = false
 
         if store.bones.entities[netId] then
             for boneId, boneOptions in pairs(store.bones.entities[netId]) do
@@ -684,6 +663,8 @@ AddEventHandler('onClientResourceStop', function(resource)
             end
             if not next(store.bones.entities[netId]) then
                 store.bones.entities[netId] = nil
+            else
+                stillHasOptions = true
             end
         end
 
@@ -696,15 +677,19 @@ AddEventHandler('onClientResourceStop', function(resource)
             end
             if not next(store.offsets.entities[netId]) then
                 store.offsets.entities[netId] = nil
+            else
+                stillHasOptions = true
             end
+        end
+
+        removeResourceOptions(options, resource)
+        if #options == 0 and not stillHasOptions then
+            store.entities[netId] = nil
         end
     end
 
     for entityId, options in pairs(store.localEntities) do
-        removeResourceOptions(options, resource)
-        if #options == 0 then
-            store.localEntities[entityId] = nil
-        end
+        local stillHasOptions = false
 
         if store.bones.localEntities[entityId] then
             for boneId, boneOptions in pairs(store.bones.localEntities[entityId]) do
@@ -715,6 +700,8 @@ AddEventHandler('onClientResourceStop', function(resource)
             end
             if not next(store.bones.localEntities[entityId]) then
                 store.bones.localEntities[entityId] = nil
+            else
+                stillHasOptions = true
             end
         end
 
@@ -727,7 +714,14 @@ AddEventHandler('onClientResourceStop', function(resource)
             end
             if not next(store.offsets.localEntities[entityId]) then
                 store.offsets.localEntities[entityId] = nil
+            else
+                stillHasOptions = true
             end
+        end
+
+        removeResourceOptions(options, resource)
+        if #options == 0 and not stillHasOptions then
+            store.localEntities[entityId] = nil
         end
     end
 
