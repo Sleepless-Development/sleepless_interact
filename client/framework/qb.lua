@@ -5,7 +5,7 @@ local success, result = pcall(function()
 end)
 
 local playerData = success and result or {}
-local utils = require 'client.utils'
+local utils = require 'client.modules.utils'
 local playerItems = utils.getItems()
 
 local function setPlayerItems()

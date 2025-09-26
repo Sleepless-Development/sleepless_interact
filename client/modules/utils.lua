@@ -173,6 +173,17 @@ function utils.getScreenDistanceSquared(coords)
     return dx * dx + dy * dy
 end
 
+---@param export string
+---@return boolean
+function utils.hasExport(export)
+    local resource, exportName = string.strsplit('.', export)
+
+    return pcall(function()
+        return exports[resource][exportName]
+    end)
+end
+
+
 SetTimeout(0, function()
     if GetResourceState('ox_inventory'):find('start') then
         setmetatable(playerItems, {
