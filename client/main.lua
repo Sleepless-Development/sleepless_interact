@@ -155,7 +155,8 @@ local function filterValidOptions(options, entity, distance, coords)
                 totalValid = totalValid + 1
             end
 
-            option.hideButton = not option.onSelect and not option.event and not option.export and not option.serverEvent and not option.command
+            option.hideButton = not option.onSelect and not option.event and not option.export and not option
+                .serverEvent and not option.command
         end
 
         if #validCategoryOptions > 0 then
@@ -190,7 +191,8 @@ local function getOptionsForEntity(entity, globalType)
         global = (store[globalType] ~= nil and #store[globalType] > 0 and store[globalType]) or nil,
         model = (store.models[model] ~= nil and #store.models[model] > 0 and store.models[model]) or nil,
         entity = (netId and store.entities[netId] ~= nil and #store.entities[netId] > 0 and store.entities[netId]) or nil,
-        localEntity = (store.localEntities[entity] ~= nil and #store.localEntities[entity] > 0 and store.localEntities[entity]) or nil,
+        localEntity = (store.localEntities[entity] ~= nil and #store.localEntities[entity] > 0 and store.localEntities[entity]) or
+            nil,
     }
 
     return next(options) and options or nil
@@ -449,7 +451,8 @@ local function drawLoop()
                     end
 
                     local distance = #(playerCoords - coords)
-                    local validOpts, validCount, hideCompletely = filterValidOptions(item.options, item.entity, distance, coords)
+                    local validOpts, validCount, hideCompletely = filterValidOptions(item.options, item.entity, distance,
+                        coords)
                     local id = item.bone or item.offset or item.entity or item.coordId
                     local shouldUpdate = false
 
@@ -483,39 +486,53 @@ local function drawLoop()
 
             if data and data.coords and not data.hideCompletely then
                 local item = data.item
-                local coords = (item.entity and not movingEntity[item.entity] and data.coords) or utils.getDrawCoordsForInteract(item)
+                local coords = (item.entity and not movingEntity[item.entity] and data.coords) or
+                    utils.getDrawCoordsForInteract(item)
 
                 SetDrawOrigin(coords.x, coords.y, coords.z)
 
                 if not foundValid and data.validOpts and data.validCount > 0 then
                     foundValid = true
+                    local newClosestId = item.bone or item.offset or item.entity or item.coordId
+
+                    local resetIndex = lastClosestItem ~= newClosestId
+                    lastClosestItem = newClosestId
+                    lastValidCount = data.validCount
+                    lastValidOptions = data.validOpts
+
+                    store.current = {
+                        options = data.validOpts,
+                        entity = item.entity,
+                        distance = data.distance,
+                        coords = coords,
+                        index = 1,
+                    }
+                    dui.sendMessage('setOptions', { options = data.validOpts, resetIndex = resetIndex })
 
                     DrawSprite(dui.instance.dictName, dui.instance.txtName, 0.0, 0.0, 1.0, 1.0, 0.0, 255, 255, 255, 255)
-                    local newClosestId = item.bone or item.offset or item.entity or item.coordId
+
                     if data.shouldUpdate or lastClosestItem ~= newClosestId or lastValidCount ~= data.validCount then
                         local newOptions = {}
 
-                        if data.validOpts then
-                            for _, opts in pairs(data.validOpts) do
-                                for j = 1, #opts do
-                                    local opt = opts[j]
-                                    newOptions[opt] = true
-                                    if not activeOptions[opt] then
-                                        activeOptions[opt] = true
-                                        local resp = (opt.onActive or opt.whileActive) and utils.getResponse(opt)
+                        for _, opts in pairs(data.validOpts) do
+                            for j = 1, #opts do
+                                local opt = opts[j]
+                                newOptions[opt] = true
+                                if not activeOptions[opt] then
+                                    activeOptions[opt] = true
+                                    local resp = (opt.onActive or opt.whileActive) and utils.getResponse(opt)
 
-                                        if opt.onActive then
-                                            pcall(opt.onActive, resp)
-                                        end
+                                    if opt.onActive then
+                                        pcall(opt.onActive, resp)
+                                    end
 
-                                        if opt.whileActive then
-                                            CreateThread(function()
-                                                while activeOptions[opt] do
-                                                    pcall(opt.whileActive, resp)
-                                                    Wait(0)
-                                                end
-                                            end)
-                                        end
+                                    if opt.whileActive then
+                                        CreateThread(function()
+                                            while activeOptions[opt] do
+                                                pcall(opt.whileActive, resp)
+                                                Wait(0)
+                                            end
+                                        end)
                                     end
                                 end
                             end
@@ -533,27 +550,17 @@ local function drawLoop()
                                 end
                             end
                         end
+                        
 
-                        local resetIndex = lastClosestItem ~= newClosestId
-                        lastClosestItem = newClosestId
-                        lastValidCount = data.validCount
-                        lastValidOptions = data.validOpts
-
-                        store.current = {
-                            options = data.validOpts,
-                            entity = item.entity,
-                            distance = data.distance,
-                            coords = coords,
-                            index = 1,
-                        }
-                        dui.sendMessage('setOptions', { options = data.validOpts, resetIndex = resetIndex })
+                        
                     end
                 else
                     local distance = #(playerCoords - coords)
                     if distance < config.maxInteractDistance and item.currentScreenDistance < math.huge then
                         local distanceRatio = math.max(1.0 - (distance / 10.0), 0.0)
                         local scale = 0.025 * distanceRatio
-                        DrawSprite(config.IndicatorSprite.dict, config.IndicatorSprite.txt, 0.0, 0.0, scale, scale * aspectRatio, 45.0, r, g, b, 255)
+                        DrawSprite(config.IndicatorSprite.dict, config.IndicatorSprite.txt, 0.0, 0.0, scale,
+                            scale * aspectRatio, 45.0, r, g, b, 255)
                     end
                 end
 
