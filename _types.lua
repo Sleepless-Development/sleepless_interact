@@ -1,3 +1,5 @@
+---@meta
+
 --- Represents an interaction option with various properties.
 ---@class InteractOption
 ---@field label string The display label for the option.

@@ -490,10 +490,23 @@ local function drawLoop()
                 if not foundValid and data.validOpts and data.validCount > 0 then
                     foundValid = true
 
-                    DrawSprite(dui.instance.dictName, dui.instance.txtName, 0.0, 0.0, 1.0, 1.0, 0.0, 255, 255, 255, 255)
                     local newClosestId = item.bone or item.offset or item.entity or item.coordId
                     if data.shouldUpdate or lastClosestItem ~= newClosestId or lastValidCount ~= data.validCount then
                         local newOptions = {}
+
+                        local resetIndex = lastClosestItem ~= newClosestId
+                        lastClosestItem = newClosestId
+                        lastValidCount = data.validCount
+                        lastValidOptions = data.validOpts
+
+                        store.current = {
+                            options = data.validOpts,
+                            entity = item.entity,
+                            distance = data.distance,
+                            coords = coords,
+                            index = 1,
+                        }
+                        dui.sendMessage('setOptions', { options = data.validOpts, resetIndex = resetIndex })
 
                         if data.validOpts then
                             for _, opts in pairs(data.validOpts) do
@@ -533,21 +546,8 @@ local function drawLoop()
                                 end
                             end
                         end
-
-                        local resetIndex = lastClosestItem ~= newClosestId
-                        lastClosestItem = newClosestId
-                        lastValidCount = data.validCount
-                        lastValidOptions = data.validOpts
-
-                        store.current = {
-                            options = data.validOpts,
-                            entity = item.entity,
-                            distance = data.distance,
-                            coords = coords,
-                            index = 1,
-                        }
-                        dui.sendMessage('setOptions', { options = data.validOpts, resetIndex = resetIndex })
                     end
+                    DrawSprite(dui.instance.dictName, dui.instance.txtName, 0.0, 0.0, 1.0, 1.0, 0.0, 255, 255, 255, 255)
                 else
                     local distance = #(playerCoords - coords)
                     if distance < config.maxInteractDistance and item.currentScreenDistance < math.huge then
