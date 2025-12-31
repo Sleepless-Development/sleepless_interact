@@ -4,6 +4,8 @@ local config = require 'client.modules.config'
 local utils = require 'client.modules.utils'
 local animation = require 'client.modules.animation'
 
+config.maxInteractDistanceSq = config.maxInteractDistance * config.maxInteractDistance
+
 ---@type boolean
 local drawLoopRunning = false
 
@@ -139,7 +141,7 @@ local function filterValidOptions(options, entity, distance, coords)
             end
 
 
-            if not hide then hide = distance > (option.distance or 2.0) end
+            if not hide then hide = distance > (option.distanceSq or 4.0) end
 
             if not hide and option.groups then hide = not utils.hasPlayerGotGroup(option.groups) end
 
@@ -324,7 +326,7 @@ local function checkNearbyEntities(coords)
                 valid[num] = {
                     entity = entity,
                     coords = entCoords,
-                    currentDistance = #(coords - entCoords),
+                    currentDistance = utils.getDistanceSquared(coords, entCoords),
                     currentScreenDistance = utils.getScreenDistanceSquared(entCoords),
                     options = options
                 }
@@ -340,7 +342,7 @@ local function checkNearbyEntities(coords)
                             entity = entity,
                             bone = boneId,
                             coords = boneCoords,
-                            currentDistance = #(coords - boneCoords),
+                            currentDistance = utils.getDistanceSquared(coords, boneCoords),
                             currentScreenDistance = utils.getScreenDistanceSquared(boneCoords),
                             options = _options
                         }
@@ -364,7 +366,7 @@ local function checkNearbyEntities(coords)
                             entity = entity,
                             offset = offsetStr,
                             coords = worldPos,
-                            currentDistance = #(coords - worldPos),
+                            currentDistance = utils.getDistanceSquared(coords, worldPos),
                             currentScreenDistance = utils.getScreenDistanceSquared(worldPos),
                             options = _options
                         }
@@ -387,11 +389,11 @@ end
 ---@return NearbyItem[]
 local function checkNearbyCoords(coords, update)
     for id, _coords in pairs(store.coordIds) do
-        local dist = #(coords - _coords)
-        if dist < config.maxInteractDistance then
+        local distSq = utils.getDistanceSquared(coords, _coords)
+        if distSq < config.maxInteractDistanceSq then
             update[#update + 1] = {
                 coords = _coords,
-                currentDistance = dist,
+                currentDistance = distSq,
                 currentScreenDistance = utils.getScreenDistanceSquared(_coords),
                 coordId = id,
                 options = { coords = store.coords[id] }
@@ -450,9 +452,8 @@ local function drawLoop()
                         end
                     end
 
-                    local distance = #(playerCoords - coords)
-                    local validOpts, validCount, hideCompletely = filterValidOptions(item.options, item.entity, distance,
-                        coords)
+                    local distanceSq = utils.getDistanceSquared(playerCoords, coords)
+                    local validOpts, validCount, hideCompletely = filterValidOptions(item.options, item.entity, distanceSq, coords)
                     local id = item.bone or item.offset or item.entity or item.coordId
                     local shouldUpdate = false
 
@@ -467,7 +468,7 @@ local function drawLoop()
                         coords = coords,
                         shouldUpdate = shouldUpdate,
                         hideCompletely = hideCompletely,
-                        distance = distance,
+                        distance = distanceSq,
                         validOpts = validOpts,
                         validCount = validCount
                     }
@@ -560,8 +561,7 @@ local function drawLoop()
                     if distance < config.maxInteractDistance and item.currentScreenDistance < math.huge then
                         local distanceRatio = math.max(1.0 - (distance / 10.0), 0.0)
                         local scale = 0.025 * distanceRatio
-                        DrawSprite(config.IndicatorSprite.dict, config.IndicatorSprite.txt, 0.0, 0.0, scale,
-                            scale * aspectRatio, 45.0, r, g, b, 255)
+                        DrawSprite(config.IndicatorSprite.dict, config.IndicatorSprite.txt, 0.0, 0.0, scale, scale * aspectRatio, 45.0, r, g, b, 255)
                     end
                 end
 

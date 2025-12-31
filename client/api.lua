@@ -70,6 +70,7 @@ local function addOptions(target, options, resource, bonesTarget, offsetsTarget)
     for i = #options, 1, -1 do
         local option = options[i]
         option.resource = option.resource or resource
+        option.distanceSq = option.distance and option.distance * option.distance or 4.0
 
         if resource == 'sleepless_interact' then
             if option.canInteract then

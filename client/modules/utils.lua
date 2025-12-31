@@ -162,6 +162,14 @@ function utils.hasPlayerGotItems(filter, hasAny)
     return not hasAny
 end
 
+---@param a vector3
+---@param b vector3
+---@return number
+function utils.getDistanceSquared(a, b)
+    local dx, dy, dz = a.x - b.x, a.y - b.y, a.z - b.z
+    return dx * dx + dy * dy + dz * dz
+end
+
 ---@param coords vector3
 ---@return number
 function utils.getScreenDistanceSquared(coords)
