@@ -101,6 +101,40 @@ end
 
 local modelCache, netIdCache = {}, {}
 
+-- Async canInteract caching system
+local canInteractCache = {}
+local canInteractPending = {}
+
+---@param option InteractOption
+---@param entity number
+---@param distance number
+---@param coords vector3
+---@return boolean|nil -- nil means pending/unknown, use cached or default
+local function getCanInteractCached(option, entity, distance, coords)
+    local cacheKey = tostring(option)
+    local cached = canInteractCache[cacheKey]
+
+    if cached and (GetGameTimer() - cached.time) < 250 then
+        return cached.result
+    end
+
+    if canInteractPending[cacheKey] then
+        return cached and cached.result or false
+    end
+
+    canInteractPending[cacheKey] = true
+    CreateThread(function()
+        local success, resp = pcall(option.canInteract, entity, distance, coords, option.name)
+        canInteractCache[cacheKey] = {
+            result = success and resp or false,
+            time = GetGameTimer()
+        }
+        canInteractPending[cacheKey] = nil
+    end)
+
+    return cached and cached.result or false
+end
+
 local function cachedEntityInfo(entity)
     if modelCache[entity] then
         return modelCache[entity], netIdCache[entity]
@@ -148,8 +182,8 @@ local function filterValidOptions(options, entity, distance, coords)
             if not hide and option.items then hide = not utils.hasPlayerGotItems(option.items, option.anyItem) end
 
             if not hide and option.canInteract then
-                local success, resp = pcall(option.canInteract, entity, distance, coords, option.name)
-                hide = not success or not resp
+                local result = getCanInteractCached(option, entity, distance, coords)
+                hide = not result
             end
 
             if not hide then
