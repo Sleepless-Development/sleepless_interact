@@ -653,7 +653,14 @@ RegisterNUICallback('select', function(data, cb)
         local option = store.current.options?[data[1]]?[data[2]]
         if option then
             if option.onSelect then
-                option.onSelect(option.qtarget and store.current.entity or utils.getResponse(option))
+                if option.canInteract then
+                    local success, resp = pcall(option.canInteract, store.current.entity, store.current.distance, store.current.coords, option.name)
+                    if success and resp then
+                        option.onSelect(option.qtarget and store.current.entity or utils.getResponse(option))
+                    end
+                else
+                    option.onSelect(option.qtarget and store.current.entity or utils.getResponse(option))
+                end
             elseif option.export then
                 exports[option.resource][option.export](nil, utils.getResponse(option))
             elseif option.event then
