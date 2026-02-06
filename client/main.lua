@@ -114,23 +114,16 @@ local function getCanInteractCached(option, entity, distance, coords)
     local cacheKey = tostring(option)
     local cached = canInteractCache[cacheKey]
 
-    if cached and (GetGameTimer() - cached.time) < 250 then
-        return cached.result
+    if not canInteractPending[cacheKey] then
+        canInteractPending[cacheKey] = true
+        CreateThread(function()
+            local success, resp = pcall(option.canInteract, entity, distance, coords, option.name)
+            canInteractCache[cacheKey] = {
+                result = success and resp or false
+            }
+            canInteractPending[cacheKey] = nil
+        end)
     end
-
-    if canInteractPending[cacheKey] then
-        return cached and cached.result or false
-    end
-
-    canInteractPending[cacheKey] = true
-    CreateThread(function()
-        local success, resp = pcall(option.canInteract, entity, distance, coords, option.name)
-        canInteractCache[cacheKey] = {
-            result = success and resp or false,
-            time = GetGameTimer()
-        }
-        canInteractPending[cacheKey] = nil
-    end)
 
     return cached and cached.result or false
 end
