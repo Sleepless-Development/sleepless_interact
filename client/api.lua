@@ -95,8 +95,12 @@ local function addOptions(target, options, resource, bonesTarget, offsetsTarget)
             local offset = option[offsetKey]
             local offsetType = type(offset)
 
-            if offsetType == 'table' and offset.x and offset.y and offset.z then
-                offset = vec3(offset.x, offset.y, offset.z)
+            if offsetType == 'table' then
+                if table.type(offset) == 'array' and #offset == 3 then
+                    offset = vec3(offset[1], offset[2], offset[3])
+                elseif offset.x and offset.y and offset.z then
+                    offset = vec3(offset.x, offset.y, offset.z)
+                end
             end
 
             if offsetType ~= 'table' and offsetType ~= 'vector3' then
@@ -185,8 +189,12 @@ function interact.addCoords(coords, options)
         typeError('coords', 'vector3 or vector3[]', coordsType)
     end
 
-    if coordsType == "table" and coords.x and coords.y and coords.z then
-        coords = { vector3(coords.x, coords.y, coords.z) }
+    if coordsType == "table" then
+        if table.type(coords) == 'array' and type(coords[1]) ~= 'vector3' and #coords == 3 then
+            coords = { vector3(coords[1], coords[2], coords[3]) }
+        elseif coords.x and coords.y and coords.z then
+            coords = { vector3(coords.x, coords.y, coords.z) }
+        end
     end
 
     if coordsType ~= "table" then
