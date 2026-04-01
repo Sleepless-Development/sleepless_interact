@@ -13,8 +13,7 @@ v2 uses a lot of code from ox_target to help ensure feature parity. so a big tha
 
 ## 📃 Documentation
 
-- [V1](https://sleeplessdevelopment.dev/interactv1)
-- [V2](https://sleeplessdevelopment.dev/interactv2)
+- [docs](https://sleeplessdevelopment.dev/interact)
 
 ## 💾 Download
 
