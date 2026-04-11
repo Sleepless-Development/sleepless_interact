@@ -4,6 +4,14 @@ local config = {}
 -- recommend keeping this pretty low for optimization
 config.maxInteractDistance = 5.0
 
+-- Maximum distance used when scanning for nearby entities of each pool.
+-- Defaults to config.maxInteractDistance when left nil. Set a number to override
+-- the scan radius per pool independently of the render distance.
+config.nearbyObjectsDistance = nil
+config.nearbyVehiclesDistance = nil
+config.nearbyPlayersDistance = nil
+config.nearbyPedsDistance = nil
+
 -- {0-255, 0-255, 0-255, 0-255}
 config.themeColor = { 28, 100, 184, 200 } --- r, g, b, a
 

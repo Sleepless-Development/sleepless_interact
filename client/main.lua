@@ -403,10 +403,10 @@ local function checkNearbyEntities(coords)
         end
     end
 
-    processEntities(getNearbyObjects(coords, 10.0), 'objects')
-    processEntities(getNearbyVehicles(coords, 10.0, true), 'vehicles')
-    processEntities(getNearbyPlayers(coords, 10.0, false), 'players')
-    processEntities(getNearbyPeds(coords, 10.0), 'peds')
+    processEntities(getNearbyObjects(coords, config.nearbyObjectsDistance or config.maxInteractDistance), 'objects')
+    processEntities(getNearbyVehicles(coords, config.nearbyVehiclesDistance or config.maxInteractDistance, true), 'vehicles')
+    processEntities(getNearbyPlayers(coords, config.nearbyPlayersDistance or config.maxInteractDistance, false), 'players')
+    processEntities(getNearbyPeds(coords, config.nearbyPedsDistance or config.maxInteractDistance), 'peds')
 
     return valid
 end
