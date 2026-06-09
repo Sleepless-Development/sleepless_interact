@@ -5,7 +5,10 @@ A FiveM library for creating 3D DUI world interactions
 ![](https://img.shields.io/github/downloads/Sleepless-Development/sleepless_interact/total?logo=github)
 ![](https://img.shields.io/github/downloads/Sleepless-Development/sleepless_interact/latest/total?logo=github)
 ![](https://img.shields.io/github/contributors/Sleepless-Development/sleepless_interact?logo=github)
-![](https://img.shields.io/github/v/release/Sleepless-Development/sleepless_interact?logo=github)
+![](https://img.shields.io/github/v/release/Sleepless-Development/sleepless_interact?logo=github)\
+[![](https://badges.5metrics.dev/sleepless_interact/serverRank.svg?style=for-the-badge)](https://5metrics.dev/resource/sleepless_interact)
+[![](https://badges.5metrics.dev/sleepless_interact/servers.svg?style=for-the-badge)](https://5metrics.dev/resource/sleepless_interact)
+[![](https://badges.5metrics.dev/sleepless_interact/players.svg?style=for-the-badge)](https://5metrics.dev/resource/sleepless_interact)
 
 
 ## thanks
