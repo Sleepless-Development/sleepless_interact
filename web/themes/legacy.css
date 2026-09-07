@@ -1,0 +1,122 @@
+@import url("https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100..900;1,100..900&display=swap");
+
+[data-theme="legacy"] {
+  --bg-color: rgb(25, 25, 25, 0.85);
+  --theme-color: rgb(28, 100, 184, 0.8);
+  --primary: 28, 100, 184;
+  --on-accent: 236, 241, 247;
+  --text: 245, 245, 245;
+}
+
+[data-theme="legacy"] #options-wrapper {
+  --options-x: 20%;
+  translate: 20% -50%;
+}
+
+[data-theme="legacy"] body {
+  color: whitesmoke;
+  transition: opacity 200ms linear;
+}
+
+[data-theme="legacy"] body.is-cooldown {
+  opacity: 0.3;
+}
+
+[data-theme="legacy"] .option-container,
+[data-theme="legacy"] .interact-summary {
+  color: var(--color-default);
+  justify-content: flex-start;
+  font-family: "Roboto";
+  background: var(--bg-color);
+  font-size: 1rem;
+  vertical-align: middle;
+  margin: 0.2rem;
+  transition: 300ms;
+  transform-origin: left top;
+  scale: 1;
+  height: 2rem;
+  padding-right: 1rem;
+  top: 0;
+  min-width: 10rem;
+}
+
+[data-theme="legacy"] .interact-summary {
+  min-width: 0;
+  width: max-content;
+  padding-left: 0.7rem;
+  padding-right: 0.9rem;
+}
+
+[data-theme="legacy"] .animated-background {
+  height: 100%;
+  width: 1%;
+  background-color: var(--theme-color);
+  transition: width 250ms ease-in-out;
+}
+
+[data-theme="legacy"] .option-container.highlighted .animated-background {
+  width: 100%;
+}
+
+[data-theme="legacy"] .option-container.highlighted,
+[data-theme="legacy"] .option-container.highlighted .option-icon,
+[data-theme="legacy"] .option-container.highlighted .option-label,
+[data-theme="legacy"] .option-container.highlighted .option-hold {
+  color: rgb(var(--on-accent));
+}
+
+[data-theme="legacy"] .option-icon {
+  font-size: 1.2rem;
+  line-height: 0;
+  width: 1.3rem;
+  margin: 0.45rem;
+  color: var(--color-default);
+}
+
+[data-theme="legacy"] .option-label {
+  font-weight: 500;
+}
+
+[data-theme="legacy"] .option-hold {
+  margin-left: 0.25em;
+  font-weight: 500;
+  text-transform: lowercase;
+}
+
+[data-theme="legacy"] .option-hold::before {
+  content: "(";
+}
+
+[data-theme="legacy"] .option-hold::after {
+  content: ")";
+}
+
+[data-theme="legacy"] #interact-container {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 0.1rem;
+  background: var(--bg-color);
+}
+
+[data-theme="legacy"] #interact-progress {
+  width: 100%;
+  height: 0%;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: var(--theme-color);
+  transition: height 0ms;
+}
+
+[data-theme="legacy"] #interact-key {
+  font-size: 1.5rem;
+  position: absolute;
+  color: whitesmoke;
+  width: 100%;
+  height: 100%;
+  font-family: "Roboto";
+  border: 0.1rem solid whitesmoke;
+  aspect-ratio: 1;
+  border-radius: 0.2rem;
+  overflow: hidden;
+}

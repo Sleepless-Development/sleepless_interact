@@ -1,5 +1,6 @@
 local store = require 'client.modules.store'
 local config = require 'client.modules.config'
+local utils = require 'client.modules.utils'
 
 local dui = {}
 local screenW, screenH = GetActualScreenResolution()
@@ -21,8 +22,38 @@ function dui.register()
     while not dui.loaded do Wait(100) end
 
     dui.sendMessage('visible', true)
-    dui.sendMessage('setColor', config.themeColor)
+    dui.sendMessage('setTheme', config.theme or 'modern')
+    if config.themeColor then
+        dui.sendMessage('setColor', config.themeColor)
+    end
+    dui.sendMessage('setMenu', {
+        compact = config.compactOptions ~= false,
+        idleMs = config.compactIdleMs or 2500,
+    })
+    dui.syncLocales()
 end
+
+function dui.syncInteractKey()
+    if not dui.instance then return end
+
+    dui.instance:sendMessage({
+        action = 'setKey',
+        value = utils.toHumanKeybind('+interact_action'),
+    })
+end
+
+function dui.syncLocales()
+    if not dui.instance then return end
+
+    dui.instance:sendMessage({
+        action = 'setLabel',
+        value = locale('interact'),
+    })
+end
+
+AddEventHandler('ox_lib:setLocale', function()
+    dui.syncLocales()
+end)
 
 RegisterNuiCallback('load', function(_, cb)
     dui.loaded = true
@@ -40,6 +71,10 @@ function dui.sendMessage(action, value)
         action = action,
         value = value
     })
+
+    if action == 'setOptions' then
+        dui.syncInteractKey()
+    end
 
     if action == 'setOptions' and not controlsRunning then
         if controlsRunning then return end

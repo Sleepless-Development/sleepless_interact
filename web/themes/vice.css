@@ -1,0 +1,178 @@
+[data-theme="vice"] {
+  --ink: 12, 4, 18;
+  --surface: 22, 8, 28;
+  --surface-2: 36, 12, 44;
+  --text: 255, 236, 248;
+  --text-muted: 214, 150, 196;
+  --hairline: 255, 120, 190;
+  --hairline-a: 0.35;
+  --primary: 255, 64, 180;
+  --on-accent: 12, 4, 18;
+  --cyan: 64, 220, 255;
+  --r-md: 0.9rem;
+  --font: "DINPRO", "Segoe UI", sans-serif;
+  --panel-a: 0.92;
+  --fill: rgba(var(--surface), var(--panel-a));
+  --shadow: 0 0.8rem 2rem rgba(40, 0, 40, 0.45);
+}
+
+[data-theme="vice"] body {
+  font-family: var(--font);
+  color: rgb(var(--text));
+  font-synthesis: none;
+}
+
+[data-theme="vice"] #options-list {
+  gap: 0.4rem;
+}
+
+[data-theme="vice"] .animated-background {
+  display: none;
+}
+
+[data-theme="vice"] #interact-container,
+[data-theme="vice"] .option-container {
+  border: 0.14rem solid transparent;
+  background-color: transparent;
+  background-image:
+    linear-gradient(var(--fill), var(--fill)),
+    linear-gradient(90deg, rgb(var(--hairline)), rgb(var(--primary)) 48%, rgb(var(--cyan)));
+  background-origin: border-box;
+  background-clip: padding-box, border-box;
+}
+
+[data-theme="vice"] #interact-container {
+  width: 3.4rem;
+  height: 3.4rem;
+  overflow: hidden;
+  border-radius: var(--r-md);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 180, 220, 0.22),
+    -0.35rem 0 0.9rem rgba(var(--hairline), 0.28),
+    0.35rem 0 0.9rem rgba(var(--cyan), 0.22);
+}
+
+[data-theme="vice"] #interact-progress {
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: 0;
+  background: rgb(var(--primary));
+}
+
+[data-theme="vice"] #interact-key {
+  width: 100%;
+  height: 100%;
+  color: rgb(var(--text));
+  font-family: var(--font);
+  font-size: 1.4rem;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  line-height: 1;
+}
+
+[data-theme="vice"] #interact-container.is-holding {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 180, 220, 0.22),
+    -0.4rem 0 1.1rem rgba(var(--primary), 0.5),
+    0.4rem 0 1.1rem rgba(var(--cyan), 0.4);
+}
+
+[data-theme="vice"] body.is-cooldown #interact-container {
+  opacity: 0.5;
+  box-shadow: none;
+}
+
+[data-theme="vice"] .option-container,
+[data-theme="vice"] .interact-summary {
+  min-width: 17rem;
+  height: 2.8rem;
+  padding: 0 0.9rem 0 0.55rem;
+  gap: 0.55rem;
+  overflow: hidden;
+  border-radius: var(--r-md);
+  color: rgb(var(--text));
+  font-family: var(--font);
+}
+
+[data-theme="vice"] .option-container {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 180, 220, 0.16),
+    var(--shadow);
+}
+
+[data-theme="vice"] .interact-summary {
+  min-width: 0;
+  width: max-content;
+  padding-left: 0.95rem;
+  padding-right: 1.2rem;
+  border: 0.1rem solid rgba(var(--hairline), var(--hairline-a));
+  background: rgba(var(--surface), var(--panel-a));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 180, 220, 0.18),
+    var(--shadow);
+}
+
+[data-theme="vice"] .option-container.highlighted {
+  --fill: rgba(var(--primary), 0.22);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 180, 220, 0.2),
+    -0.3rem 0 0.8rem rgba(var(--primary), 0.35),
+    0.3rem 0 0.8rem rgba(var(--cyan), 0.28);
+}
+
+[data-theme="vice"] .option-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.6rem;
+  font-size: 1.2rem;
+  color: rgb(var(--text-muted));
+}
+
+[data-theme="vice"] .option-container.highlighted .option-icon {
+  color: rgb(var(--text));
+}
+
+[data-theme="vice"] .option-label {
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  line-height: 1;
+}
+
+[data-theme="vice"] .option-hold {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  height: 1.7rem;
+  padding: 0 0.55rem;
+  border: 0.1rem solid transparent;
+  border-radius: 0.35rem;
+  background-image:
+    linear-gradient(rgba(var(--ink), 0.55), rgba(var(--ink), 0.55)),
+    linear-gradient(90deg, rgb(var(--hairline)), rgb(var(--cyan)));
+  background-origin: border-box;
+  background-clip: padding-box, border-box;
+  color: rgb(var(--text));
+  font-size: 1.05rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+[data-theme="vice"] .option-container.highlighted .option-hold {
+  background-image: none;
+  background-color: rgb(var(--primary));
+  border-color: rgb(var(--primary));
+  color: rgb(var(--on-accent));
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  [data-theme="vice"] {
+    --panel-a: 1;
+    --fill: rgba(var(--surface), 1);
+  }
+}

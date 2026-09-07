@@ -1,9 +1,30 @@
-<html>
+<!DOCTYPE html>
+<html lang="en" data-theme="modern">
   <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>sleepless_interact</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free/css/all.min.css" />
     <link href="style.css" rel="stylesheet" type="text/css" />
+    <link href="themes/legacy.css" rel="stylesheet" type="text/css" />
+    <link href="themes/modern.css" rel="stylesheet" type="text/css" />
+    <link href="themes/minimal.css" rel="stylesheet" type="text/css" />
+    <link href="themes/light.css" rel="stylesheet" type="text/css" />
+    <link href="themes/retro.css" rel="stylesheet" type="text/css" />
+    <link href="themes/cyber.css" rel="stylesheet" type="text/css" />
+    <link href="themes/vice.css" rel="stylesheet" type="text/css" />
+    <link href="themes/noir.css" rel="stylesheet" type="text/css" />
+    <link href="themes/industrial.css" rel="stylesheet" type="text/css" />
+    <link href="themes/fantasy.css" rel="stylesheet" type="text/css" />
   </head>
   <body>
+    <div class="browser-dock" id="browser-dock" hidden>
+      <span class="browser-dock-label">Theme</span>
+      <div class="browser-themes" id="browser-themes"></div>
+      <button type="button" id="browser-compact">Compact</button>
+      <button type="button" id="browser-cooldown">Cooldown</button>
+    </div>
+
     <div id="container">
       <div id="interact-container">
         <div id="interact-progress"></div>
@@ -11,72 +32,14 @@
       </div>
 
       <div id="options-wrapper">
-        <div class="option-container">
+        <div id="interact-summary" class="interact-summary">
           <div class="animated-background"></div>
-          <i class="fas fa-hand-paper fa-fw option-icon"></i>
-          <p class="option-label">Option 1</p>
+          <p class="option-label">Interact</p>
         </div>
-
-        <div class="option-container">
-          <div class="animated-background"></div>
-          <i class="fas fa-hand-paper fa-fw option-icon"></i>
-          <p class="option-label">Option 2</p>
-        </div>
-
-        <div class="option-container">
-          <div class="animated-background"></div>
-          <i class="fas fa-hand-paper fa-fw option-icon"></i>
-          <p class="option-label">Option 3 (hold)</p>
-        </div>
-
-        <div class="option-container">
-          <div class="animated-background"></div>
-          <i class="fas fa-hand-paper fa-fw option-icon"></i>
-          <p class="option-label">Option 4</p>
-        </div>
-
-        <div class="option-container">
-          <div class="animated-background"></div>
-          <i class="fas fa-hand-paper fa-fw option-icon"></i>
-          <p class="option-label">Option 5</p>
-        </div>
+        <div id="options-list"></div>
       </div>
     </div>
 
-    <!-- <script>
-      let currentIndex = 0;
-      const optionsWrapper = document.getElementById("options-wrapper");
-      const options = optionsWrapper.querySelectorAll(".option-container");
-
-      // Function to update the highlighted option
-      function updateHighlight() {
-        options.forEach(option => option.classList.remove("highlighted"));
-        options[currentIndex].classList.add("highlighted");
-      }
-
-      // Since setCurrentIndex isn’t defined, I’ll assume it’s meant to update currentIndex
-      function setCurrentIndex(newIndex) {
-        currentIndex = newIndex;
-        return currentIndex; // Return for assignment compatibility
-      }
-
-      // Wheel event listener
-      window.addEventListener("wheel", (event) => {
-        if (options.length === 0) return;
-
-        if (event.deltaY > 0) {
-          // Scroll down: increment index
-          currentIndex = setCurrentIndex((currentIndex + 1) % options.length);
-        } else {
-          // Scroll up: decrement index with wrap-around
-          currentIndex = setCurrentIndex((currentIndex - 1 + options.length) % options.length);
-        }
-        updateHighlight();
-      });
-
-      // Initialize with the first option highlighted
-      updateHighlight();
-    </script> -->
     <script defer type="module" src="js/main.js"></script>
   </body>
 </html>

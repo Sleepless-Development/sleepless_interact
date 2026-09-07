@@ -24,7 +24,7 @@ local NetworkGetEntityIsNetworked = NetworkGetEntityIsNetworked
 local NetworkGetNetworkIdFromEntity = NetworkGetNetworkIdFromEntity
 local GetEntityModel = GetEntityModel
 
-local r, g, b, a = table.unpack(config.themeColor)
+local r, g, b, a = table.unpack(config.getThemeColor())
 
 
 RegisterNUICallback('startHoldAnim', function(data, cb)
@@ -47,8 +47,8 @@ end)
 local pressed = false
 lib.addKeybind({
     name = 'interact_action',
-    description = 'Interact',
-    defaultKey = 'E',
+    description = locale('interact'),
+    defaultKey = config.defaultInteractKey or 'E',
     onPressed = function(self)
         if GetGameTimer() > store.cooldownEndTime then
             if not next(store.current) then return end
@@ -62,6 +62,22 @@ lib.addKeybind({
         dui.sendMessage("release")
     end,
 })
+
+dui.syncInteractKey()
+SetTimeout(500, dui.syncInteractKey)
+
+CreateThread(function()
+    local wasPaused = false
+
+    while true do
+        local paused = IsPauseMenuActive()
+        if wasPaused and not paused then
+            dui.syncInteractKey()
+        end
+        wasPaused = paused
+        Wait(400)
+    end
+end)
 
 
 local hidePerKeybind = config.showKeyBindBehavior == "hold"
@@ -77,14 +93,14 @@ if config.useShowKeyBind then
                 if hidePerKeybind then
                     table.wipe(store.nearby)
                     lib.notify({
-                        title = 'Interact',
-                        description = 'Disabled',
+                        title = locale('interact'),
+                        description = locale('interact_disabled'),
                         type = 'warning'
                     })
                 else
                     lib.notify({
-                        title = 'Interact',
-                        description = 'Enabled',
+                        title = locale('interact'),
+                        description = locale('interact_enabled'),
                         type = 'success'
                     })
                 end

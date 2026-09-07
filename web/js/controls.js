@@ -1,23 +1,73 @@
 import { fetchNui } from "./fetchNui.js";
+import { bumpIdle, closeMenu, isMenuOpen, tryOpenMenu } from "./menu.js";
+
+const optionsList = document.getElementById("options-list");
 const optionsWrapper = document.getElementById("options-wrapper");
 const progressElement = document.getElementById("interact-progress");
 const interactButton = document.getElementById("interact-container");
+const container = document.getElementById("container");
 
 let currentIndex = 0;
 let isHolding = false;
-let holdStartTime = null;
 let holdTimeout = null;
 let defaultColor = null;
 
-export function checkHideButton() {
-  const options = optionsWrapper.querySelectorAll(".option-container");
-  const option = options[currentIndex];
+function getOptions() {
+  return optionsList.querySelectorAll(".option-container");
+}
 
+function srgbToLin(channel) {
+  const c = channel / 255;
+  return c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+}
+
+function onAccentFor(r, g, b) {
+  const luminance =
+    0.2126 * srgbToLin(r) + 0.7152 * srgbToLin(g) + 0.0722 * srgbToLin(b);
+  return luminance > 0.28 ? "8, 11, 16" : "236, 241, 247";
+}
+
+function clearAccent() {
+  document.body.style.removeProperty("--theme-color");
+  document.body.style.removeProperty("--primary");
+  document.body.style.removeProperty("--on-accent");
+}
+
+function applyAccent(color) {
+  if (!color) {
+    clearAccent();
+    return;
+  }
+  document.body.style.setProperty("--theme-color", color);
+
+  const match = String(color).match(/(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/);
+  if (match) {
+    const r = Number(match[1]);
+    const g = Number(match[2]);
+    const b = Number(match[3]);
+    document.body.style.setProperty("--primary", `${r}, ${g}, ${b}`);
+    document.body.style.setProperty("--on-accent", onAccentFor(r, g, b));
+  }
+}
+
+export function restoreDefaultAccent() {
+  if (defaultColor) applyAccent(defaultColor);
+  else clearAccent();
+}
+
+export function checkHideButton() {
+  if (!isMenuOpen()) {
+    interactButton.style.visibility = "visible";
+    return;
+  }
+
+  const option = getOptions()[currentIndex];
   interactButton.style.visibility = option && option.hideButton ? "hidden" : "visible";
 }
 
 export function setDefaultColor(color) {
   defaultColor = color;
+  applyAccent(color);
   return defaultColor;
 }
 
@@ -27,42 +77,50 @@ export function setCurrentIndex(newIndex) {
   return currentIndex;
 }
 
-export function onSelect() {
-  const options = optionsWrapper.querySelectorAll(".option-container");
-  const option = options[currentIndex];
+function collapseAfterSelect() {
+  if (!closeMenu()) return;
+  setCurrentIndex(0);
+  updateHighlight();
+}
 
+export function onSelect() {
+  if (tryOpenMenu()) {
+    requestAnimationFrame(() => updateHighlight());
+    return;
+  }
+
+  const option = getOptions()[currentIndex];
   if (!option) return;
 
   if (option.holdTime) {
     startHold(option);
     fetchNui("startHoldAnim", [option.targetType, option.targetId]);
-  } else {
-    fetchNui("select", [option.targetType, option.targetId]);
+    return;
   }
+
+  fetchNui("select", [option.targetType, option.targetId]);
+  collapseAfterSelect();
 }
 
 function completeHold(option) {
   if (!isHolding) return;
 
-  const options = optionsWrapper.querySelectorAll(".option-container");
-  const currentOption = options[currentIndex];
+  const currentOption = getOptions()[currentIndex];
+  if (!currentOption || currentOption !== option) return;
 
-  if (!currentOption) return;
-
-  // Verify it's still the same option
-  if (currentOption === option) {
-    fetchNui("select", [option.targetType, option.targetId]);
-  }
+  fetchNui("select", [option.targetType, option.targetId]);
+  collapseAfterSelect();
 }
 
 export function resetHold() {
   if (!isHolding) return;
 
   isHolding = false;
-  holdStartTime = null;
   clearTimeout(holdTimeout);
   progressElement.style.transition = "none";
   progressElement.style.height = "0";
+  interactButton.classList.remove("is-holding");
+  bumpIdle();
 
   fetchNui("endHoldAnim");
 }
@@ -71,7 +129,7 @@ function startHold(option) {
   if (isHolding) return;
 
   isHolding = true;
-  holdStartTime = Date.now();
+  interactButton.classList.add("is-holding");
   progressElement.style.transition = `height ${option.holdTime}ms linear`;
   progressElement.style.height = "100%";
 
@@ -80,26 +138,33 @@ function startHold(option) {
   }, option.holdTime);
 }
 
+function syncSelectedAlignment() {
+  optionsWrapper.style.removeProperty("translate");
+}
+
 export function updateHighlight() {
-  const options = optionsWrapper.querySelectorAll(".option-container");
+  const options = getOptions();
   if (options.length > 0) {
     options.forEach((option) => option.classList.remove("highlighted"));
-    options[currentIndex].classList.add("highlighted");
+    const active = options[currentIndex] || options[0];
+    if (active) active.classList.add("highlighted");
 
-    if (options[currentIndex].color) {
-      const c = options[currentIndex].color;
-      const color = `rgb(${c[0]}, ${c[1]}, ${c[2]}, ${c[3] / 255})`;
-      document.body.style.setProperty("--theme-color", color);
+    if (active?.color) {
+      const c = active.color;
+      applyAccent(`rgb(${c[0]}, ${c[1]}, ${c[2]}, ${c[3] / 255})`);
     } else {
-      document.body.style.setProperty("--theme-color", defaultColor);
+      restoreDefaultAccent();
     }
   }
+
+  syncSelectedAlignment();
 }
 
 window.addEventListener("wheel", (event) => {
   if (isHolding) return;
+  if (!isMenuOpen()) return;
 
-  const options = optionsWrapper.querySelectorAll(".option-container");
+  const options = getOptions();
   if (options.length === 0) return;
 
   if (event.deltaY > 0) {
@@ -109,8 +174,13 @@ window.addEventListener("wheel", (event) => {
   }
 
   updateHighlight();
-
+  bumpIdle();
   fetchNui("currentOption", [currentIndex + 1]);
+});
+
+container.addEventListener("menu-collapsed", () => {
+  setCurrentIndex(0);
+  updateHighlight();
 });
 
 updateHighlight();

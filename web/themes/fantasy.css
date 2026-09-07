@@ -1,0 +1,175 @@
+[data-theme="fantasy"] {
+  --ink: 18, 12, 8;
+  --surface: 28, 18, 12;
+  --surface-2: 40, 26, 16;
+  --text: 244, 228, 196;
+  --text-muted: 186, 156, 110;
+  --hairline: 212, 175, 110;
+  --hairline-a: 0.38;
+  --primary: 212, 175, 110;
+  --on-accent: 18, 12, 8;
+  --flourish: var(--hairline);
+  --r-sm: 0.35rem;
+  --font: Palatino, "Palatino Linotype", Georgia, serif;
+  --panel-a: 0.94;
+  --shadow: 0 0.8rem 1.6rem rgba(8, 4, 0, 0.5);
+}
+
+[data-theme="fantasy"] body {
+  font-family: var(--font);
+  color: rgb(var(--text));
+}
+
+[data-theme="fantasy"] #options-list {
+  gap: 0.5rem;
+}
+
+[data-theme="fantasy"] .animated-background {
+  display: none;
+}
+
+[data-theme="fantasy"] #interact-container {
+  width: 3.5rem;
+  height: 3.5rem;
+  border: 0.14rem solid rgba(var(--hairline), 0.7);
+  border-radius: var(--r-sm);
+  background: rgba(var(--surface), var(--panel-a));
+  box-shadow:
+    inset 0 0 0 0.12rem rgba(var(--ink), 0.55),
+    var(--shadow);
+}
+
+[data-theme="fantasy"] #interact-container::before,
+[data-theme="fantasy"] .option-container::before {
+  content: "";
+  position: absolute;
+  inset: 0.2rem;
+  z-index: 3;
+  pointer-events: none;
+  background:
+    linear-gradient(rgb(var(--flourish)), rgb(var(--flourish))) top left / 0.62rem 0.12rem no-repeat,
+    linear-gradient(rgb(var(--flourish)), rgb(var(--flourish))) top left / 0.12rem 0.62rem no-repeat,
+    linear-gradient(rgb(var(--flourish)), rgb(var(--flourish))) top right / 0.62rem 0.12rem no-repeat,
+    linear-gradient(rgb(var(--flourish)), rgb(var(--flourish))) top right / 0.12rem 0.62rem no-repeat,
+    linear-gradient(rgb(var(--flourish)), rgb(var(--flourish))) bottom left / 0.62rem 0.12rem no-repeat,
+    linear-gradient(rgb(var(--flourish)), rgb(var(--flourish))) bottom left / 0.12rem 0.62rem no-repeat,
+    linear-gradient(rgb(var(--flourish)), rgb(var(--flourish))) bottom right / 0.62rem 0.12rem no-repeat,
+    linear-gradient(rgb(var(--flourish)), rgb(var(--flourish))) bottom right / 0.12rem 0.62rem no-repeat;
+}
+
+[data-theme="fantasy"] #interact-progress {
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: 0;
+  background: rgb(var(--primary));
+}
+
+[data-theme="fantasy"] #interact-key {
+  width: 100%;
+  height: 100%;
+  color: rgb(var(--hairline));
+  font-family: var(--font);
+  font-size: 1.55rem;
+  font-weight: 700;
+  font-style: italic;
+  line-height: 1.15;
+}
+
+[data-theme="fantasy"] #interact-container.is-holding {
+  --flourish: var(--primary);
+  border-color: rgb(var(--primary));
+}
+
+[data-theme="fantasy"] body.is-cooldown #interact-container {
+  opacity: 0.55;
+}
+
+[data-theme="fantasy"] body.is-cooldown #interact-key {
+  color: rgb(var(--text-muted));
+  font-style: normal;
+}
+
+[data-theme="fantasy"] .option-container,
+[data-theme="fantasy"] .interact-summary {
+  min-width: 18rem;
+  height: 3rem;
+  padding: 0 1rem 0 0.65rem;
+  gap: 0.6rem;
+  overflow: hidden;
+  border: 0.12rem solid rgba(var(--hairline), var(--hairline-a));
+  border-radius: var(--r-sm);
+  background: rgba(var(--surface), var(--panel-a));
+  box-shadow:
+    inset 0 1px 0 rgba(var(--hairline), 0.18),
+    var(--shadow);
+  color: rgb(var(--text));
+  font-family: var(--font);
+  transition:
+    border-color 160ms ease,
+    background-color 160ms ease;
+}
+
+[data-theme="fantasy"] .interact-summary {
+  min-width: 0;
+  width: max-content;
+  padding-left: 1rem;
+  padding-right: 1.3rem;
+}
+
+[data-theme="fantasy"] .option-container.highlighted {
+  --flourish: var(--primary);
+  border-color: rgb(var(--primary));
+  background: rgba(var(--primary), 0.16);
+}
+
+[data-theme="fantasy"] .option-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.7rem;
+  font-size: 1.2rem;
+  color: rgb(var(--text-muted));
+}
+
+[data-theme="fantasy"] .option-container.highlighted .option-icon {
+  color: rgb(var(--hairline));
+}
+
+[data-theme="fantasy"] .option-label {
+  font-size: 1.35rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  line-height: 1.1;
+}
+
+[data-theme="fantasy"] .interact-summary .option-label {
+  font-style: italic;
+}
+
+[data-theme="fantasy"] .option-hold {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  height: 1.7rem;
+  padding: 0 0.55rem;
+  border: 0.1rem solid rgba(var(--hairline), 0.45);
+  border-radius: 0.2rem;
+  color: rgb(var(--text-muted));
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  font-variant: small-caps;
+}
+
+[data-theme="fantasy"] .option-container.highlighted .option-hold {
+  border-color: rgb(var(--primary));
+  color: rgb(var(--text));
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  [data-theme="fantasy"] {
+    --panel-a: 1;
+  }
+}

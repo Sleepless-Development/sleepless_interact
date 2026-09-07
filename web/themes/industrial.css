@@ -1,0 +1,168 @@
+[data-theme="industrial"] {
+  --ink: 10, 10, 8;
+  --surface: 18, 18, 16;
+  --surface-2: 28, 28, 24;
+  --text: 230, 228, 214;
+  --text-muted: 156, 152, 128;
+  --hairline: 196, 176, 96;
+  --hairline-a: 0.4;
+  --primary: 212, 168, 48;
+  --on-accent: 10, 10, 8;
+  --font: "DINPRO", "Segoe UI", sans-serif;
+  --panel-a: 0.94;
+}
+
+[data-theme="industrial"] body {
+  font-family: var(--font);
+  color: rgb(var(--text));
+  font-synthesis: none;
+}
+
+[data-theme="industrial"] #options-list {
+  gap: 0.22rem;
+}
+
+[data-theme="industrial"] .animated-background {
+  display: none;
+}
+
+[data-theme="industrial"] #interact-container {
+  width: 3.3rem;
+  height: 3.3rem;
+  border: 0.16rem solid rgba(var(--hairline), 0.75);
+  border-radius: 0;
+  background-color: rgba(var(--surface), var(--panel-a));
+  background-image:
+    radial-gradient(circle at 0.4rem 0.4rem, rgb(var(--hairline)) 0.07rem, rgb(var(--ink)) 0.1rem, rgb(var(--hairline)) 0.15rem, transparent 0.17rem),
+    radial-gradient(circle at calc(100% - 0.4rem) 0.4rem, rgb(var(--hairline)) 0.07rem, rgb(var(--ink)) 0.1rem, rgb(var(--hairline)) 0.15rem, transparent 0.17rem),
+    radial-gradient(circle at 0.4rem calc(100% - 0.4rem), rgb(var(--hairline)) 0.07rem, rgb(var(--ink)) 0.1rem, rgb(var(--hairline)) 0.15rem, transparent 0.17rem),
+    radial-gradient(circle at calc(100% - 0.4rem) calc(100% - 0.4rem), rgb(var(--hairline)) 0.07rem, rgb(var(--ink)) 0.1rem, rgb(var(--hairline)) 0.15rem, transparent 0.17rem);
+  box-shadow: inset 0 -0.2rem 0 rgba(0, 0, 0, 0.45);
+}
+
+[data-theme="industrial"] #interact-progress {
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: 0;
+  background: rgb(var(--primary));
+}
+
+[data-theme="industrial"] #interact-key {
+  width: 100%;
+  height: 100%;
+  color: rgb(var(--text));
+  font-family: var(--font);
+  font-size: 1.35rem;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  line-height: 1;
+}
+
+[data-theme="industrial"] #interact-container.is-holding {
+  border-color: rgb(var(--primary));
+}
+
+[data-theme="industrial"] body.is-cooldown #interact-container {
+  opacity: 0.5;
+}
+
+[data-theme="industrial"] .option-container,
+[data-theme="industrial"] .interact-summary {
+  min-width: 17rem;
+  height: 2.6rem;
+  padding: 0 0.75rem 0 0.45rem;
+  gap: 0.5rem;
+  overflow: hidden;
+  border: 0.12rem solid rgba(var(--hairline), var(--hairline-a));
+  border-radius: 0;
+  background-color: rgba(var(--surface), var(--panel-a));
+  background-image:
+    radial-gradient(circle at 0.34rem 0.34rem, rgb(var(--hairline)) 0.06rem, rgb(var(--ink)) 0.09rem, rgb(var(--hairline)) 0.13rem, transparent 0.15rem),
+    radial-gradient(circle at calc(100% - 0.34rem) 0.34rem, rgb(var(--hairline)) 0.06rem, rgb(var(--ink)) 0.09rem, rgb(var(--hairline)) 0.13rem, transparent 0.15rem),
+    radial-gradient(circle at 0.34rem calc(100% - 0.34rem), rgb(var(--hairline)) 0.06rem, rgb(var(--ink)) 0.09rem, rgb(var(--hairline)) 0.13rem, transparent 0.15rem),
+    radial-gradient(circle at calc(100% - 0.34rem) calc(100% - 0.34rem), rgb(var(--hairline)) 0.06rem, rgb(var(--ink)) 0.09rem, rgb(var(--hairline)) 0.13rem, transparent 0.15rem);
+  box-shadow: inset 0 -0.16rem 0 rgba(0, 0, 0, 0.35);
+  color: rgb(var(--text));
+  font-family: var(--font);
+  transition:
+    border-color 160ms ease,
+    background-color 160ms ease;
+}
+
+[data-theme="industrial"] .interact-summary {
+  min-width: 0;
+  width: max-content;
+  padding-left: 0.8rem;
+  padding-right: 1rem;
+}
+
+[data-theme="industrial"] .option-container.highlighted {
+  border-color: rgb(var(--primary));
+  background-color: rgba(var(--primary), 0.18);
+}
+
+[data-theme="industrial"] .option-container.highlighted::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 0.28rem;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    -45deg,
+    rgb(var(--primary)) 0,
+    rgb(var(--primary)) 0.32rem,
+    rgb(var(--ink)) 0.32rem,
+    rgb(var(--ink)) 0.64rem
+  );
+}
+
+[data-theme="industrial"] .option-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.6rem;
+  font-size: 1.15rem;
+  color: rgb(var(--text-muted));
+}
+
+[data-theme="industrial"] .option-container.highlighted .option-icon {
+  color: rgb(var(--text));
+}
+
+[data-theme="industrial"] .option-label {
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  line-height: 1;
+}
+
+[data-theme="industrial"] .option-hold {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  height: 1.6rem;
+  padding: 0 0.4rem;
+  border: 0.1rem solid rgba(var(--hairline), 0.45);
+  color: rgb(var(--text-muted));
+  font-size: 1.05rem;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+[data-theme="industrial"] .option-container.highlighted .option-hold {
+  border-color: rgb(var(--primary));
+  color: rgb(var(--text));
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  [data-theme="industrial"] {
+    --panel-a: 1;
+  }
+}

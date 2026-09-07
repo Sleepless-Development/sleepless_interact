@@ -1,20 +1,60 @@
-@import url("https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100..900;1,100..900&display=swap");
+@font-face {
+  font-family: "DINPRO";
+  src: url("./fonts/dinpro.otf") format("opentype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "DINPRO";
+  src: url("./fonts/dinpro_bold.otf") format("opentype");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "DINPRO";
+  src: url("./fonts/dinpro_black.otf") format("opentype");
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+}
 
 :root {
   font-size: 1vh;
+
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --dur-press: 140ms;
+  --dur-hover: 160ms;
+  --dur-ui: 200ms;
+
+  --theme-color: rgb(28, 100, 184, 0.8);
+  --primary: 28, 100, 184;
+  --on-accent: 8, 11, 16;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: transparent;
+  color-scheme: dark;
 }
 
 body {
   user-select: none;
   white-space: nowrap;
-  margin: 0;
-  overflow: hidden;
-  color: whitesmoke;
-
-  --bg-color: rgb(25, 25, 25, 0.85);
-  --theme-color: rgb(28, 100, 184, 0.8);
-
-  transition: opacity 200ms linear;
+  visibility: hidden;
 }
 
 p {
@@ -31,104 +71,255 @@ p {
   justify-content: center;
 }
 
-#options-wrapper {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  translate: 20% -50%;
-}
-
-.option-container {
-  color: var(--color-default);
-  display: flex;
-  flex-direction: row;
-  justify-content: flex-start;
-  align-items: center;
-  font-family: "Roboto";
-  background: var(--bg-color);
-  font-size: 1rem;
-  vertical-align: middle;
-  margin: 0.2rem;
-  transition: 300ms;
-  transform-origin: left top;
-  scale: 1;
-  height: 2rem;
-  padding-right: 1rem;
-  top: 0;
-  min-width: 10rem;
-}
-
-.animated-background {
-  position: absolute;
-  height: 100%;
-  width: 1%; /* Default state: collapsed */
-  background-color: var(--theme-color);
-  z-index: 1;
-  transition: width 250ms ease-in-out; /* Smooth transition for both directions */
-}
-
-.option-container.highlighted .animated-background {
-  width: 100%; /* Expand when highlighted */
-}
-
-.option-icon {
-  font-size: 1.2rem;
-  line-height: 0;
-  width: 1.3rem;
-  margin: 0.45rem;
-  color: var(--color-default);
-  z-index: 2;
-}
-
-.option-label {
-  font-weight: 500;
-  z-index: 2;
-}
-
 #interact-container {
-  width: 2.5rem;
-  height: 2.5rem;
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 0.1rem;
   overflow: hidden;
-  background: var(--bg-color);
 }
 
 #interact-progress {
   position: absolute;
-  width: 100%;
-  height: 0%;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  background: var(--theme-color);
-  transition: height 0ms;
-  /* animation: progress 1000ms linear infinite; */
+  pointer-events: none;
 }
 
 #interact-key {
-  font-size: 1.5rem;
-  position: absolute;
-  color: whitesmoke;
-  width: 100%;
-  height: 100%;
-  font-family: "Roboto";
-  border: 0.1rem solid whitesmoke;
-  aspect-ratio: 1;
+  position: relative;
+  z-index: 2;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 0.2rem;
+}
+
+#interact-key.is-wide {
+  font-size: 0.72em;
+  letter-spacing: 0.04em;
+  max-width: 100%;
+  padding: 0 0.12rem;
   overflow: hidden;
 }
 
-@keyframes progress {
-  from {
-    height: 0%;
+#interact-container.is-holding #interact-key {
+  -webkit-text-stroke: 0.1rem rgb(var(--on-accent));
+  paint-order: stroke fill;
+}
+
+#options-wrapper {
+  --options-x: 2.6rem;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  translate: var(--options-x) -50%;
+  display: flex;
+  flex-direction: column;
+}
+
+#options-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.interact-summary,
+.option-container {
+  position: relative;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+
+.interact-summary {
+  display: none;
+}
+
+#container.is-compact .interact-summary {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  width: max-content;
+  height: auto;
+  margin: 0;
+  padding: 0 0.15rem;
+  gap: 0;
+  overflow: visible;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+#container.is-compact .interact-summary .animated-background {
+  display: none;
+}
+
+#container.is-compact .interact-summary .option-label {
+  color: rgb(var(--text, 236, 241, 247));
+  font-size: 1.45rem;
+  font-weight: 900;
+  font-style: normal;
+  letter-spacing: 0.1em;
+  line-height: 1;
+  text-transform: uppercase;
+  -webkit-text-stroke: 0.16rem #000;
+  paint-order: stroke fill;
+  text-shadow:
+    0.07rem 0.07rem 0 #000,
+    -0.07rem 0.07rem 0 #000,
+    0.07rem -0.07rem 0 #000,
+    -0.07rem -0.07rem 0 #000;
+}
+
+#container.is-compact #options-list {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform-origin: left center;
+  transform: translate(0, -50%);
+}
+
+#container.is-compact:not(.is-open) #options-list {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: translate(-0.45rem, -50%) scale(0.96);
+}
+
+#container.is-compact.is-open .interact-summary {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+#container.is-compact.is-ready #options-list,
+#container.is-compact.is-ready .interact-summary {
+  transition:
+    opacity var(--dur-ui) var(--ease-out),
+    transform var(--dur-ui) var(--ease-out),
+    visibility var(--dur-ui);
+}
+
+#container.is-compact.is-ready:not(.is-open) #options-list,
+#container.is-compact.is-ready.is-open .interact-summary {
+  transition-duration: 140ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #container.is-compact.is-ready #options-list,
+  #container.is-compact.is-ready .interact-summary {
+    transition: opacity 120ms ease, visibility 120ms;
   }
-  to {
-    height: 100%;
+
+  #container.is-compact:not(.is-open) #options-list {
+    transform: translate(0, -50%);
   }
+}
+
+.animated-background {
+  position: absolute;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.option-icon,
+.option-label,
+.option-hold {
+  position: relative;
+  z-index: 2;
+}
+
+.browser-dock {
+  display: none;
+}
+
+html[data-browser] body {
+  visibility: visible;
+}
+
+html[data-browser] body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background:
+    linear-gradient(180deg, rgba(8, 11, 16, 0.18), rgba(8, 11, 16, 0.42)),
+    url("./preview/world.jpg") center / cover no-repeat,
+    #080b10;
+}
+
+html[data-browser] .browser-dock {
+  position: fixed;
+  top: 2.4rem;
+  left: 2.4rem;
+  z-index: 20;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+  max-width: 76rem;
+  padding: 0.55rem;
+  border: 0.1rem solid rgba(220, 230, 242, 0.12);
+  border-radius: 1.1rem;
+  background: rgba(10, 14, 20, 0.88);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    0 1.4rem 3.6rem rgba(0, 0, 0, 0.42);
+  font-family: "DINPRO", "Segoe UI", sans-serif;
+  color: rgb(236, 241, 247);
+}
+
+.browser-dock-label {
+  padding: 0 0.7rem;
+  font-size: 1.05rem;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgb(156, 170, 186);
+}
+
+.browser-themes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  max-width: 58rem;
+}
+
+.browser-dock button {
+  height: 2.8rem;
+  padding: 0 1rem;
+  border: 0.1rem solid rgba(220, 230, 242, 0.12);
+  border-radius: 0.7rem;
+  background: rgba(8, 11, 16, 0.55);
+  color: rgb(236, 241, 247);
+  font-family: inherit;
+  font-size: 1.2rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition:
+    transform 140ms cubic-bezier(0.23, 1, 0.32, 1),
+    background-color 160ms ease,
+    border-color 160ms ease,
+    color 160ms ease;
+}
+
+.browser-dock button.is-active {
+  border-color: rgb(var(--primary));
+  background: rgba(var(--primary), 0.16);
+  box-shadow: 0 0 0.6rem rgba(var(--primary), 0.55);
+}
+
+.browser-dock button:active {
+  transform: scale(0.97);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .browser-dock button:hover:not(.is-active) {
+    border-color: rgba(220, 230, 242, 0.28);
+    background: rgba(220, 230, 242, 0.08);
+  }
+}
+
+::selection {
+  background: rgba(var(--primary), 0.32);
+  color: rgb(236, 241, 247);
 }

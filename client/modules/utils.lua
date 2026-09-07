@@ -181,6 +181,79 @@ function utils.getScreenDistanceSquared(coords)
     return dx * dx + dy * dy
 end
 
+local SPECIAL_KEYS = {
+    b_100 = 'M1',
+    b_101 = 'M2',
+    b_102 = 'M3',
+    b_130 = '-',
+    b_131 = '+',
+    b_140 = 'N4',
+    b_141 = 'N5',
+    b_142 = 'N6',
+    b_143 = 'N7',
+    b_144 = 'N8',
+    b_145 = 'N9',
+    b_146 = 'N2',
+    b_147 = 'N3',
+    b_138 = 'N0',
+    b_139 = 'N1',
+    b_170 = 'F1',
+    b_171 = 'F2',
+    b_172 = 'F3',
+    b_173 = 'F4',
+    b_174 = 'F5',
+    b_175 = 'F6',
+    b_176 = 'F7',
+    b_177 = 'F8',
+    b_178 = 'F9',
+    b_179 = 'F10',
+    b_180 = 'F11',
+    b_181 = 'F12',
+    b_194 = 'UP',
+    b_195 = 'DN',
+    b_196 = 'LT',
+    b_197 = 'RT',
+    b_198 = 'DEL',
+    b_199 = 'ESC',
+    b_200 = 'INS',
+    b_210 = 'DEL',
+    b_211 = 'INS',
+    b_212 = 'END',
+    b_1000 = 'SHFT',
+    b_1002 = 'TAB',
+    b_1003 = 'ENT',
+    b_1004 = 'BKSP',
+    b_1008 = 'HOME',
+    b_1009 = 'PGUP',
+    b_1010 = 'PGDN',
+    b_1012 = 'CAPS',
+    b_1013 = 'CTRL',
+    b_1014 = 'CTRL',
+    b_1015 = 'ALT',
+    b_1055 = 'HOME',
+    b_1056 = 'PGUP',
+    b_2000 = 'SPC',
+}
+
+--- Resolve a RegisterKeyMapping command to a short HUD label.
+--- Pass a command name (`'+interact_action'`) or a control hash.
+---@param command string|number
+---@return string
+function utils.toHumanKeybind(command)
+    local hash = type(command) == 'string' and joaat(command) or command
+    local raw = GetControlInstructionalButton(2, hash | 0x80000000, true)
+
+    if type(raw) ~= 'string' or raw == '' then
+        return 'E'
+    end
+
+    if raw:sub(1, 2):lower() == 't_' then
+        return raw:sub(3):upper()
+    end
+
+    return SPECIAL_KEYS[raw] or SPECIAL_KEYS[raw:lower()] or 'E'
+end
+
 ---@param export string
 ---@return boolean
 function utils.hasExport(export)

@@ -1,0 +1,222 @@
+[data-theme="cyber"] {
+  --ink: 3, 8, 14;
+  --surface: 4, 12, 20;
+  --surface-2: 8, 22, 32;
+  --text: 180, 245, 255;
+  --text-muted: 80, 170, 190;
+  --primary: 0, 229, 255;
+  --on-accent: 3, 8, 14;
+  --cut: 0.9rem;
+  --rim: 0.14rem;
+  --clip: polygon(
+    0 0,
+    100% 0,
+    100% calc(100% - var(--cut)),
+    calc(100% - var(--cut)) 100%,
+    0 100%
+  );
+  --font: "DINPRO", "Segoe UI", sans-serif;
+  --panel-a: 0.94;
+}
+
+[data-theme="cyber"] body {
+  font-family: var(--font);
+  color: rgb(var(--text));
+  font-synthesis: none;
+}
+
+[data-theme="cyber"] #options-list {
+  gap: 0.45rem;
+}
+
+[data-theme="cyber"] .animated-background {
+  display: none;
+}
+
+[data-theme="cyber"] #interact-container {
+  --cut: 0.75rem;
+  width: 3.4rem;
+  height: 3.4rem;
+  overflow: visible;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+[data-theme="cyber"] #interact-container::before,
+[data-theme="cyber"] #interact-container::after {
+  content: "";
+  position: absolute;
+  pointer-events: none;
+}
+
+[data-theme="cyber"] #interact-container::before {
+  inset: 0;
+  z-index: 0;
+  background: rgb(var(--primary));
+  clip-path: var(--clip);
+}
+
+[data-theme="cyber"] #interact-container::after {
+  inset: var(--rim);
+  z-index: 1;
+  background: rgba(var(--surface), var(--panel-a));
+  clip-path: var(--clip);
+}
+
+[data-theme="cyber"] #interact-progress {
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 2;
+  width: 100%;
+  height: 0;
+  background: rgb(var(--primary));
+  clip-path: var(--clip);
+  box-shadow: none;
+}
+
+[data-theme="cyber"] #interact-key {
+  width: 100%;
+  height: 100%;
+  z-index: 3;
+  color: rgb(var(--primary));
+  font-family: var(--font);
+  font-size: 1.4rem;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  line-height: 1;
+}
+
+[data-theme="cyber"] body.is-cooldown #interact-container {
+  opacity: 0.5;
+}
+
+[data-theme="cyber"] body.is-cooldown #interact-key {
+  color: rgb(var(--text-muted));
+}
+
+[data-theme="cyber"] .option-container {
+  min-width: 18rem;
+  height: 2.9rem;
+  padding: 0 1.15rem 0 0.75rem;
+  gap: 0.55rem;
+  overflow: visible;
+  isolation: isolate;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  color: rgb(var(--text));
+  font-family: var(--font);
+}
+
+[data-theme="cyber"] .option-container::before,
+[data-theme="cyber"] .option-container::after {
+  content: "";
+  position: absolute;
+  pointer-events: none;
+}
+
+[data-theme="cyber"] .option-container::before {
+  inset: 0;
+  z-index: 0;
+  background: rgb(var(--primary));
+  clip-path: var(--clip);
+}
+
+[data-theme="cyber"] .option-container::after {
+  inset: var(--rim);
+  z-index: 1;
+  background: rgba(var(--surface), var(--panel-a));
+  clip-path: var(--clip);
+}
+
+[data-theme="cyber"] .option-container.highlighted::after {
+  background: rgb(var(--primary));
+}
+
+[data-theme="cyber"] .option-icon,
+[data-theme="cyber"] .option-label,
+[data-theme="cyber"] .option-hold {
+  z-index: 2;
+}
+
+[data-theme="cyber"] .option-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.6rem;
+  font-size: 1.15rem;
+  color: rgb(var(--primary));
+}
+
+[data-theme="cyber"] .option-label {
+  font-size: 1.2rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  line-height: 1;
+}
+
+[data-theme="cyber"] .option-hold {
+  --cut: 0.4rem;
+  --rim: 0.1rem;
+  margin-left: auto;
+  position: relative;
+  height: 1.7rem;
+  padding: 0 0.55rem;
+  overflow: visible;
+  border: none;
+  background: transparent;
+  color: rgb(var(--primary));
+  font-size: 1.05rem;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  display: inline-flex;
+  align-items: center;
+}
+
+[data-theme="cyber"] .option-hold::before,
+[data-theme="cyber"] .option-hold::after {
+  content: "";
+  position: absolute;
+  pointer-events: none;
+}
+
+[data-theme="cyber"] .option-hold::before {
+  inset: 0;
+  z-index: -2;
+  background: rgb(var(--primary));
+  clip-path: var(--clip);
+}
+
+[data-theme="cyber"] .option-hold::after {
+  inset: var(--rim);
+  z-index: -1;
+  background: rgba(var(--ink), 0.92);
+  clip-path: var(--clip);
+}
+
+[data-theme="cyber"] .option-container.highlighted .option-icon,
+[data-theme="cyber"] .option-container.highlighted .option-label,
+[data-theme="cyber"] .option-container.highlighted .option-hold {
+  color: rgb(var(--on-accent));
+}
+
+[data-theme="cyber"] .option-container.highlighted .option-hold::before {
+  background: rgb(var(--on-accent));
+}
+
+[data-theme="cyber"] .option-container.highlighted .option-hold::after {
+  background: rgb(var(--primary));
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  [data-theme="cyber"] {
+    --panel-a: 1;
+  }
+}

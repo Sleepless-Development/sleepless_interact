@@ -6,6 +6,8 @@ game 'gta5'
 
 version '2.1.3'
 
+ox_lib 'locale'
+
 shared_scripts {
 	'@ox_lib/init.lua',
 }
@@ -17,6 +19,7 @@ client_scripts {
 }
 
 files {
+	'locales/*.json',
 	'web/**',
 	'client/modules/*.lua',
 	'client/framework/*.lua',
