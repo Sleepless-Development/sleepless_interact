@@ -16,7 +16,7 @@ v2 uses a lot of code from ox_target to help ensure feature parity. so a big tha
 
 ## 📃 Documentation
 
-- [docs](https://sleeplessdevelopment.dev/interact)
+- [docs](https://sleeplessdevelopment.dev/docs/interact)
 
 ## 💾 Download
 
