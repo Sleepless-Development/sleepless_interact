@@ -121,7 +121,9 @@
 [data-theme="fantasy"] .option-container.highlighted {
   --flourish: var(--primary);
   border-color: rgb(var(--primary));
-  background: rgba(var(--primary), 0.16);
+  background:
+    linear-gradient(rgba(var(--primary), 0.22), rgba(var(--primary), 0.22)),
+    rgb(var(--surface));
 }
 
 [data-theme="fantasy"] .option-icon {

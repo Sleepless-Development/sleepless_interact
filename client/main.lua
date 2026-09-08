@@ -599,7 +599,8 @@ local function drawLoop()
                         index = 1,
                     }
 
-                    DrawSprite(dui.instance.dictName, dui.instance.txtName, 0.0, 0.0, 1.0, 1.0, 0.0, 255, 255, 255, 255)
+                    local duiScale = config.duiScale or 0.8
+                    DrawSprite(dui.instance.dictName, dui.instance.txtName, 0.0, 0.0, duiScale, duiScale, 0.0, 255, 255, 255, 255)
                 else
                     local distance = #(playerCoords - coords)
                     if distance < config.maxInteractDistance and item.currentScreenDistance < math.huge then

@@ -4,6 +4,9 @@ local config = {}
 -- recommend keeping this pretty low for optimization
 config.maxInteractDistance = 5.0
 
+-- World size of the prompt sprite. 1.0 matches a fullscreen NUI at the 3D point.
+config.duiScale = 0.8
+
 -- Visual theme for the world prompt.
 -- Built-in: legacy | modern | minimal | light | retro | cyber | vice | noir | industrial | fantasy
 -- To add another look later, drop a file at web/themes/<id>.css
@@ -12,16 +15,16 @@ config.theme = 'modern'
 
 -- Default accent per theme. Used by the HUD and the world indicator sprite.
 config.themeColors = {
-    legacy = { 28, 100, 184, 200 },
-    modern = { 49, 164, 252, 255 },
-    minimal = { 168, 186, 204, 255 },
-    light = { 37, 99, 235, 255 },
-    retro = { 255, 176, 32, 255 },
-    cyber = { 0, 229, 255, 255 },
-    vice = { 255, 64, 180, 255 },
-    noir = { 240, 240, 236, 255 },
-    industrial = { 212, 168, 48, 255 },
-    fantasy = { 212, 175, 110, 255 },
+	legacy = { 28, 100, 184, 200 },
+	modern = { 49, 164, 252, 255 },
+	minimal = { 168, 186, 204, 255 },
+	light = { 37, 99, 235, 255 },
+	retro = { 255, 176, 32, 255 },
+	cyber = { 0, 229, 255, 255 },
+	vice = { 255, 64, 180, 255 },
+	noir = { 240, 240, 236, 255 },
+	industrial = { 212, 168, 48, 255 },
+	fantasy = { 212, 175, 110, 255 },
 }
 
 -- Optional override for every theme. Set to { r, g, b, a } to force one accent
@@ -29,11 +32,11 @@ config.themeColors = {
 config.themeColor = nil
 
 function config.getThemeColor()
-    if config.themeColor then
-        return config.themeColor
-    end
-    local colors = config.themeColors
-    return (colors and colors[config.theme]) or { 49, 164, 252, 255 }
+	if config.themeColor then
+		return config.themeColor
+	end
+	local colors = config.themeColors
+	return (colors and colors[config.theme]) or { 49, 164, 252, 255 }
 end
 
 -- If true, targets with more than one option show "Interact" until E is pressed.

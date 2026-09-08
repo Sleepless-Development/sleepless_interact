@@ -154,19 +154,17 @@ p {
 
 #container.is-compact .interact-summary .option-label {
   color: rgb(var(--text, 236, 241, 247));
-  font-size: 1.45rem;
+  font-family: "DINPRO", "Segoe UI", sans-serif;
+  font-size: 1.25rem;
   font-weight: 900;
   font-style: normal;
-  letter-spacing: 0.1em;
+  font-synthesis: none;
+  letter-spacing: 0.08em;
   line-height: 1;
   text-transform: uppercase;
-  -webkit-text-stroke: 0.16rem #000;
+  -webkit-text-stroke: 0.05rem #000;
   paint-order: stroke fill;
-  text-shadow:
-    0.07rem 0.07rem 0 #000,
-    -0.07rem 0.07rem 0 #000,
-    0.07rem -0.07rem 0 #000,
-    -0.07rem -0.07rem 0 #000;
+  text-shadow: 0 0.04rem 0.1rem #000;
 }
 
 #container.is-compact #options-list {

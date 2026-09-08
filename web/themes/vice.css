@@ -116,7 +116,7 @@
 }
 
 [data-theme="vice"] .option-container.highlighted {
-  --fill: rgba(var(--primary), 0.22);
+  --fill: rgb(var(--surface-2));
   box-shadow:
     inset 0 1px 0 rgba(255, 180, 220, 0.2),
     -0.3rem 0 0.8rem rgba(var(--primary), 0.35),

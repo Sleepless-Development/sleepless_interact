@@ -101,7 +101,7 @@
 
 [data-theme="industrial"] .option-container.highlighted {
   border-color: rgb(var(--primary));
-  background-color: rgba(var(--primary), 0.18);
+  background-color: rgb(var(--surface-2));
 }
 
 [data-theme="industrial"] .option-container.highlighted::after {

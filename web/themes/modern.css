@@ -14,7 +14,7 @@
   --shadow: 0 0.8rem 1.8rem rgba(0, 0, 0, 0.42);
   --neon-tight: 0 0 0.6rem rgba(var(--primary), 0.55);
   --font: "DINPRO", "Segoe UI", sans-serif;
-  --panel-a: 0.92;
+  --panel-a: 0.96;
 }
 
 [data-theme="modern"] body {
@@ -108,7 +108,9 @@
 
 [data-theme="modern"] .option-container.highlighted {
   border-color: rgb(var(--primary));
-  background: rgba(var(--primary), 0.14);
+  background:
+    linear-gradient(rgba(var(--primary), 0.32), rgba(var(--primary), 0.32)),
+    rgb(var(--surface));
   box-shadow: var(--neon-tight), var(--inset-shine);
 }
 
