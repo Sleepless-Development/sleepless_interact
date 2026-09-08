@@ -356,63 +356,64 @@ local function checkNearbyEntities(coords)
     local function processEntities(entities, globalType)
         for i = 1, #entities do
             local ent = entities[i]
-            local entity = ent.object or ent.vehicle or ent.ped
-            local model = cachedEntityInfo(entity)
-            local entCoords = GetEntityCoords(entity)
-            local options = getOptionsForEntity(entity, globalType)
-            local boneOptions = getBoneOptionsForEntity(entity, globalType)
-            local offsetOptions = getOffsetOptionsForEntity(entity, globalType)
+            local entity = ent.object or ent.ped or ent.vehicle
+            if entity and entity ~= 0 then
+                local model = cachedEntityInfo(entity)
+                local entCoords = GetEntityCoords(entity)
+                local options = getOptionsForEntity(entity, globalType)
+                local boneOptions = getBoneOptionsForEntity(entity, globalType)
+                local offsetOptions = getOffsetOptionsForEntity(entity, globalType)
 
+                if options then
+                    num = num + 1
+                    valid[num] = {
+                        entity = entity,
+                        coords = entCoords,
+                        currentDistance = utils.getDistanceSquared(coords, entCoords),
+                        currentScreenDistance = utils.getScreenDistanceSquared(entCoords),
+                        options = options
+                    }
+                end
 
-            if options then
-                num = num + 1
-                valid[num] = {
-                    entity = entity,
-                    coords = entCoords,
-                    currentDistance = utils.getDistanceSquared(coords, entCoords),
-                    currentScreenDistance = utils.getScreenDistanceSquared(entCoords),
-                    options = options
-                }
-            end
-
-            if boneOptions then
-                for boneId, _options in pairs(boneOptions) do
-                    local boneIndex = GetEntityBoneIndexByName(entity, boneId)
-                    if boneIndex ~= -1 then
-                        local boneCoords = GetEntityBonePosition_2(entity, boneIndex)
-                        num = num + 1
-                        valid[num] = {
-                            entity = entity,
-                            bone = boneId,
-                            coords = boneCoords,
-                            currentDistance = utils.getDistanceSquared(coords, boneCoords),
-                            currentScreenDistance = utils.getScreenDistanceSquared(boneCoords),
-                            options = _options
-                        }
+                if boneOptions then
+                    for boneId, _options in pairs(boneOptions) do
+                        local boneIndex = GetEntityBoneIndexByName(entity, boneId)
+                        if boneIndex ~= -1 then
+                            local boneCoords = GetEntityBonePosition_2(entity, boneIndex)
+                            num = num + 1
+                            valid[num] = {
+                                entity = entity,
+                                bone = boneId,
+                                coords = boneCoords,
+                                currentDistance = utils.getDistanceSquared(coords, boneCoords),
+                                currentScreenDistance = utils.getScreenDistanceSquared(boneCoords),
+                                options = _options
+                            }
+                        end
                     end
                 end
-            end
 
-            if offsetOptions then
-                for offsetStr, _options in pairs(offsetOptions) do
-                    local x, y, z, offsetType = utils.getCoordsAndTypeFromOffsetId(offsetStr)
-                    if x and y and z and offsetType then
-                        local offset = vec3(tonumber(x), tonumber(y), tonumber(z))
-                        local worldPos
-                        if offsetType == "offset" then
-                            local min, max = GetModelDimensions(model)
-                            offset = (max - min) * offset + min
+                if offsetOptions then
+                    for offsetStr, _options in pairs(offsetOptions) do
+                        local x, y, z, offsetType = utils.getCoordsAndTypeFromOffsetId(offsetStr)
+                        if x and y and z and offsetType then
+                            local offset = vec3(tonumber(x), tonumber(y), tonumber(z))
+                            local worldPos
+                            if offsetType == "offset" then
+                                local min, max = GetModelDimensions(model)
+                                offset = (max - min) * offset + min
+                            end
+                            worldPos = GetOffsetFromEntityInWorldCoords(entity, offset.x, offset.y, offset.z)
+                            num = num + 1
+                            valid[num] = {
+                                entity = entity,
+                                offset = offsetStr,
+                                coords = worldPos,
+                                currentDistance = utils.getDistanceSquared(coords, worldPos),
+                                currentScreenDistance = utils.getScreenDistanceSquared(worldPos),
+                                options = _options
+                            }
                         end
-                        worldPos = GetOffsetFromEntityInWorldCoords(entity, offset.x, offset.y, offset.z)
-                        num = num + 1
-                        valid[num] = {
-                            entity = entity,
-                            offset = offsetStr,
-                            coords = worldPos,
-                            currentDistance = utils.getDistanceSquared(coords, worldPos),
-                            currentScreenDistance = utils.getScreenDistanceSquared(worldPos),
-                            options = _options
-                        }
                     end
                 end
             end
