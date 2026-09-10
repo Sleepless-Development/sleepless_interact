@@ -26,6 +26,7 @@ function setHudVisible(show) {
   if (show) {
     body.classList.remove("is-leaving");
     body.style.visibility = "visible";
+    void body.offsetWidth;
     requestAnimationFrame(() => {
       body.classList.add("is-visible");
     });

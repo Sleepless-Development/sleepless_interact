@@ -24,8 +24,30 @@ local NetworkGetEntityIsNetworked = NetworkGetEntityIsNetworked
 local NetworkGetNetworkIdFromEntity = NetworkGetNetworkIdFromEntity
 local GetEntityModel = GetEntityModel
 
-local r, g, b, a = table.unpack(config.getThemeColor())
+local runtimeTxds = {}
 
+local function loadSprite(sprite)
+    if not sprite then return end
+
+    if sprite.file then
+        local txd = runtimeTxds[sprite.dict]
+        if not txd then
+            txd = CreateRuntimeTxd(sprite.dict)
+            runtimeTxds[sprite.dict] = txd
+        end
+        CreateRuntimeTextureFromImage(txd, sprite.txt, sprite.file)
+        return
+    end
+
+    if sprite.dict then
+        lib.requestStreamedTextureDict(sprite.dict)
+    end
+end
+
+loadSprite(config.IndicatorSprite)
+if config.CenterDot and config.CenterDot.enabled ~= false then
+    loadSprite(config.CenterDot)
+end
 
 RegisterNUICallback('startHoldAnim', function(data, cb)
     local option = store.current.options?[data[1]]?[data[2]]
@@ -457,7 +479,7 @@ end
 
 local activeOptions = {}
 
-local FADE_OUT_MS = 200
+local FADE_OUT_MS = 240
 local promptVisible = false
 local hideUntil = 0
 local lastDrawCoords
@@ -482,7 +504,14 @@ local function drawLoop()
     if drawLoopRunning then return end
     drawLoopRunning = true
 
-    lib.requestStreamedTextureDict(config.IndicatorSprite.dict)
+    if not config.IndicatorSprite.file then
+        lib.requestStreamedTextureDict(config.IndicatorSprite.dict)
+    end
+
+    local centerDot = config.CenterDot
+    if centerDot and centerDot.enabled ~= false and not centerDot.file then
+        lib.requestStreamedTextureDict(centerDot.dict)
+    end
 
     local lastClosestItem, lastValidCount, lastValidOptions = nil, 0, nil
     local nearbyData = {}
@@ -517,6 +546,7 @@ local function drawLoop()
                     end
 
                     local distanceSq = utils.getDistanceSquared(playerCoords, coords)
+                    item.currentScreenDistance = utils.getScreenDistanceSquared(coords)
                     local validOpts, validCount, hideCompletely = filterValidOptions(item.options, item.entity, distanceSq, coords)
                     local id = item.bone or item.offset or item.entity or item.coordId
                     local shouldUpdate = false
@@ -538,13 +568,21 @@ local function drawLoop()
                     }
                 end
             end
+            table.sort(store.nearby, function(a, b)
+                return a.currentScreenDistance < b.currentScreenDistance
+            end)
             Wait(150)
         end
     end)
 
-    while #store.nearby > 0 or GetGameTimer() < hideUntil do
+    local requireLookAt = config.requireLookAt ~= false
+    local lookRadius = config.lookRadius or 0.08
+    local lookRadiusSq = lookRadius * lookRadius
+
+    while #store.nearby > 0 or GetGameTimer() < hideUntil or promptVisible do
         Wait(0)
         local foundValid = false
+        local inRange = false
 
         for i = 1, #store.nearby do
             local data = nearbyData[i]
@@ -556,7 +594,11 @@ local function drawLoop()
 
                 SetDrawOrigin(coords.x, coords.y, coords.z)
 
-                if not foundValid and data.validOpts and data.validCount > 0 then
+                local screenDistSq = utils.getScreenDistanceSquared(coords)
+                if data.validOpts and data.validCount > 0 then
+                    inRange = true
+                end
+                if not foundValid and data.validOpts and data.validCount > 0 and (not requireLookAt or screenDistSq <= lookRadiusSq) then
                     foundValid = true
 
                     local newClosestId = item.bone or item.offset or item.entity or item.coordId
@@ -625,14 +667,25 @@ local function drawLoop()
                     DrawSprite(dui.instance.dictName, dui.instance.txtName, 0.0, 0.0, duiScale, duiScale, 0.0, 255, 255, 255, 255)
                 else
                     local distance = #(playerCoords - coords)
-                    if distance < config.maxInteractDistance and item.currentScreenDistance < math.huge then
+                    if distance < config.maxInteractDistance and screenDistSq < math.huge then
                         local distanceRatio = math.max(1.0 - (distance / 10.0), 0.0)
-                        local scale = 0.025 * distanceRatio
-                        DrawSprite(config.IndicatorSprite.dict, config.IndicatorSprite.txt, 0.0, 0.0, scale, scale * aspectRatio, 45.0, r, g, b, 255)
+                        local sprite = config.IndicatorSprite
+                        local scale = (sprite.scale or 0.016) * distanceRatio
+                        local color = sprite.color or { 255, 255, 255 }
+                        DrawSprite(sprite.dict, sprite.txt, 0.0, 0.0, scale, scale * aspectRatio, sprite.rotation or 0.0, color[1], color[2], color[3], color[4] or 255)
                     end
                 end
 
                 ClearDrawOrigin()
+            end
+        end
+
+        if inRange then
+            local dot = config.CenterDot
+            if dot and dot.enabled ~= false then
+                local color = dot.color or { 255, 255, 255, 255 }
+                local scale = dot.scale or 0.003
+                DrawSprite(dot.dict, dot.txt, dot.x or 0.5, dot.y or 0.5, scale, scale * aspectRatio, 0.0, color[1], color[2], color[3], color[4] or 255)
             end
         end
 
@@ -662,7 +715,13 @@ local function drawLoop()
         end
     end
 
-    SetStreamedTextureDictAsNoLongerNeeded(config.IndicatorSprite.dict)
+    if not config.IndicatorSprite.file then
+        SetStreamedTextureDictAsNoLongerNeeded(config.IndicatorSprite.dict)
+    end
+
+    if centerDot and centerDot.enabled ~= false and not centerDot.file then
+        SetStreamedTextureDictAsNoLongerNeeded(centerDot.dict)
+    end
 
     drawLoopRunning = false
 end

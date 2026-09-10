@@ -106,7 +106,9 @@
 
 [data-theme="modern"] .option-container.highlighted {
   border-color: rgb(var(--primary));
-  background: rgba(var(--primary), 0.12);
+  background:
+    linear-gradient(rgba(var(--primary), 0.22), rgba(var(--primary), 0.22)),
+    rgba(var(--surface), 0.92);
   box-shadow: none;
 }
 

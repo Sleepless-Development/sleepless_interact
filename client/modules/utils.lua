@@ -176,7 +176,7 @@ function utils.getScreenDistanceSquared(coords)
     local success, screenX, screenY = GetScreenCoordFromWorldCoord(coords.x, coords.y, coords.z)
     if not success then return math.huge end
 
-    local dx = screenX - 0.5
+    local dx = (screenX - 0.5) * GetAspectRatio(true)
     local dy = screenY - 0.5
     return dx * dx + dy * dy
 end

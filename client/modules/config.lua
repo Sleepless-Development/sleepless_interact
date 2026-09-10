@@ -4,16 +4,22 @@ local config = {}
 -- recommend keeping this pretty low for optimization
 config.maxInteractDistance = 5.0
 
--- World size of the prompt sprite. 1.0 matches a fullscreen NUI at the 3D point.
-config.duiScale = 0.8
+-- If true, the prompt only opens when the target is inside lookRadius of the reticle.
+config.requireLookAt = true
+
+-- Screen-space radius from the reticle (fraction of screen height). Raise it to aim looser.
+config.lookRadius = 0.05
+
+-- World size of the prompt sprite.
+config.duiScale = 0.7
 
 -- Visual theme for the world prompt.
 -- Built-in: legacy | modern | minimal | light | retro | cyber | vice | noir | industrial | fantasy
 -- To add another look later, drop a file at web/themes/<id>.css
 -- using [data-theme="<id>"] selectors, then set this to that id.
-config.theme = 'modern'
+config.theme = 'minimal'
 
--- Default accent per theme. Used by the HUD and the world indicator sprite.
+-- Default accent per theme. Used by the HUD highlight.
 config.themeColors = {
 	legacy = { 28, 100, 184, 200 },
 	modern = { 49, 164, 252, 255 },
@@ -51,8 +57,27 @@ config.compactIdleMs = 2500
 -- The prompt reads the live mapping, so the HUD shows whatever they bind.
 config.defaultInteractKey = 'E'
 
---- texture dictionary and texture name for the sprite used to show non active interactions.
-config.IndicatorSprite = { dict = 'shared', txt = 'emptydot_32' }
+-- Distant / inactive marker. `file` loads a PNG from this resource as a runtime texture.
+-- color tints the texture; white on a white PNG stays white.
+config.IndicatorSprite = {
+	dict = 'slp_ind',
+	txt = 'radio',
+	file = 'web/indicator.png',
+	rotation = 0.0,
+	color = { 255, 255, 255, 200 },
+	scale = 0.011,
+}
+
+-- Screen-center pip while in range of a usable interact.
+config.CenterDot = {
+	enabled = true,
+	dict = 'mpcarhud',
+	txt = 'leaderboard_car_colour_icon_singlecolour',
+	color = { 255, 255, 255, 255 },
+	scale = 0.004,
+	x = 0.5,
+	y = 0.5,
+}
 
 -- boolean true/false use a keybind to show and hide the interactions
 config.useShowKeyBind = false
