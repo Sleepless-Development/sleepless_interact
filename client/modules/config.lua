@@ -17,7 +17,7 @@ config.duiScale = 0.7
 -- Built-in: legacy | modern | minimal | light | retro | cyber | vice | noir | industrial | fantasy
 -- To add another look later, drop a file at web/themes/<id>.css
 -- using [data-theme="<id>"] selectors, then set this to that id.
-config.theme = 'minimal'
+config.theme = 'modern'
 
 -- Default accent per theme. Used by the HUD highlight.
 config.themeColors = {
