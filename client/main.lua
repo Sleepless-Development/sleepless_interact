@@ -457,6 +457,26 @@ end
 
 local activeOptions = {}
 
+local FADE_OUT_MS = 200
+local promptVisible = false
+local hideUntil = 0
+local lastDrawCoords
+
+local function setPromptVisible(show)
+    if show then
+        if promptVisible then return end
+        promptVisible = true
+        hideUntil = 0
+        dui.sendMessage('visible', true)
+        return
+    end
+
+    if not promptVisible then return end
+    promptVisible = false
+    hideUntil = GetGameTimer() + FADE_OUT_MS
+    dui.sendMessage('visible', false)
+end
+
 local aspectRatio = GetAspectRatio(true)
 local function drawLoop()
     if drawLoopRunning then return end
@@ -522,7 +542,7 @@ local function drawLoop()
         end
     end)
 
-    while #store.nearby > 0 do
+    while #store.nearby > 0 or GetGameTimer() < hideUntil do
         Wait(0)
         local foundValid = false
 
@@ -599,6 +619,8 @@ local function drawLoop()
                         index = 1,
                     }
 
+                    lastDrawCoords = coords
+                    setPromptVisible(true)
                     local duiScale = config.duiScale or 0.8
                     DrawSprite(dui.instance.dictName, dui.instance.txtName, 0.0, 0.0, duiScale, duiScale, 0.0, 255, 255, 255, 255)
                 else
@@ -614,19 +636,29 @@ local function drawLoop()
             end
         end
 
-        if not foundValid and next(store.current) then
-            for _, opts in pairs(store.current.options) do
-                for j = 1, #opts do
-                    local opt = opts[j]
+        if not foundValid then
+            setPromptVisible(false)
+            if lastDrawCoords and GetGameTimer() < hideUntil then
+                SetDrawOrigin(lastDrawCoords.x, lastDrawCoords.y, lastDrawCoords.z)
+                local duiScale = config.duiScale or 0.8
+                DrawSprite(dui.instance.dictName, dui.instance.txtName, 0.0, 0.0, duiScale, duiScale, 0.0, 255, 255, 255, 255)
+                ClearDrawOrigin()
+            end
 
-                    if opt.onInactive and activeOptions[opt] then
-                        pcall(opt.onInactive, utils.getResponse(opt))
-                        activeOptions[opt] = nil
+            if next(store.current) then
+                for _, opts in pairs(store.current.options) do
+                    for j = 1, #opts do
+                        local opt = opts[j]
+
+                        if opt.onInactive and activeOptions[opt] then
+                            pcall(opt.onInactive, utils.getResponse(opt))
+                            activeOptions[opt] = nil
+                        end
                     end
                 end
+                store.current = {}
+                lastClosestItem = nil
             end
-            store.current = {}
-            lastClosestItem = nil
         end
     end
 

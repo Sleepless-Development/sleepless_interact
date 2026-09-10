@@ -21,7 +21,7 @@ function dui.register()
 
     while not dui.loaded do Wait(100) end
 
-    dui.sendMessage('visible', true)
+    dui.sendMessage('visible', false)
     dui.sendMessage('setTheme', config.theme or 'modern')
     if config.themeColor then
         dui.sendMessage('setColor', config.themeColor)

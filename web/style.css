@@ -29,10 +29,19 @@
   --dur-press: 140ms;
   --dur-hover: 160ms;
   --dur-ui: 200ms;
+  --dur-out: 160ms;
 
-  --theme-color: rgb(28, 100, 184, 0.8);
-  --primary: 28, 100, 184;
-  --on-accent: 8, 11, 16;
+  --theme-color: rgb(49, 164, 252, 0.8);
+  --primary: 49, 164, 252;
+  --on-accent: 0, 0, 0;
+  --on-fill: 0, 0, 0;
+  --ink: 0, 0, 0;
+  --surface: 0, 0, 0;
+  --text: 255, 255, 255;
+  --text-muted: 168, 168, 168;
+  --hairline: 255, 255, 255;
+  --hairline-a: 0.16;
+  --panel-a: 0.72;
 }
 
 *,
@@ -69,6 +78,17 @@ p {
   display: flex;
   align-items: center;
   justify-content: center;
+  opacity: 0;
+  transition: opacity var(--dur-ui) var(--ease-out);
+}
+
+body.is-visible #container {
+  opacity: 1;
+}
+
+body.is-leaving #container {
+  opacity: 0;
+  transition-duration: var(--dur-out);
 }
 
 #interact-container {
@@ -202,6 +222,11 @@ p {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  #container,
+  body.is-leaving #container {
+    transition-duration: 120ms;
+  }
+
   #container.is-compact.is-ready #options-list,
   #container.is-compact.is-ready .interact-summary {
     transition: opacity 120ms ease, visibility 120ms;

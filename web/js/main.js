@@ -3,6 +3,7 @@ import { fetchNui } from "./fetchNui.js";
 import { onSelect, resetHold, setCurrentIndex, setDefaultColor, updateHighlight } from "./controls.js";
 import { applyTheme } from "./theme.js";
 import { setupBrowserMode } from "./browser.js";
+import { isEnvBrowser } from "./env.js";
 import { setMenuConfig, setOptionCount } from "./menu.js";
 
 const optionsList = document.getElementById("options-list");
@@ -10,6 +11,34 @@ const interactKeyEl = document.getElementById("interact-key");
 const body = document.body;
 
 let interactKeyLabel = "E";
+let hideTimer = 0;
+
+function fadeMs() {
+  const raw = (getComputedStyle(document.documentElement).getPropertyValue("--dur-out") || "").trim();
+  const value = Number.parseFloat(raw);
+  if (Number.isNaN(value)) return 160;
+  return raw.endsWith("ms") ? value : value * 1000;
+}
+
+function setHudVisible(show) {
+  window.clearTimeout(hideTimer);
+
+  if (show) {
+    body.classList.remove("is-leaving");
+    body.style.visibility = "visible";
+    requestAnimationFrame(() => {
+      body.classList.add("is-visible");
+    });
+    return;
+  }
+
+  body.classList.remove("is-visible");
+  body.classList.add("is-leaving");
+  hideTimer = window.setTimeout(() => {
+    body.classList.remove("is-leaving");
+    if (!isEnvBrowser()) body.style.visibility = "hidden";
+  }, fadeMs() + 40);
+}
 
 function setInteractKey(label) {
   const text = String(label || "E").trim() || "E";
@@ -30,7 +59,7 @@ function setInteractLabel(label) {
 window.addEventListener("message", (event) => {
   switch (event.data.action) {
     case "visible": {
-      body.style.visibility = event.data.value ? "visible" : "hidden";
+      setHudVisible(!!event.data.value);
       break;
     }
 
