@@ -10,6 +10,10 @@ config.requireLookAt = true
 -- Screen-space radius from the reticle (fraction of screen height). Raise it to aim looser.
 config.lookRadius = 0.05
 
+-- If true, entity options without offset, offsetAbsolute, or bones are placed
+-- at the model bounding-box center instead of the entity origin.
+config.autoCenter = true
+
 -- World size of the prompt sprite.
 config.duiScale = 0.7
 

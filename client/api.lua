@@ -1,5 +1,6 @@
 local utils = require 'client.modules.utils'
 local store = require 'client.modules.store'
+local config = require 'client.modules.config'
 
 --- Throws a type error with a formatted message.
 ---@param variable string The name of the variable with the type issue.
@@ -71,6 +72,10 @@ local function addOptions(target, options, resource, bonesTarget, offsetsTarget)
         local option = options[i]
         option.resource = option.resource or resource
         option.distanceSq = option.distance and option.distance * option.distance or 4.0
+
+        if config.autoCenter and offsetsTarget and not option.offset and not option.offsetAbsolute and not option.bones then
+            option.offset = vec3(0.5, 0.5, 0.5)
+        end
 
         if resource == 'sleepless_interact' then
             if option.canInteract then
