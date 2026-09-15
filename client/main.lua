@@ -23,6 +23,10 @@ local GetModelDimensions = GetModelDimensions
 local NetworkGetEntityIsNetworked = NetworkGetEntityIsNetworked
 local NetworkGetNetworkIdFromEntity = NetworkGetNetworkIdFromEntity
 local GetEntityModel = GetEntityModel
+local HasEntityClearLosToEntity = HasEntityClearLosToEntity
+local StartExpensiveSynchronousShapeTestLosProbe = StartExpensiveSynchronousShapeTestLosProbe
+local GetShapeTestResult = GetShapeTestResult
+local DoesEntityExist = DoesEntityExist
 
 local runtimeTxds = {}
 
@@ -164,6 +168,32 @@ local function getCanInteractCached(option, entity, distance, coords)
     end
 
     return cached and cached.result or false
+end
+
+local DEFAULT_LOS_FLAGS = 17
+
+---@param item NearbyItem
+---@param coords vector3
+---@return boolean
+local function hasLineOfSight(item, coords)
+    if config.requireLos == false then return true end
+
+    local flags = config.losFlags or DEFAULT_LOS_FLAGS
+    local ped = cache.ped
+
+    if item.entity then
+        return DoesEntityExist(item.entity) and HasEntityClearLosToEntity(ped, item.entity, flags)
+    end
+
+    local origin = GetEntityCoords(ped)
+    local handle = StartExpensiveSynchronousShapeTestLosProbe(
+        origin.x, origin.y, origin.z + 0.6,
+        coords.x, coords.y, coords.z,
+        flags, ped, 7
+    )
+    local retval, hit = GetShapeTestResult(handle)
+    if retval == 0 then return true end
+    return hit ~= 1
 end
 
 local function cachedEntityInfo(entity)
@@ -585,7 +615,14 @@ local function drawLoop()
 
                     local distanceSq = utils.getDistanceSquared(playerCoords, coords)
                     item.currentScreenDistance = utils.getScreenDistanceSquared(coords)
-                    local validOpts, validCount, hideCompletely = filterValidOptions(item.options, item.entity, distanceSq, coords, item.globalType)
+
+                    local validOpts, validCount, hideCompletely
+                    if not hasLineOfSight(item, coords) then
+                        hideCompletely = true
+                    else
+                        validOpts, validCount, hideCompletely = filterValidOptions(item.options, item.entity, distanceSq, coords, item.globalType)
+                    end
+
                     local id = item.bone or item.offset or item.entity or item.coordId
                     local shouldUpdate = false
 
@@ -791,7 +828,7 @@ RegisterNUICallback('select', function(data, cb)
     local currentTime = GetGameTimer()
     if store.current.options and currentTime > (store.cooldownEndTime or 0) then
         local option = store.current.options?[data[1]]?[data[2]]
-        if option then
+        if option and hasLineOfSight({ entity = store.current.entity, coordId = store.current.coordsId }, store.current.coords) then
             if option.onSelect then
                 if option.canInteract then
                     local success, resp = pcall(option.canInteract, store.current.entity, store.current.distance, store.current.coords, option.name)

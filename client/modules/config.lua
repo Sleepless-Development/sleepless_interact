@@ -14,6 +14,14 @@ config.lookRadius = 0.05
 -- at the model bounding-box center instead of the entity origin.
 config.autoCenter = true
 
+-- If true, interacts are hidden when the player has no clear line of sight.
+-- Entity targets test LOS to the entity. Coord targets test LOS to the point.
+config.requireLos = true
+
+-- Shape-test flags for requireLos. 1 world, 2 vehicles, 4 peds, 16 objects.
+-- 17 (world + objects) blocks walls and props without peds/vehicles eating LOS.
+config.losFlags = 17
+
 -- Hide the distant marker when this interact type currently has no valid options
 -- (canInteract, distance, groups, items, in-vehicle).
 -- true  = hide the sprite
