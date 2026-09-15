@@ -8,6 +8,7 @@
 ---@field distance? number The maximum distance at which the option is available.
 ---@field holdTime? number Makes the option a press and hold and sets how long it should be held for. (miliseconds)
 ---@field canInteract? fun(entity: number, distance: number, coords: vector3, name: string): boolean? A function to determine if the option can be interacted with.
+---@field hideWhenEmpty? boolean Override `config.hideWhenEmpty` for this option. True hides the distant marker when this option is invalid. False keeps it.
 ---@field name? string A unique identifier for the option.
 ---@field resource? string The resource that registered the option.
 ---@field offset? vector3 A relative offset from the entity's position.
@@ -33,6 +34,7 @@
 ---@field coords vector3
 ---@field offset? string
 ---@field coordId? string
+---@field globalType? 'peds' | 'vehicles' | 'objects' | 'players'
 
 -- Represents the response structure sent to onSelect and other callable methods.
 ---@class InteractResponse

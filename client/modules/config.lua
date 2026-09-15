@@ -14,6 +14,22 @@ config.lookRadius = 0.05
 -- at the model bounding-box center instead of the entity origin.
 config.autoCenter = true
 
+-- Hide the distant marker when this interact type currently has no valid options
+-- (canInteract, distance, groups, items, in-vehicle).
+-- true  = hide the sprite
+-- false = keep the sprite as a point of interest
+-- An option's hideWhenEmpty field overrides the type default.
+config.hideWhenEmpty = {
+	globalPeds = true,
+	globalVehicles = true,
+	globalObjects = true,
+	globalPlayers = true,
+	models = false,
+	entities = false,
+	localEntities = false,
+	coords = false,
+}
+
 -- World size of the prompt sprite.
 config.duiScale = 0.7
 

@@ -178,23 +178,58 @@ local function cachedEntityInfo(entity)
     return model, netId
 end
 
+local hideWhenEmptyKey = {
+    global = {
+        peds = 'globalPeds',
+        vehicles = 'globalVehicles',
+        objects = 'globalObjects',
+        players = 'globalPlayers',
+    },
+    model = 'models',
+    entity = 'entities',
+    localEntity = 'localEntities',
+    coords = 'coords',
+}
+
+---@param options table<string, InteractOption[]>
+---@param globalType? string
+---@return boolean
+local function shouldHideWhenEmpty(options, globalType)
+    local cfg = config.hideWhenEmpty
+
+    for category, _options in pairs(options) do
+        local typeDefault = false
+        if cfg then
+            local key = category == 'global' and hideWhenEmptyKey.global[globalType] or hideWhenEmptyKey[category]
+            typeDefault = key and cfg[key] == true
+        end
+
+        for i = 1, #_options do
+            local hide = _options[i].hideWhenEmpty
+            if hide == nil then
+                hide = typeDefault
+            end
+            if not hide then
+                return false
+            end
+        end
+    end
+
+    return true
+end
+
 ---@param options InteractOption[]
 ---@param entity number
 ---@param distance number
 ---@param coords vector3
+---@param globalType? string
 ---@return nil | table<string, InteractOption[]>, number | nil, boolean | nil
-local function filterValidOptions(options, entity, distance, coords)
+local function filterValidOptions(options, entity, distance, coords, globalType)
     if not options then return nil end
     local validOptions = {}
     local totalValid = 0
-    local hasGlobal = options['global'] ~= nil
-    local hasNonGlobal = false
 
     for category, _options in pairs(options) do
-        if category ~= 'global' then
-            hasNonGlobal = true
-        end
-
         local validCategoryOptions = {}
 
         for i = 1, #_options do
@@ -231,7 +266,7 @@ local function filterValidOptions(options, entity, distance, coords)
         end
     end
 
-    local hideCompletely = hasGlobal and not hasNonGlobal and totalValid == 0
+    local hideCompletely = totalValid == 0 and shouldHideWhenEmpty(options, globalType)
 
     if totalValid == 0 then
         return nil, nil, hideCompletely
@@ -393,7 +428,8 @@ local function checkNearbyEntities(coords)
                         coords = entCoords,
                         currentDistance = utils.getDistanceSquared(coords, entCoords),
                         currentScreenDistance = utils.getScreenDistanceSquared(entCoords),
-                        options = options
+                        options = options,
+                        globalType = globalType,
                     }
                 end
 
@@ -409,7 +445,8 @@ local function checkNearbyEntities(coords)
                                 coords = boneCoords,
                                 currentDistance = utils.getDistanceSquared(coords, boneCoords),
                                 currentScreenDistance = utils.getScreenDistanceSquared(boneCoords),
-                                options = _options
+                                options = _options,
+                                globalType = globalType,
                             }
                         end
                     end
@@ -433,7 +470,8 @@ local function checkNearbyEntities(coords)
                                 coords = worldPos,
                                 currentDistance = utils.getDistanceSquared(coords, worldPos),
                                 currentScreenDistance = utils.getScreenDistanceSquared(worldPos),
-                                options = _options
+                                options = _options,
+                                globalType = globalType,
                             }
                         end
                     end
@@ -547,7 +585,7 @@ local function drawLoop()
 
                     local distanceSq = utils.getDistanceSquared(playerCoords, coords)
                     item.currentScreenDistance = utils.getScreenDistanceSquared(coords)
-                    local validOpts, validCount, hideCompletely = filterValidOptions(item.options, item.entity, distanceSq, coords)
+                    local validOpts, validCount, hideCompletely = filterValidOptions(item.options, item.entity, distanceSq, coords, item.globalType)
                     local id = item.bone or item.offset or item.entity or item.coordId
                     local shouldUpdate = false
 
