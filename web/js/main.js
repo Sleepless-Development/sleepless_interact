@@ -29,6 +29,7 @@ function setHudVisible(show) {
     void body.offsetWidth;
     requestAnimationFrame(() => {
       body.classList.add("is-visible");
+      reportPromptAnchor();
     });
     return;
   }
@@ -57,6 +58,20 @@ function setInteractLabel(label) {
   el.textContent = String(label || "Interact").trim() || "Interact";
 }
 
+function reportPromptAnchor() {
+  if (isEnvBrowser()) return;
+  const key = document.getElementById("interact-container");
+  if (!key) return;
+
+  requestAnimationFrame(() => {
+    const rect = key.getBoundingClientRect();
+    fetchNui("promptAnchor", {
+      x: (rect.left + rect.right) / 2 / window.innerWidth,
+      y: (rect.top + rect.bottom) / 2 / window.innerHeight,
+    });
+  });
+}
+
 window.addEventListener("message", (event) => {
   switch (event.data.action) {
     case "visible": {
@@ -67,6 +82,7 @@ window.addEventListener("message", (event) => {
     case "setTheme": {
       applyTheme(event.data.value);
       updateHighlight();
+      reportPromptAnchor();
       break;
     }
 
@@ -91,6 +107,7 @@ window.addEventListener("message", (event) => {
       setOptionCount(count, { reset: !!event.data.value.resetIndex });
       if (event.data.value.resetIndex) setCurrentIndex(0);
       updateHighlight();
+      reportPromptAnchor();
       break;
     }
 
@@ -106,6 +123,7 @@ window.addEventListener("message", (event) => {
 
     case "setKey": {
       setInteractKey(event.data.value);
+      reportPromptAnchor();
       break;
     }
 

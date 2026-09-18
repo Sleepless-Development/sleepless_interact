@@ -90,6 +90,11 @@ function utils.getDrawCoordsForInteract(item)
         return item.coords
     end
 
+    if item.localOffset and item.entity then
+        local offset = item.localOffset
+        return GetOffsetFromEntityInWorldCoords(item.entity, offset.x, offset.y, offset.z)
+    end
+
     if item.offset then
         local x, y, z, offsetType = utils.getCoordsAndTypeFromOffsetId(item.offset)
         local entityModel = GetEntityModel(item.entity)
@@ -103,6 +108,10 @@ function utils.getDrawCoordsForInteract(item)
         end
 
         return GetOffsetFromEntityInWorldCoords(item.entity, offset.x, offset.y, offset.z)
+    end
+
+    if item.boneIndex then
+        return GetEntityBonePosition_2(item.entity, item.boneIndex)
     end
 
     if item.bone then
@@ -171,12 +180,13 @@ function utils.getDistanceSquared(a, b)
 end
 
 ---@param coords vector3
+---@param aspectRatio? number
 ---@return number
-function utils.getScreenDistanceSquared(coords)
+function utils.getScreenDistanceSquared(coords, aspectRatio)
     local success, screenX, screenY = GetScreenCoordFromWorldCoord(coords.x, coords.y, coords.z)
     if not success then return math.huge end
 
-    local dx = (screenX - 0.5) * GetAspectRatio(true)
+    local dx = (screenX - 0.5) * (aspectRatio or GetAspectRatio(true))
     local dy = screenY - 0.5
     return dx * dx + dy * dy
 end

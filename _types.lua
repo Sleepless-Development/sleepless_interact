@@ -31,6 +31,8 @@
 ---@field currentDistance number
 ---@field entity? number
 ---@field bone? string
+---@field boneIndex? number
+---@field localOffset? vector3
 ---@field coords vector3
 ---@field offset? string
 ---@field coordId? string

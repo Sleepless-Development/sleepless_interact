@@ -72,6 +72,7 @@ local function addOptions(target, options, resource, bonesTarget, offsetsTarget)
         local option = options[i]
         option.resource = option.resource or resource
         option.distanceSq = option.distance and option.distance * option.distance or 4.0
+        option.hideButton = not option.onSelect and not option.event and not option.export and not option.serverEvent and not option.command
 
         if config.autoCenter and offsetsTarget and not option.offset and not option.offsetAbsolute and not option.bones then
             option.offset = vec3(0.5, 0.5, 0.5)

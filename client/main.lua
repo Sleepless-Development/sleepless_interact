@@ -11,7 +11,8 @@ local drawLoopRunning = false
 
 local GetEntityCoords = GetEntityCoords
 local DrawSprite = DrawSprite
-local SetDrawOrigin = SetDrawOrigin
+local GetScreenCoordFromWorldCoord = GetScreenCoordFromWorldCoord
+local GetActualScreenResolution = GetActualScreenResolution
 local getNearbyObjects = lib.getNearbyObjects
 local getNearbyPlayers = lib.getNearbyPlayers
 local getNearbyVehicles = lib.getNearbyVehicles
@@ -23,6 +24,7 @@ local GetModelDimensions = GetModelDimensions
 local NetworkGetEntityIsNetworked = NetworkGetEntityIsNetworked
 local NetworkGetNetworkIdFromEntity = NetworkGetNetworkIdFromEntity
 local GetEntityModel = GetEntityModel
+local GetEntityType = GetEntityType
 local HasEntityClearLosToEntity = HasEntityClearLosToEntity
 local StartExpensiveSynchronousShapeTestLosProbe = StartExpensiveSynchronousShapeTestLosProbe
 local GetShapeTestResult = GetShapeTestResult
@@ -143,7 +145,6 @@ end
 
 local modelCache, netIdCache = {}, {}
 
--- Async canInteract caching system
 local canInteractCache = {}
 local canInteractPending = {}
 
@@ -151,9 +152,9 @@ local canInteractPending = {}
 ---@param entity number
 ---@param distance number
 ---@param coords vector3
----@return boolean|nil -- nil means pending/unknown, use cached or default
+---@return boolean|nil
 local function getCanInteractCached(option, entity, distance, coords)
-    local cacheKey = tostring(option)
+    local cacheKey = tostring(option) .. ':' .. tostring(entity or 0)
     local cached = canInteractCache[cacheKey]
 
     if not canInteractPending[cacheKey] then
@@ -171,29 +172,100 @@ local function getCanInteractCached(option, entity, distance, coords)
 end
 
 local DEFAULT_LOS_FLAGS = 17
+local MOVE_EPSILON_SQ = 0.0001
+local SCAN_RADIUS_PADDING = 4.0
+
+local function mapHasKeys(t)
+    return t and next(t) ~= nil
+end
+
+---@param a table<string, InteractOption[]>|nil
+---@param b table<string, InteractOption[]>|nil
+---@return boolean
+local function validOptionsChanged(a, b)
+    if a == b then return false end
+    if not a or not b then return true end
+
+    local aCount = 0
+    for category, opts in pairs(a) do
+        aCount = aCount + 1
+        local other = b[category]
+        if not other or #other ~= #opts then return true end
+        for i = 1, #opts do
+            if opts[i] ~= other[i] then return true end
+        end
+    end
+
+    local bCount = 0
+    for _ in pairs(b) do
+        bCount = bCount + 1
+    end
+
+    return aCount ~= bCount
+end
+
+---@param globalType string
+---@param hasUntyped boolean
+---@param hasNetEntities boolean
+---@return boolean
+local function needsEntityPool(globalType, hasUntyped, hasNetEntities)
+    if store[globalType] and #store[globalType] > 0 then return true end
+    if mapHasKeys(store.bones[globalType]) then return true end
+    if mapHasKeys(store.offsets[globalType]) then return true end
+    if globalType == 'players' then
+        return hasNetEntities
+    end
+    return hasUntyped
+end
+
+---@param from vector3
+---@param to vector3
+---@param flags number
+---@param ignore number
+---@return integer retval
+---@return boolean hit
+---@return number entityHit
+local function probeLos(from, to, flags, ignore)
+    local handle = StartExpensiveSynchronousShapeTestLosProbe(
+        from.x, from.y, from.z,
+        to.x, to.y, to.z,
+        flags, ignore, 7
+    )
+    local retval, hit, _, _, entityHit = GetShapeTestResult(handle)
+    return retval, hit == 1 or hit == true, entityHit or 0
+end
 
 ---@param item NearbyItem
 ---@param coords vector3
+---@param origin? vector3
 ---@return boolean
-local function hasLineOfSight(item, coords)
+local function hasLineOfSight(item, coords, origin)
     if config.requireLos == false then return true end
 
     local flags = config.losFlags or DEFAULT_LOS_FLAGS
     local ped = cache.ped
-
-    if item.entity then
-        return DoesEntityExist(item.entity) and HasEntityClearLosToEntity(ped, item.entity, flags)
+    if not origin then
+        origin = GetEntityCoords(ped)
+        origin = vec3(origin.x, origin.y, origin.z + 0.6)
     end
 
-    local origin = GetEntityCoords(ped)
-    local handle = StartExpensiveSynchronousShapeTestLosProbe(
-        origin.x, origin.y, origin.z + 0.6,
-        coords.x, coords.y, coords.z,
-        flags, ped, 7
-    )
-    local retval, hit = GetShapeTestResult(handle)
+    if item.entity then
+        if not DoesEntityExist(item.entity) then return false end
+
+        local entityType = GetEntityType(item.entity)
+        if entityType == 1 or entityType == 2 then
+            return HasEntityClearLosToEntity(ped, item.entity, flags)
+        end
+
+        local retval, hit, entityHit = probeLos(origin, coords, flags, ped)
+        if retval == 0 then return true end
+        if not hit then return true end
+        return entityHit == item.entity
+    end
+
+    local retval, hit = probeLos(origin, coords, flags, ped)
     if retval == 0 then return true end
-    return hit ~= 1
+    return not hit
 end
 
 local function cachedEntityInfo(entity)
@@ -286,9 +358,6 @@ local function filterValidOptions(options, entity, distance, coords, globalType)
                 validCategoryOptions[#validCategoryOptions + 1] = option
                 totalValid = totalValid + 1
             end
-
-            option.hideButton = not option.onSelect and not option.event and not option.export and not option
-                .serverEvent and not option.command
         end
 
         if #validCategoryOptions > 0 then
@@ -307,8 +376,10 @@ end
 
 ---@param entity number
 ---@param globalType string
+---@param model number
+---@param netId? number
 ---@return InteractOption[] | nil
-local function getOptionsForEntity(entity, globalType)
+local function getOptionsForEntity(entity, globalType, model, netId)
     if not entity then return nil end
 
     if IsPedAPlayer(entity) then
@@ -316,8 +387,6 @@ local function getOptionsForEntity(entity, globalType)
             global = store.players,
         }
     end
-
-    local model, netId = cachedEntityInfo(entity)
 
     local options = {
         global = (store[globalType] ~= nil and #store[globalType] > 0 and store[globalType]) or nil,
@@ -332,10 +401,41 @@ end
 
 ---@param entity number
 ---@param globalType string
+---@param model number
+---@param netId? number
+---@return boolean
+local function hasStoredBones(entity, globalType, model, netId)
+    local bones = store.bones
+    if bones[globalType] and next(bones[globalType]) then return true end
+    if model and bones.models and bones.models[model] and next(bones.models[model]) then return true end
+    if netId then
+        return bones.entities and bones.entities[netId] and next(bones.entities[netId]) ~= nil
+    end
+    return bones.localEntities and bones.localEntities[entity] and next(bones.localEntities[entity]) ~= nil
+end
+
+---@param entity number
+---@param globalType string
+---@param model number
+---@param netId? number
+---@return boolean
+local function hasStoredOffsets(entity, globalType, model, netId)
+    local offsets = store.offsets
+    if offsets[globalType] and next(offsets[globalType]) then return true end
+    if model and offsets.models and offsets.models[model] and next(offsets.models[model]) then return true end
+    if netId then
+        return offsets.entities and offsets.entities[netId] and next(offsets.entities[netId]) ~= nil
+    end
+    return offsets.localEntities and offsets.localEntities[entity] and next(offsets.localEntities[entity]) ~= nil
+end
+
+---@param entity number
+---@param globalType string
+---@param model number
+---@param netId? number
 ---@return table<string, InteractOption[]> | nil
-local function getBoneOptionsForEntity(entity, globalType)
+local function getBoneOptionsForEntity(entity, globalType, model, netId)
     if not entity then return nil end
-    local model, netId = cachedEntityInfo(entity)
     local boneOptions = {}
     local hasOptions = false
 
@@ -384,10 +484,11 @@ end
 
 ---@param entity number
 ---@param globalType string
+---@param model number
+---@param netId? number
 ---@return table<string, InteractOption[]> | nil
-local function getOffsetOptionsForEntity(entity, globalType)
+local function getOffsetOptionsForEntity(entity, globalType, model, netId)
     if not entity then return nil end
-    local model, netId = cachedEntityInfo(entity)
     local offsetOptions = {}
     local hasOptions = false
 
@@ -435,74 +536,90 @@ local function getOffsetOptionsForEntity(entity, globalType)
 end
 
 ---@param coords vector3
+---@param aspectRatio number
 ---@return NearbyItem[]
-local function checkNearbyEntities(coords)
+local function checkNearbyEntities(coords, aspectRatio)
+    table.wipe(modelCache)
+    table.wipe(netIdCache)
+
     local valid = {}
     local num = 0
+    local scanRadius = config.maxInteractDistance + SCAN_RADIUS_PADDING
 
     local function processEntities(entities, globalType)
+        local dimCache = {}
+
         for i = 1, #entities do
             local ent = entities[i]
             local entity = ent.object or ent.ped or ent.vehicle
             if entity and entity ~= 0 then
-                local model = cachedEntityInfo(entity)
-                local entCoords = GetEntityCoords(entity)
-                local options = getOptionsForEntity(entity, globalType)
-                local boneOptions = getBoneOptionsForEntity(entity, globalType)
-                local offsetOptions = getOffsetOptionsForEntity(entity, globalType)
+                local model, netId = cachedEntityInfo(entity)
+                local options = getOptionsForEntity(entity, globalType, model, netId)
+                local boneOptions = hasStoredBones(entity, globalType, model, netId) and getBoneOptionsForEntity(entity, globalType, model, netId) or nil
+                local offsetOptions = hasStoredOffsets(entity, globalType, model, netId) and getOffsetOptionsForEntity(entity, globalType, model, netId) or nil
 
-                if options then
-                    num = num + 1
-                    valid[num] = {
-                        entity = entity,
-                        coords = entCoords,
-                        currentDistance = utils.getDistanceSquared(coords, entCoords),
-                        currentScreenDistance = utils.getScreenDistanceSquared(entCoords),
-                        options = options,
-                        globalType = globalType,
-                    }
-                end
+                if options or boneOptions or offsetOptions then
+                    local entCoords = GetEntityCoords(entity)
 
-                if boneOptions then
-                    for boneId, _options in pairs(boneOptions) do
-                        local boneIndex = GetEntityBoneIndexByName(entity, boneId)
-                        if boneIndex ~= -1 then
-                            local boneCoords = GetEntityBonePosition_2(entity, boneIndex)
-                            num = num + 1
-                            valid[num] = {
-                                entity = entity,
-                                bone = boneId,
-                                coords = boneCoords,
-                                currentDistance = utils.getDistanceSquared(coords, boneCoords),
-                                currentScreenDistance = utils.getScreenDistanceSquared(boneCoords),
-                                options = _options,
-                                globalType = globalType,
-                            }
+                    if options then
+                        num = num + 1
+                        valid[num] = {
+                            entity = entity,
+                            coords = entCoords,
+                            currentDistance = utils.getDistanceSquared(coords, entCoords),
+                            currentScreenDistance = utils.getScreenDistanceSquared(entCoords, aspectRatio),
+                            options = options,
+                            globalType = globalType,
+                        }
+                    end
+
+                    if boneOptions then
+                        for boneId, _options in pairs(boneOptions) do
+                            local boneIndex = GetEntityBoneIndexByName(entity, boneId)
+                            if boneIndex ~= -1 then
+                                local boneCoords = GetEntityBonePosition_2(entity, boneIndex)
+                                num = num + 1
+                                valid[num] = {
+                                    entity = entity,
+                                    bone = boneId,
+                                    boneIndex = boneIndex,
+                                    coords = boneCoords,
+                                    currentDistance = utils.getDistanceSquared(coords, boneCoords),
+                                    currentScreenDistance = utils.getScreenDistanceSquared(boneCoords, aspectRatio),
+                                    options = _options,
+                                    globalType = globalType,
+                                }
+                            end
                         end
                     end
-                end
 
-                if offsetOptions then
-                    for offsetStr, _options in pairs(offsetOptions) do
-                        local x, y, z, offsetType = utils.getCoordsAndTypeFromOffsetId(offsetStr)
-                        if x and y and z and offsetType then
-                            local offset = vec3(tonumber(x), tonumber(y), tonumber(z))
-                            local worldPos
-                            if offsetType == "offset" then
-                                local min, max = GetModelDimensions(model)
-                                offset = (max - min) * offset + min
+                    if offsetOptions then
+                        for offsetStr, _options in pairs(offsetOptions) do
+                            local x, y, z, offsetType = utils.getCoordsAndTypeFromOffsetId(offsetStr)
+                            if x and y and z and offsetType then
+                                local offset = vec3(tonumber(x), tonumber(y), tonumber(z))
+                                if offsetType == "offset" then
+                                    local dims = dimCache[model]
+                                    if not dims then
+                                        local min, max = GetModelDimensions(model)
+                                        dims = { min, max }
+                                        dimCache[model] = dims
+                                    end
+                                    offset = (dims[2] - dims[1]) * offset + dims[1]
+                                end
+                                local worldPos = GetOffsetFromEntityInWorldCoords(entity, offset.x, offset.y, offset.z)
+                                num = num + 1
+                                valid[num] = {
+                                    entity = entity,
+                                    offset = offsetStr,
+                                    localOffset = offset,
+                                    coords = worldPos,
+                                    currentDistance = utils.getDistanceSquared(coords, worldPos),
+                                    currentScreenDistance = utils.getScreenDistanceSquared(worldPos, aspectRatio),
+                                    options = _options,
+                                    globalType = globalType,
+                                }
                             end
-                            worldPos = GetOffsetFromEntityInWorldCoords(entity, offset.x, offset.y, offset.z)
-                            num = num + 1
-                            valid[num] = {
-                                entity = entity,
-                                offset = offsetStr,
-                                coords = worldPos,
-                                currentDistance = utils.getDistanceSquared(coords, worldPos),
-                                currentScreenDistance = utils.getScreenDistanceSquared(worldPos),
-                                options = _options,
-                                globalType = globalType,
-                            }
                         end
                     end
                 end
@@ -510,25 +627,40 @@ local function checkNearbyEntities(coords)
         end
     end
 
-    processEntities(getNearbyObjects(coords, 10.0), 'objects')
-    processEntities(getNearbyVehicles(coords, 10.0, true), 'vehicles')
-    processEntities(getNearbyPlayers(coords, 10.0, false), 'players')
-    processEntities(getNearbyPeds(coords, 10.0), 'peds')
+    local hasModels = mapHasKeys(store.models) or mapHasKeys(store.bones.models) or mapHasKeys(store.offsets.models)
+    local hasEntities = mapHasKeys(store.entities) or mapHasKeys(store.bones.entities) or mapHasKeys(store.offsets.entities)
+    local hasLocalEntities = mapHasKeys(store.localEntities) or mapHasKeys(store.bones.localEntities) or mapHasKeys(store.offsets.localEntities)
+    local hasUntyped = hasModels or hasEntities or hasLocalEntities
+    local hasNetEntities = hasEntities or hasLocalEntities
+
+    if needsEntityPool('objects', hasUntyped, hasNetEntities) then
+        processEntities(getNearbyObjects(coords, scanRadius), 'objects')
+    end
+    if needsEntityPool('vehicles', hasUntyped, hasNetEntities) then
+        processEntities(getNearbyVehicles(coords, scanRadius, true), 'vehicles')
+    end
+    if needsEntityPool('players', hasUntyped, hasNetEntities) then
+        processEntities(getNearbyPlayers(coords, scanRadius, false), 'players')
+    end
+    if needsEntityPool('peds', hasUntyped, hasNetEntities) then
+        processEntities(getNearbyPeds(coords, scanRadius), 'peds')
+    end
 
     return valid
 end
 
 ---@param coords vector3
 ---@param update NearbyItem[]
+---@param aspectRatio number
 ---@return NearbyItem[]
-local function checkNearbyCoords(coords, update)
+local function checkNearbyCoords(coords, update, aspectRatio)
     for id, _coords in pairs(store.coordIds) do
         local distSq = utils.getDistanceSquared(coords, _coords)
         if distSq < config.maxInteractDistanceSq then
             update[#update + 1] = {
                 coords = _coords,
                 currentDistance = distSq,
-                currentScreenDistance = utils.getScreenDistanceSquared(_coords),
+                currentScreenDistance = utils.getScreenDistanceSquared(_coords, aspectRatio),
                 coordId = id,
                 options = { coords = store.coords[id] }
             }
@@ -548,9 +680,53 @@ end
 local activeOptions = {}
 
 local FADE_OUT_MS = 240
+local INDICATOR_FADE_IN_MS = 200
+local INDICATOR_FADE_OUT_MS = 160
 local promptVisible = false
 local hideUntil = 0
 local lastDrawCoords
+
+local function easeOutCubic(t)
+    local u = 1.0 - t
+    return 1.0 - u * u * u
+end
+
+local function drawSpriteAtCoords(coords, dict, txt, width, height, rot, r, g, b, a, resX, resY)
+    local ok, sx, sy = GetScreenCoordFromWorldCoord(coords.x, coords.y, coords.z)
+    if not ok then return end
+    sx = sx + width * (0.5 - (dui.anchorX or 0.5))
+    sy = sy + height * (0.5 - (dui.anchorY or 0.5))
+    DrawSprite(
+        dict,
+        txt,
+        (math.floor(sx * resX) + 0.5) / resX,
+        (math.floor(sy * resY) + 0.5) / resY,
+        width,
+        height,
+        rot,
+        r,
+        g,
+        b,
+        a
+    )
+end
+
+local function sampleIndicatorAlpha(st, now)
+    local dur = st.to >= st.from and INDICATOR_FADE_IN_MS or INDICATOR_FADE_OUT_MS
+    local t = dur > 0 and (now - st.start) / dur or 1.0
+    if t >= 1.0 then return st.to end
+    if t <= 0.0 then return st.from end
+    return st.from + (st.to - st.from) * easeOutCubic(t)
+end
+
+local function setIndicatorTarget(st, now, target)
+    local cur = sampleIndicatorAlpha(st, now)
+    if st.to == target then return cur end
+    st.from = cur
+    st.to = target
+    st.start = now
+    return cur
+end
 
 local function setPromptVisible(show)
     if show then
@@ -567,7 +743,6 @@ local function setPromptVisible(show)
     dui.sendMessage('visible', false)
 end
 
-local aspectRatio = GetAspectRatio(true)
 local function drawLoop()
     if drawLoopRunning then return end
     drawLoopRunning = true
@@ -584,6 +759,11 @@ local function drawLoop()
     local lastClosestItem, lastValidCount, lastValidOptions = nil, 0, nil
     local nearbyData = {}
     local playerCoords
+    local aspectRatio = GetAspectRatio(true)
+    local screenW, screenH = GetActualScreenResolution()
+    local indicatorFade = {}
+    local maxDistSq = config.maxInteractDistanceSq
+    local maxIndicators = config.maxIndicators or 8
 
     local entityStartCoords = {}
     local movingEntity = {}
@@ -596,6 +776,9 @@ local function drawLoop()
             end
 
             playerCoords = GetEntityCoords(cache.ped)
+            aspectRatio = GetAspectRatio(true)
+            screenW, screenH = GetActualScreenResolution()
+            local losOrigin = vec3(playerCoords.x, playerCoords.y, playerCoords.z + 0.6)
             nearbyData = {}
             for i = 1, #store.nearby do
                 local item = store.nearby[i]
@@ -604,20 +787,27 @@ local function drawLoop()
 
                 if coords then
                     if item.entity then
-                        if not entityStartCoords[item.entity] then
+                        local start = entityStartCoords[item.entity]
+                        if not start then
                             entityStartCoords[item.entity] = coords
-                        end
-
-                        if coords ~= entityStartCoords then
-                            movingEntity[item.entity] = true
+                        elseif not movingEntity[item.entity] then
+                            local dx = coords.x - start.x
+                            local dy = coords.y - start.y
+                            local dz = coords.z - start.z
+                            if dx * dx + dy * dy + dz * dz > MOVE_EPSILON_SQ then
+                                movingEntity[item.entity] = true
+                            end
                         end
                     end
 
                     local distanceSq = utils.getDistanceSquared(playerCoords, coords)
-                    item.currentScreenDistance = utils.getScreenDistanceSquared(coords)
+                    local screenDistSq = utils.getScreenDistanceSquared(coords, aspectRatio)
+                    item.currentScreenDistance = screenDistSq
 
                     local validOpts, validCount, hideCompletely
-                    if not hasLineOfSight(item, coords) then
+                    if distanceSq > maxDistSq or screenDistSq == math.huge then
+                        hideCompletely = true
+                    elseif not hasLineOfSight(item, coords, losOrigin) then
                         hideCompletely = true
                     else
                         validOpts, validCount, hideCompletely = filterValidOptions(item.options, item.entity, distanceSq, coords, item.globalType)
@@ -626,10 +816,8 @@ local function drawLoop()
                     local id = item.bone or item.offset or item.entity or item.coordId
                     local shouldUpdate = false
 
-                    if id == lastClosestItem then
-                        if lastValidOptions then
-                            shouldUpdate = not lib.table.matches(validOpts, lastValidOptions)
-                        end
+                    if id == lastClosestItem and lastValidOptions then
+                        shouldUpdate = validOptionsChanged(validOpts, lastValidOptions)
                     end
 
                     nearbyData[i] = {
@@ -654,10 +842,39 @@ local function drawLoop()
     local lookRadius = config.lookRadius or 0.08
     local lookRadiusSq = lookRadius * lookRadius
 
-    while #store.nearby > 0 or GetGameTimer() < hideUntil or promptVisible do
+    while #store.nearby > 0 or GetGameTimer() < hideUntil or promptVisible or next(indicatorFade) do
         Wait(0)
         local foundValid = false
         local inRange = false
+        local indicatorsDrawn = 0
+        local now = GetGameTimer()
+        local seenIndicators = {}
+        local sprite = config.IndicatorSprite
+        local spriteColor = (sprite and sprite.color) or { 255, 255, 255, 220 }
+        local spriteAlpha = spriteColor[4] or 220
+        local spriteNear = (sprite and sprite.scale) or 0.016
+        local spriteFar = spriteNear * 0.72
+        local maxDist = config.maxInteractDistance
+
+        local function drawIndicator(st)
+            local alpha = sampleIndicatorAlpha(st, now)
+            if alpha <= 0.01 then return end
+            local a = math.floor(spriteAlpha * alpha + 0.5)
+            drawSpriteAtCoords(
+                st.coords,
+                sprite.dict,
+                sprite.txt,
+                st.scale,
+                st.scale * aspectRatio,
+                sprite.rotation or 0.0,
+                spriteColor[1],
+                spriteColor[2],
+                spriteColor[3],
+                a,
+                screenW,
+                screenH
+            )
+        end
 
         for i = 1, #store.nearby do
             local data = nearbyData[i]
@@ -667,9 +884,7 @@ local function drawLoop()
                 local coords = (item.entity and not movingEntity[item.entity] and data.coords) or
                     utils.getDrawCoordsForInteract(item)
 
-                SetDrawOrigin(coords.x, coords.y, coords.z)
-
-                local screenDistSq = utils.getScreenDistanceSquared(coords)
+                local screenDistSq = utils.getScreenDistanceSquared(coords, aspectRatio)
                 if data.validOpts and data.validCount > 0 then
                     inRange = true
                 end
@@ -738,20 +953,38 @@ local function drawLoop()
 
                     lastDrawCoords = coords
                     setPromptVisible(true)
-                    local duiScale = config.duiScale or 0.8
-                    DrawSprite(dui.instance.dictName, dui.instance.txtName, 0.0, 0.0, duiScale, duiScale, 0.0, 255, 255, 255, 255)
-                else
-                    local distance = #(playerCoords - coords)
-                    if distance < config.maxInteractDistance and screenDistSq < math.huge then
-                        local distanceRatio = math.max(1.0 - (distance / 10.0), 0.0)
-                        local sprite = config.IndicatorSprite
-                        local scale = (sprite.scale or 0.016) * distanceRatio
-                        local color = sprite.color or { 255, 255, 255 }
-                        DrawSprite(sprite.dict, sprite.txt, 0.0, 0.0, scale, scale * aspectRatio, sprite.rotation or 0.0, color[1], color[2], color[3], color[4] or 255)
+                    local duiScale = config.duiScale or 0.12
+                    local drawH = duiScale
+                    local drawW = duiScale * ((dui.width or 1) / (dui.height or 1)) * (screenH / screenW)
+                    drawSpriteAtCoords(coords, dui.instance.dictName, dui.instance.txtName, drawW, drawH, 0.0, 255, 255, 255, 255, screenW, screenH)
+                elseif indicatorsDrawn < maxIndicators and data.distance < maxDistSq and screenDistSq < math.huge then
+                    indicatorsDrawn = indicatorsDrawn + 1
+                    local distT = maxDist > 0 and math.min(math.sqrt(data.distance) / maxDist, 1.0) or 0.0
+                    local scale = spriteNear + (spriteFar - spriteNear) * distT
+                    local id = item.bone or item.offset or item.entity or item.coordId
+                    seenIndicators[id] = true
+                    local st = indicatorFade[id]
+                    if not st then
+                        st = { from = 0.0, to = 1.0, start = now, coords = coords, scale = scale }
+                        indicatorFade[id] = st
+                    else
+                        setIndicatorTarget(st, now, 1.0)
+                        st.coords = coords
+                        st.scale = scale
                     end
+                    drawIndicator(st)
                 end
+            end
+        end
 
-                ClearDrawOrigin()
+        for id, st in pairs(indicatorFade) do
+            if not seenIndicators[id] then
+                setIndicatorTarget(st, now, 0.0)
+                if sampleIndicatorAlpha(st, now) <= 0.01 then
+                    indicatorFade[id] = nil
+                else
+                    drawIndicator(st)
+                end
             end
         end
 
@@ -767,10 +1000,10 @@ local function drawLoop()
         if not foundValid then
             setPromptVisible(false)
             if lastDrawCoords and GetGameTimer() < hideUntil then
-                SetDrawOrigin(lastDrawCoords.x, lastDrawCoords.y, lastDrawCoords.z)
-                local duiScale = config.duiScale or 0.8
-                DrawSprite(dui.instance.dictName, dui.instance.txtName, 0.0, 0.0, duiScale, duiScale, 0.0, 255, 255, 255, 255)
-                ClearDrawOrigin()
+                local duiScale = config.duiScale or 0.12
+                local drawH = duiScale
+                local drawW = duiScale * ((dui.width or 1) / (dui.height or 1)) * (screenH / screenW)
+                drawSpriteAtCoords(lastDrawCoords, dui.instance.dictName, dui.instance.txtName, drawW, drawH, 0.0, 255, 255, 255, 255, screenW, screenH)
             end
 
             if next(store.current) then
@@ -807,8 +1040,9 @@ local function BuilderLoop()
             table.wipe(store.nearby)
         else
             local coords = GetEntityCoords(cache.ped)
-            local update = checkNearbyEntities(coords)
-            update = checkNearbyCoords(coords, update)
+            local aspectRatio = GetAspectRatio(true)
+            local update = checkNearbyEntities(coords, aspectRatio)
+            update = checkNearbyCoords(coords, update, aspectRatio)
 
             store.nearby = update
 
@@ -829,15 +1063,16 @@ RegisterNUICallback('select', function(data, cb)
     if store.current.options and currentTime > (store.cooldownEndTime or 0) then
         local option = store.current.options?[data[1]]?[data[2]]
         if option and hasLineOfSight({ entity = store.current.entity, coordId = store.current.coordsId }, store.current.coords) then
-            if option.onSelect then
-                if option.canInteract then
-                    local success, resp = pcall(option.canInteract, store.current.entity, store.current.distance, store.current.coords, option.name)
-                    if success and resp then
-                        option.onSelect(option.qtarget and store.current.entity or utils.getResponse(option))
-                    end
-                else
-                    option.onSelect(option.qtarget and store.current.entity or utils.getResponse(option))
+            if option.canInteract then
+                local success, resp = pcall(option.canInteract, store.current.entity, store.current.distance, store.current.coords, option.name)
+                if not success or not resp then
+                    cb(1)
+                    return
                 end
+            end
+
+            if option.onSelect then
+                option.onSelect(option.qtarget and store.current.entity or utils.getResponse(option))
             elseif option.export then
                 exports[option.resource][option.export](nil, utils.getResponse(option))
             elseif option.event then
@@ -847,6 +1082,7 @@ RegisterNUICallback('select', function(data, cb)
             elseif option.command then
                 ExecuteCommand(option.command)
             end
+
             local cooldown = option.cooldown or 1500
             store.cooldownEndTime = currentTime + cooldown
             if cooldown > 0 then

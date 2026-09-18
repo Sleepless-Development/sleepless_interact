@@ -11,6 +11,9 @@ const MOCK_OPTIONS = {
     { label: "Search", icon: "fa-solid fa-magnifying-glass" },
     { label: "Lockpick", icon: "fa-solid fa-unlock", holdTime: 1600 },
     { label: "Examine", icon: "fa-solid fa-eye" },
+    { label: "Flip vehicle", icon: "fa-solid fa-rotate" },
+    { label: "Push", icon: "fa-solid fa-hand" },
+    { label: "Refuel", icon: "fa-solid fa-gas-pump" },
   ],
 };
 

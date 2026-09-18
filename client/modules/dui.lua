@@ -3,19 +3,45 @@ local config = require 'client.modules.config'
 local utils = require 'client.modules.utils'
 
 local dui = {}
-local screenW, screenH = GetActualScreenResolution()
 local controlsRunning = false
+local lastInteractKey
+dui.anchorX = 0.07
+dui.anchorY = 0.5
 
 function dui.register()
     if dui.instance then
         dui.instance:remove()
     end
 
+    lastInteractKey = nil
+
+    local screenW, screenH = GetActualScreenResolution()
+    local spriteScale = config.duiScale or 0.12
+    local superSample = 2
+    local aspect = 2.4
+    local height = math.max(2, math.floor(screenH * spriteScale * superSample + 0.5))
+    local width = math.max(2, math.floor(height * aspect + 0.5))
+    width = width - (width % 2)
+    height = height - (height % 2)
+
+    local maxEdge = config.duiResolution or 2048
+    local longEdge = math.max(width, height)
+    if longEdge > maxEdge then
+        local fit = maxEdge / longEdge
+        width = math.max(2, math.floor(width * fit + 0.5))
+        height = math.max(2, math.floor(height * fit + 0.5))
+        width = width - (width % 2)
+        height = height - (height % 2)
+    end
+
+    dui.width = width
+    dui.height = height
+
     dui.instance = lib.dui:new(
         {
             url = ("nui://%s/web/index.html"):format(cache.resource),
-            width = screenW,
-            height = screenH,
+            width = width,
+            height = height,
         }
     )
 
@@ -36,9 +62,13 @@ end
 function dui.syncInteractKey()
     if not dui.instance then return end
 
+    local key = utils.toHumanKeybind('+interact_action')
+    if key == lastInteractKey then return end
+    lastInteractKey = key
+
     dui.instance:sendMessage({
         action = 'setKey',
-        value = utils.toHumanKeybind('+interact_action'),
+        value = key,
     })
 end
 
@@ -63,6 +93,18 @@ end)
 
 RegisterNuiCallback('currentOption', function(data, cb)
     store.current.index = data[1]
+    cb(1)
+end)
+
+RegisterNuiCallback('promptAnchor', function(data, cb)
+    if type(data) == 'table' then
+        if type(data.x) == 'number' then
+            dui.anchorX = data.x
+        end
+        if type(data.y) == 'number' then
+            dui.anchorY = data.y
+        end
+    end
     cb(1)
 end)
 
@@ -118,7 +160,7 @@ dui.handleDuiControls = function()
     end
 
     if input then
-        Wait(200)
+        Wait(110)
     end
 end
 

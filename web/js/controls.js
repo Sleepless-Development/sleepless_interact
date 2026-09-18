@@ -142,6 +142,29 @@ function syncSelectedAlignment() {
   optionsWrapper.style.removeProperty("translate");
 }
 
+function isFullyVisible(el, container) {
+  const bounds = container.getBoundingClientRect();
+  const rect = el.getBoundingClientRect();
+  return rect.top >= bounds.top - 1 && rect.bottom <= bounds.bottom + 1;
+}
+
+function updateScrollHints() {
+  const options = getOptions();
+  const first = options[0];
+  const last = options[options.length - 1];
+  optionsWrapper.classList.toggle("has-scroll-up", !!(first && !isFullyVisible(first, optionsList)));
+  optionsWrapper.classList.toggle("has-scroll-down", !!(last && !isFullyVisible(last, optionsList)));
+}
+
+function scrollActiveIntoView() {
+  const options = getOptions();
+  const active = options[currentIndex];
+  if (active) {
+    active.scrollIntoView({ block: "nearest" });
+  }
+  requestAnimationFrame(updateScrollHints);
+}
+
 export function updateHighlight() {
   const options = getOptions();
   if (options.length > 0) {
@@ -158,7 +181,10 @@ export function updateHighlight() {
   }
 
   syncSelectedAlignment();
+  scrollActiveIntoView();
 }
+
+optionsList.addEventListener("scroll", updateScrollHints);
 
 window.addEventListener("wheel", (event) => {
   if (isHolding) return;
@@ -166,6 +192,8 @@ window.addEventListener("wheel", (event) => {
 
   const options = getOptions();
   if (options.length === 0) return;
+
+  event.preventDefault();
 
   if (event.deltaY > 0) {
     currentIndex = setCurrentIndex((currentIndex + 1) % options.length);
@@ -176,7 +204,7 @@ window.addEventListener("wheel", (event) => {
   updateHighlight();
   bumpIdle();
   fetchNui("currentOption", [currentIndex + 1]);
-});
+}, { passive: false });
 
 container.addEventListener("menu-collapsed", () => {
   setCurrentIndex(0);

@@ -4,6 +4,10 @@ local config = {}
 -- recommend keeping this pretty low for optimization
 config.maxInteractDistance = 5.0
 
+-- Max distant indicator sprites drawn per frame (the prompt is not counted).
+-- Raise it if you want more dots in busy areas.
+config.maxIndicators = 8
+
 -- If true, the prompt only opens when the target is inside lookRadius of the reticle.
 config.requireLookAt = true
 
@@ -15,7 +19,8 @@ config.lookRadius = 0.05
 config.autoCenter = true
 
 -- If true, interacts are hidden when the player has no clear line of sight.
--- Entity targets test LOS to the entity. Coord targets test LOS to the point.
+-- Peds/vehicles test LOS to the entity. Objects (addModel) probe the interact
+-- point and treat a hit on that entity as clear. Coord targets probe the point.
 config.requireLos = true
 
 -- Shape-test flags for requireLos. 1 world, 2 vehicles, 4 peds, 16 objects.
@@ -38,8 +43,13 @@ config.hideWhenEmpty = {
 	coords = false,
 }
 
--- World size of the prompt sprite.
-config.duiScale = 0.7
+-- World size of the prompt sprite. The prompt fills the DUI texture, so this
+-- is the on-screen size of the prompt itself (not a padded canvas).
+config.duiScale = 0.2
+
+-- Cap on the DUI texture long edge. The texture is sized to 2x the on-screen
+-- sprite (duiScale * resolution) so text stays sharp; this only clamps 4K+.
+config.duiResolution = 2048
 
 -- Visual theme for the world prompt.
 -- Built-in: legacy | modern | minimal | light | retro | cyber | vice | noir | industrial | fantasy
@@ -92,8 +102,8 @@ config.IndicatorSprite = {
 	txt = 'radio',
 	file = 'web/indicator.png',
 	rotation = 0.0,
-	color = { 255, 255, 255, 200 },
-	scale = 0.011,
+	color = { 255, 255, 255, 220 },
+	scale = 0.0085,
 }
 
 -- Screen-center pip while in range of a usable interact.
