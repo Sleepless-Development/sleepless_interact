@@ -4,7 +4,7 @@ use_experimental_fxv2_oal 'yes'
 lua54 'yes'
 game 'gta5'
 
-version '2.4.0'
+version '2.4.1'
 
 ox_lib 'locale'
 
