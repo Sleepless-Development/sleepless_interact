@@ -1,37 +1,33 @@
 local config = {}
 
--- this is the maximum distance that interacts will render the indicator sprite (little cirlce)
--- recommend keeping this pretty low for optimization
+-- Maximum distance the indicator sprite renders.
 config.maxInteractDistance = 5.0
 
--- Max distant indicator sprites drawn per frame (the prompt is not counted).
--- Raise it if you want more dots in busy areas.
+-- Maximum indicator sprites drawn at once.
 config.maxIndicators = 8
 
--- If true, the prompt only opens when the target is inside lookRadius of the reticle.
+-- Only open the prompt when looking at the target.
 config.requireLookAt = true
 
--- Screen-space radius from the reticle (fraction of screen height). Raise it to aim looser.
+-- How close to the reticle the target must be.
 config.lookRadius = 0.05
 
--- If true, entity options without offset, offsetAbsolute, or bones are placed
--- at the model bounding-box center instead of the entity origin.
+-- Place unoffset entity options at the model center.
 config.autoCenter = true
 
--- If true, interacts are hidden when the player has no clear line of sight.
--- Peds/vehicles test LOS to the entity. Objects (addModel) probe the interact
--- point and treat a hit on that entity as clear. Coord targets probe the point.
+-- Hide interacts the player cannot see.
 config.requireLos = true
 
--- Shape-test flags for requireLos. 1 world, 2 vehicles, 4 peds, 16 objects.
--- 17 (world + objects) blocks walls and props without peds/vehicles eating LOS.
+-- What blocks line of sight. 1 world, 2 vehicles, 4 peds, 16 objects.
 config.losFlags = 17
 
--- Hide the distant marker when this interact type currently has no valid options
--- (canInteract, distance, groups, items, in-vehicle).
--- true  = hide the sprite
--- false = keep the sprite as a point of interest
--- An option's hideWhenEmpty field overrides the type default.
+-- How far collision in front of an ATM can be and still count as visible.
+config.losShellDepth = 2.0
+
+-- Draw line-of-sight debug.
+config.debug = false
+
+-- Hide the indicator when an interact type has no valid options.
 config.hideWhenEmpty = {
 	globalPeds = true,
 	globalVehicles = true,
@@ -43,21 +39,16 @@ config.hideWhenEmpty = {
 	coords = false,
 }
 
--- World size of the prompt sprite. The prompt fills the DUI texture, so this
--- is the on-screen size of the prompt itself (not a padded canvas).
+-- Size of the world prompt.
 config.duiScale = 0.2
 
--- Cap on the DUI texture long edge. The texture is sized to 2x the on-screen
--- sprite (duiScale * resolution) so text stays sharp; this only clamps 4K+.
+-- Maximum size of the prompt texture.
 config.duiResolution = 2048
 
--- Visual theme for the world prompt.
--- Built-in: legacy | modern | minimal | light | retro | cyber | vice | noir | industrial | fantasy
--- To add another look later, drop a file at web/themes/<id>.css
--- using [data-theme="<id>"] selectors, then set this to that id.
+-- Prompt theme.
 config.theme = 'modern'
 
--- Default accent per theme. Used by the HUD highlight.
+-- Accent color for each theme.
 config.themeColors = {
 	legacy = { 28, 100, 184, 200 },
 	modern = { 49, 164, 252, 255 },
@@ -71,8 +62,7 @@ config.themeColors = {
 	fantasy = { 212, 175, 110, 255 },
 }
 
--- Optional override for every theme. Set to { r, g, b, a } to force one accent
--- across all looks. Leave nil to use the theme's own color above.
+-- Accent color used for every theme. Nil uses the theme color.
 config.themeColor = nil
 
 function config.getThemeColor()
@@ -83,20 +73,16 @@ function config.getThemeColor()
 	return (colors and colors[config.theme]) or { 49, 164, 252, 255 }
 end
 
--- If true, targets with more than one option show "Interact" until E is pressed.
--- The list expands, then collapses after a selection or a short idle.
--- If false, every option is shown immediately.
+-- Show one Interact row until the menu is opened.
 config.compactOptions = true
 
--- Milliseconds of no menu activity before a compact list collapses.
+-- How long before a compact menu closes.
 config.compactIdleMs = 2500
 
--- Default key for the interact action. Players can rebind this in GTA Settings > Key Bindings > FiveM.
--- The prompt reads the live mapping, so the HUD shows whatever they bind.
+-- Default interact key.
 config.defaultInteractKey = 'E'
 
--- Distant / inactive marker. `file` loads a PNG from this resource as a runtime texture.
--- color tints the texture; white on a white PNG stays white.
+-- Distant indicator sprite.
 config.IndicatorSprite = {
 	dict = 'slp_ind',
 	txt = 'radio',
@@ -106,7 +92,7 @@ config.IndicatorSprite = {
 	scale = 0.0085,
 }
 
--- Screen-center pip while in range of a usable interact.
+-- Dot drawn at the center of the screen.
 config.CenterDot = {
 	enabled = true,
 	dict = 'mpcarhud',
@@ -117,13 +103,13 @@ config.CenterDot = {
 	y = 0.5,
 }
 
--- boolean true/false use a keybind to show and hide the interactions
+-- Use a key to show and hide interacts.
 config.useShowKeyBind = false
 
--- string default key mapping for the show interactions keybind
+-- Default key for showing interacts.
 config.defaultShowKeyBind = 'LMENU'
 
--- "hold" | "toggle" sets the behavior of the show interactions key bind
+-- Hold or toggle the show key.
 config.showKeyBindBehavior = 'toggle'
 
 return config

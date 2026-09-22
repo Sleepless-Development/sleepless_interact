@@ -3,6 +3,7 @@ local store = require 'client.modules.store'
 local config = require 'client.modules.config'
 local utils = require 'client.modules.utils'
 local animation = require 'client.modules.animation'
+local los = require 'client.modules.los'
 
 config.maxInteractDistanceSq = config.maxInteractDistance * config.maxInteractDistance
 
@@ -24,11 +25,6 @@ local GetModelDimensions = GetModelDimensions
 local NetworkGetEntityIsNetworked = NetworkGetEntityIsNetworked
 local NetworkGetNetworkIdFromEntity = NetworkGetNetworkIdFromEntity
 local GetEntityModel = GetEntityModel
-local GetEntityType = GetEntityType
-local HasEntityClearLosToEntity = HasEntityClearLosToEntity
-local StartExpensiveSynchronousShapeTestLosProbe = StartExpensiveSynchronousShapeTestLosProbe
-local GetShapeTestResult = GetShapeTestResult
-local DoesEntityExist = DoesEntityExist
 
 local runtimeTxds = {}
 
@@ -171,7 +167,6 @@ local function getCanInteractCached(option, entity, distance, coords)
     return cached and cached.result or false
 end
 
-local DEFAULT_LOS_FLAGS = 17
 local MOVE_EPSILON_SQ = 0.0001
 local SCAN_RADIUS_PADDING = 4.0
 
@@ -216,56 +211,6 @@ local function needsEntityPool(globalType, hasUntyped, hasNetEntities)
         return hasNetEntities
     end
     return hasUntyped
-end
-
----@param from vector3
----@param to vector3
----@param flags number
----@param ignore number
----@return integer retval
----@return boolean hit
----@return number entityHit
-local function probeLos(from, to, flags, ignore)
-    local handle = StartExpensiveSynchronousShapeTestLosProbe(
-        from.x, from.y, from.z,
-        to.x, to.y, to.z,
-        flags, ignore, 7
-    )
-    local retval, hit, _, _, entityHit = GetShapeTestResult(handle)
-    return retval, hit == 1 or hit == true, entityHit or 0
-end
-
----@param item NearbyItem
----@param coords vector3
----@param origin? vector3
----@return boolean
-local function hasLineOfSight(item, coords, origin)
-    if config.requireLos == false then return true end
-
-    local flags = config.losFlags or DEFAULT_LOS_FLAGS
-    local ped = cache.ped
-    if not origin then
-        origin = GetEntityCoords(ped)
-        origin = vec3(origin.x, origin.y, origin.z + 0.6)
-    end
-
-    if item.entity then
-        if not DoesEntityExist(item.entity) then return false end
-
-        local entityType = GetEntityType(item.entity)
-        if entityType == 1 or entityType == 2 then
-            return HasEntityClearLosToEntity(ped, item.entity, flags)
-        end
-
-        local retval, hit, entityHit = probeLos(origin, coords, flags, ped)
-        if retval == 0 then return true end
-        if not hit then return true end
-        return entityHit == item.entity
-    end
-
-    local retval, hit = probeLos(origin, coords, flags, ped)
-    if retval == 0 then return true end
-    return not hit
 end
 
 local function cachedEntityInfo(entity)
@@ -555,8 +500,10 @@ local function checkNearbyEntities(coords, aspectRatio)
             if entity and entity ~= 0 then
                 local model, netId = cachedEntityInfo(entity)
                 local options = getOptionsForEntity(entity, globalType, model, netId)
-                local boneOptions = hasStoredBones(entity, globalType, model, netId) and getBoneOptionsForEntity(entity, globalType, model, netId) or nil
-                local offsetOptions = hasStoredOffsets(entity, globalType, model, netId) and getOffsetOptionsForEntity(entity, globalType, model, netId) or nil
+                local boneOptions = hasStoredBones(entity, globalType, model, netId) and
+                getBoneOptionsForEntity(entity, globalType, model, netId) or nil
+                local offsetOptions = hasStoredOffsets(entity, globalType, model, netId) and
+                getOffsetOptionsForEntity(entity, globalType, model, netId) or nil
 
                 if options or boneOptions or offsetOptions then
                     local entCoords = GetEntityCoords(entity)
@@ -565,6 +512,7 @@ local function checkNearbyEntities(coords, aspectRatio)
                         num = num + 1
                         valid[num] = {
                             entity = entity,
+                            atm = los.isAtmModel(model),
                             coords = entCoords,
                             currentDistance = utils.getDistanceSquared(coords, entCoords),
                             currentScreenDistance = utils.getScreenDistanceSquared(entCoords, aspectRatio),
@@ -581,6 +529,7 @@ local function checkNearbyEntities(coords, aspectRatio)
                                 num = num + 1
                                 valid[num] = {
                                     entity = entity,
+                                    atm = los.isAtmModel(model),
                                     bone = boneId,
                                     boneIndex = boneIndex,
                                     coords = boneCoords,
@@ -611,6 +560,7 @@ local function checkNearbyEntities(coords, aspectRatio)
                                 num = num + 1
                                 valid[num] = {
                                     entity = entity,
+                                    atm = los.isAtmModel(model),
                                     offset = offsetStr,
                                     localOffset = offset,
                                     coords = worldPos,
@@ -628,8 +578,10 @@ local function checkNearbyEntities(coords, aspectRatio)
     end
 
     local hasModels = mapHasKeys(store.models) or mapHasKeys(store.bones.models) or mapHasKeys(store.offsets.models)
-    local hasEntities = mapHasKeys(store.entities) or mapHasKeys(store.bones.entities) or mapHasKeys(store.offsets.entities)
-    local hasLocalEntities = mapHasKeys(store.localEntities) or mapHasKeys(store.bones.localEntities) or mapHasKeys(store.offsets.localEntities)
+    local hasEntities = mapHasKeys(store.entities) or mapHasKeys(store.bones.entities) or
+    mapHasKeys(store.offsets.entities)
+    local hasLocalEntities = mapHasKeys(store.localEntities) or mapHasKeys(store.bones.localEntities) or
+    mapHasKeys(store.offsets.localEntities)
     local hasUntyped = hasModels or hasEntities or hasLocalEntities
     local hasNetEntities = hasEntities or hasLocalEntities
 
@@ -728,6 +680,69 @@ local function setIndicatorTarget(st, now, target)
     return cur
 end
 
+local DrawLine = DrawLine
+local DrawMarker = DrawMarker
+
+local function drawDebugText(coords, text)
+    SetDrawOrigin(coords.x, coords.y, coords.z + 0.15, 0)
+    SetTextScale(0.28, 0.28)
+    SetTextFont(4)
+    SetTextColour(255, 255, 255, 230)
+    SetTextOutline()
+    SetTextCentre(true)
+    BeginTextCommandDisplayText('STRING')
+    AddTextComponentSubstringPlayerName(text)
+    EndTextCommandDisplayText(0.0, 0.0)
+    ClearDrawOrigin()
+end
+
+local function drawInteractDebug(entries, count)
+    for i = 1, count do
+        local data = entries[i]
+        if not data then goto continue end
+        local coords = data.coords
+        local dbg = data.item and data.item.debugLos
+
+        if coords then
+            DrawMarker(28, coords.x, coords.y, coords.z, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.05, 0.05, 0.05, 255, 210, 40,
+                180, false, false, 2, false, nil, nil, false)
+        end
+
+        if dbg and dbg.origin and dbg.target then
+            local r, g, b = 220, 50, 50
+            if dbg.clear then
+                r, g, b = 50, 200, 80
+            end
+
+            DrawLine(dbg.origin.x, dbg.origin.y, dbg.origin.z, dbg.target.x, dbg.target.y, dbg.target.z, r, g, b, 220)
+            DrawMarker(28, dbg.target.x, dbg.target.y, dbg.target.z, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.07, 0.07, 0.07, 70,
+                150, 255, 200, false, false, 2, false, nil, nil, false)
+
+            if not dbg.clear and dbg.hit then
+                DrawLine(dbg.origin.x, dbg.origin.y, dbg.origin.z, dbg.hit.x, dbg.hit.y, dbg.hit.z, 255, 40, 40, 255)
+                DrawMarker(28, dbg.hit.x, dbg.hit.y, dbg.hit.z, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.045, 0.045, 0.045, 255,
+                    30, 30, 220, false, false, 2, false, nil, nil, false)
+            end
+
+            local label = 'LOS clear'
+            if not dbg.clear then
+                if dbg.reason == 'native' and dbg.gap then
+                    local kind = dbg.hitEntity == 0 and 'world' or ('ent %s'):format(dbg.hitEntity)
+                    label = ('native %s %.2fm'):format(kind, dbg.gap)
+                elseif dbg.reason == 'shell' and dbg.gap then
+                    label = ('shell %.2fm'):format(dbg.gap)
+                elseif dbg.reason == 'wall' then
+                    label = 'inner wall'
+                else
+                    label = 'LOS blocked'
+                end
+            end
+            drawDebugText(dbg.target, label)
+        end
+        ::continue::
+    end
+end
+
 local function setPromptVisible(show)
     if show then
         if promptVisible then return end
@@ -807,10 +822,11 @@ local function drawLoop()
                     local validOpts, validCount, hideCompletely
                     if distanceSq > maxDistSq or screenDistSq == math.huge then
                         hideCompletely = true
-                    elseif not hasLineOfSight(item, coords, losOrigin) then
+                    elseif not los.hasClear(item, coords, losOrigin) then
                         hideCompletely = true
                     else
-                        validOpts, validCount, hideCompletely = filterValidOptions(item.options, item.entity, distanceSq, coords, item.globalType)
+                        validOpts, validCount, hideCompletely = filterValidOptions(item.options, item.entity, distanceSq,
+                            coords, item.globalType)
                     end
 
                     local id = item.bone or item.offset or item.entity or item.coordId
@@ -956,7 +972,8 @@ local function drawLoop()
                     local duiScale = config.duiScale or 0.12
                     local drawH = duiScale
                     local drawW = duiScale * ((dui.width or 1) / (dui.height or 1)) * (screenH / screenW)
-                    drawSpriteAtCoords(coords, dui.instance.dictName, dui.instance.txtName, drawW, drawH, 0.0, 255, 255, 255, 255, screenW, screenH)
+                    drawSpriteAtCoords(coords, dui.instance.dictName, dui.instance.txtName, drawW, drawH, 0.0, 255, 255,
+                        255, 255, screenW, screenH)
                 elseif indicatorsDrawn < maxIndicators and data.distance < maxDistSq and screenDistSq < math.huge then
                     indicatorsDrawn = indicatorsDrawn + 1
                     local distT = maxDist > 0 and math.min(math.sqrt(data.distance) / maxDist, 1.0) or 0.0
@@ -988,12 +1005,17 @@ local function drawLoop()
             end
         end
 
+        if config.debug then
+            drawInteractDebug(nearbyData, #store.nearby)
+        end
+
         if inRange then
             local dot = config.CenterDot
             if dot and dot.enabled ~= false then
                 local color = dot.color or { 255, 255, 255, 255 }
                 local scale = dot.scale or 0.003
-                DrawSprite(dot.dict, dot.txt, dot.x or 0.5, dot.y or 0.5, scale, scale * aspectRatio, 0.0, color[1], color[2], color[3], color[4] or 255)
+                DrawSprite(dot.dict, dot.txt, dot.x or 0.5, dot.y or 0.5, scale, scale * aspectRatio, 0.0, color[1],
+                    color[2], color[3], color[4] or 255)
             end
         end
 
@@ -1003,7 +1025,8 @@ local function drawLoop()
                 local duiScale = config.duiScale or 0.12
                 local drawH = duiScale
                 local drawW = duiScale * ((dui.width or 1) / (dui.height or 1)) * (screenH / screenW)
-                drawSpriteAtCoords(lastDrawCoords, dui.instance.dictName, dui.instance.txtName, drawW, drawH, 0.0, 255, 255, 255, 255, screenW, screenH)
+                drawSpriteAtCoords(lastDrawCoords, dui.instance.dictName, dui.instance.txtName, drawW, drawH, 0.0, 255,
+                    255, 255, 255, screenW, screenH)
             end
 
             if next(store.current) then
@@ -1034,6 +1057,33 @@ local function drawLoop()
     drawLoopRunning = false
 end
 
+RegisterCommand('interact_debug', function()
+    config.debug = not config.debug
+    lib.notify({
+        title = 'sleepless_interact',
+        description = config.debug and 'Debug on. /interact_los prints debugLos' or 'Debug off',
+        type = 'inform',
+    })
+end, false)
+
+RegisterCommand('interact_los', function()
+    if not config.debug then
+        lib.notify({
+            title = 'sleepless_interact',
+            description = 'Turn debug on with /interact_debug',
+            type = 'inform',
+        })
+        return
+    end
+
+    los.dump(store.nearby)
+    lib.notify({
+        title = 'sleepless_interact',
+        description = 'debugLos printed to F8',
+        type = 'inform',
+    })
+end, false)
+
 local function BuilderLoop()
     while true do
         if shouldHideInteract() then
@@ -1062,9 +1112,10 @@ RegisterNUICallback('select', function(data, cb)
     local currentTime = GetGameTimer()
     if store.current.options and currentTime > (store.cooldownEndTime or 0) then
         local option = store.current.options?[data[1]]?[data[2]]
-        if option and hasLineOfSight({ entity = store.current.entity, coordId = store.current.coordsId }, store.current.coords) then
+        if option and los.hasClear({ entity = store.current.entity, coordId = store.current.coordsId }, store.current.coords) then
             if option.canInteract then
-                local success, resp = pcall(option.canInteract, store.current.entity, store.current.distance, store.current.coords, option.name)
+                local success, resp = pcall(option.canInteract, store.current.entity, store.current.distance,
+                    store.current.coords, option.name)
                 if not success or not resp then
                     cb(1)
                     return

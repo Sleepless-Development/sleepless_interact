@@ -37,6 +37,9 @@
 ---@field offset? string
 ---@field coordId? string
 ---@field globalType? 'peds' | 'vehicles' | 'objects' | 'players'
+---@field atm? boolean True when the entity model is a wall ATM handled by custom LOS.
+---@field losClear? boolean
+---@field losAt? number
 
 -- Represents the response structure sent to onSelect and other callable methods.
 ---@class InteractResponse
