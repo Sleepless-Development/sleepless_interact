@@ -127,8 +127,10 @@ export function setupBrowserMode() {
     if (state === "hold") {
       const progress = document.getElementById("interact-progress");
       const interact = document.getElementById("interact-container");
+      const ring = document.querySelector(".hold-ring-path");
       if (interact) interact.classList.add("is-holding");
       if (progress) progress.style.height = "62%";
+      if (ring) ring.style.strokeDashoffset = "38";
     }
   };
 

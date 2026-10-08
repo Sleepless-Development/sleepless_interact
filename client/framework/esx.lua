@@ -3,7 +3,7 @@ local utils = require 'client.modules.utils'
 local groups = { 'job', 'job2' }
 local playerGroups = {}
 local playerItems = utils.getItems()
-local usingOxInventory = GetResourceState('ox_inventory'):find('start')
+local usingOxInventory = GetResourceState('wasabi_inventory'):find('start') or GetResourceState('ox_inventory'):find('start')
 
 local function setPlayerData(playerData)
     table.wipe(playerGroups)

@@ -276,15 +276,22 @@ end
 
 
 SetTimeout(0, function()
-    if GetResourceState('ox_inventory'):find('start') then
+    local inventoryResource
+    if GetResourceState('wasabi_inventory'):find('start') then
+        inventoryResource = 'wasabi_inventory'
+    elseif GetResourceState('ox_inventory'):find('start') then
+        inventoryResource = 'ox_inventory'
+    end
+
+    if inventoryResource then
         setmetatable(playerItems, {
             __index = function(self, index)
-                self[index] = exports.ox_inventory:Search('count', index) or 0
+                self[index] = exports[inventoryResource]:Search('count', index) or 0
                 return self[index]
             end
         })
 
-        AddEventHandler('ox_inventory:itemCount', function(name, count)
+        AddEventHandler(('%s:itemCount'):format(inventoryResource), function(name, count)
             playerItems[name] = count
         end)
     end

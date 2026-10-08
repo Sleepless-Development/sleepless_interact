@@ -4,6 +4,7 @@ local config = require 'client.modules.config'
 local utils = require 'client.modules.utils'
 local animation = require 'client.modules.animation'
 local los = require 'client.modules.los'
+local indicator = require 'client.modules.indicator'
 
 config.maxInteractDistanceSq = config.maxInteractDistance * config.maxInteractDistance
 
@@ -46,7 +47,9 @@ local function loadSprite(sprite)
     end
 end
 
-loadSprite(config.IndicatorSprite)
+if not indicator.active then
+    loadSprite(config.IndicatorSprite)
+end
 if config.CenterDot and config.CenterDot.enabled ~= false then
     loadSprite(config.CenterDot)
 end
@@ -762,7 +765,7 @@ local function drawLoop()
     if drawLoopRunning then return end
     drawLoopRunning = true
 
-    if not config.IndicatorSprite.file then
+    if not indicator.active then
         lib.requestStreamedTextureDict(config.IndicatorSprite.dict)
     end
 
@@ -868,9 +871,15 @@ local function drawLoop()
         local sprite = config.IndicatorSprite
         local spriteColor = (sprite and sprite.color) or { 255, 255, 255, 220 }
         local spriteAlpha = spriteColor[4] or 220
-        local spriteNear = (sprite and sprite.scale) or 0.016
+        local spriteNear = (indicator.active and config.indicatorScale) or (sprite and sprite.scale) or 0.016
         local spriteFar = spriteNear * 0.72
         local maxDist = config.maxInteractDistance
+        local indicatorDict = indicator.dict or sprite.dict
+        local indicatorTxt = indicator.txt or sprite.txt
+        local tintR, tintG, tintB = spriteColor[1], spriteColor[2], spriteColor[3]
+        if indicator.active then
+            tintR, tintG, tintB = 255, 255, 255
+        end
 
         local function drawIndicator(st)
             local alpha = sampleIndicatorAlpha(st, now)
@@ -878,14 +887,14 @@ local function drawLoop()
             local a = math.floor(spriteAlpha * alpha + 0.5)
             drawSpriteAtCoords(
                 st.coords,
-                sprite.dict,
-                sprite.txt,
+                indicatorDict,
+                indicatorTxt,
                 st.scale,
                 st.scale * aspectRatio,
                 sprite.rotation or 0.0,
-                spriteColor[1],
-                spriteColor[2],
-                spriteColor[3],
+                tintR,
+                tintG,
+                tintB,
                 a,
                 screenW,
                 screenH
@@ -1046,7 +1055,7 @@ local function drawLoop()
         end
     end
 
-    if not config.IndicatorSprite.file then
+    if not indicator.active then
         SetStreamedTextureDictAsNoLongerNeeded(config.IndicatorSprite.dict)
     end
 

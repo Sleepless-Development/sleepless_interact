@@ -6,14 +6,11 @@
   --primary: 28, 100, 184;
   --on-accent: 236, 241, 247;
   --text: 245, 245, 245;
+  --option-gap: 0.35rem;
 }
 
 [data-theme="legacy"] #options-wrapper {
   --options-x: 2.6rem;
-}
-
-[data-theme="legacy"] #options-list {
-  gap: 0.35rem;
 }
 
 [data-theme="legacy"] body {

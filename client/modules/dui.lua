@@ -49,9 +49,7 @@ function dui.register()
 
     dui.sendMessage('visible', false)
     dui.sendMessage('setTheme', config.theme or 'modern')
-    if config.themeColor then
-        dui.sendMessage('setColor', config.themeColor)
-    end
+    dui.sendMessage('setColor', config.getThemeColor())
     dui.sendMessage('setMenu', {
         compact = config.compactOptions ~= false,
         idleMs = config.compactIdleMs or 2500,

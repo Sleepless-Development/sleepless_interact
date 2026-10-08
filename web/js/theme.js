@@ -8,7 +8,7 @@ export const THEMES = [
   { id: "retro", label: "Retro" },
   { id: "cyber", label: "Cyber" },
   { id: "vice", label: "Vice" },
-  { id: "noir", label: "Noir" },
+  { id: "kawaii", label: "Kawaii" },
   { id: "industrial", label: "Industrial" },
   { id: "fantasy", label: "Fantasy" },
 ];

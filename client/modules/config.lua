@@ -51,13 +51,13 @@ config.theme = 'modern'
 -- Accent color for each theme.
 config.themeColors = {
 	legacy = { 28, 100, 184, 200 },
-	modern = { 49, 164, 252, 255 },
+	modern = { 255, 255, 255, 255 },
 	minimal = { 168, 186, 204, 255 },
 	light = { 37, 99, 235, 255 },
 	retro = { 255, 176, 32, 255 },
 	cyber = { 0, 229, 255, 255 },
 	vice = { 255, 64, 180, 255 },
-	noir = { 240, 240, 236, 255 },
+	kawaii = { 255, 111, 168, 255 },
 	industrial = { 212, 168, 48, 255 },
 	fantasy = { 212, 175, 110, 255 },
 }
@@ -82,11 +82,16 @@ config.compactIdleMs = 2500
 -- Default interact key.
 config.defaultInteractKey = 'E'
 
--- Distant indicator sprite.
+-- Distant indicator. sprite, or an id in web/indicators.
+config.indicator = 'ripple'
+
+-- World size of a CSS indicator.
+config.indicatorScale = 0.02
+
+-- GTA texture used when the indicator is sprite.
 config.IndicatorSprite = {
-	dict = 'slp_ind',
-	txt = 'radio',
-	file = 'web/indicator.png',
+	dict = 'mpcarhud',
+	txt = 'leaderboard_car_colour_icon_singlecolour',
 	rotation = 0.0,
 	color = { 255, 255, 255, 220 },
 	scale = 0.0085,

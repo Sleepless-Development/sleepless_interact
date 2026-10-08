@@ -1,0 +1,24 @@
+.loader {
+    --color-1: #fff;
+    --size: 1px;
+    width: calc(48 * var(--size));
+    height: calc(48 * var(--size));
+    border: calc(6 * var(--size)) solid var(--color-1);
+    border-radius: 50%;
+    display: inline-block;
+    position: relative;
+    box-sizing: border-box;
+}
+
+.loader::before {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: calc(23 * var(--size));
+    height: calc(23 * var(--size));
+    border-radius: 50%;
+    background: var(--color-1);
+    transform: translate(-50%, -50%);
+    box-sizing: border-box;
+}

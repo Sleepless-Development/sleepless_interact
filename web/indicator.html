@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <style>
+        :root {
+            --indicator-fit: 3.5;
+        }
+
+        html,
+        body {
+            margin: 0;
+            width: 100%;
+            height: 100%;
+            background: transparent;
+            overflow: hidden;
+        }
+
+        body {
+            display: grid;
+            place-items: center;
+        }
+
+        .indicator-fit {
+            transform: scale(var(--indicator-fit));
+            transform-origin: center;
+        }
+
+        .loader {
+            margin: 0 !important;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .loader,
+            .loader::before,
+            .loader::after {
+                animation: none !important;
+            }
+        }
+    </style>
+    <link id="indicator-style" rel="stylesheet" href="" />
+</head>
+<body>
+    <div class="indicator-fit">
+        <span class="loader"></span>
+    </div>
+    <script>
+        const params = new URLSearchParams(location.search);
+        const style = (params.get("style") || "").replace(/[^a-z0-9_-]/gi, "");
+        const accent = params.get("accent");
+        const loader = document.querySelector(".loader");
+
+        if (style) {
+            document.getElementById("indicator-style").href = "indicators/" + style + ".css";
+        }
+
+        if (params.has("preview")) {
+            document.documentElement.style.background = "#111";
+        }
+
+        if (loader && style !== "wedge") {
+            loader.style.setProperty("--color-1", "#fff");
+            if (accent) {
+                loader.style.setProperty("--color-2", "rgb(" + accent + ")");
+            }
+        }
+    </script>
+</body>
+</html>

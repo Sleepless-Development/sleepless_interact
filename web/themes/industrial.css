@@ -10,16 +10,14 @@
   --on-accent: 10, 10, 8;
   --font: "DINPRO", "Segoe UI", sans-serif;
   --panel-a: 0.94;
+  --option-row-h: 2.6rem;
+  --option-gap: 0.22rem;
 }
 
 [data-theme="industrial"] body {
   font-family: var(--font);
   color: rgb(var(--text));
   font-synthesis: none;
-}
-
-[data-theme="industrial"] #options-list {
-  gap: 0.22rem;
 }
 
 [data-theme="industrial"] .animated-background {
@@ -72,7 +70,7 @@
 [data-theme="industrial"] .option-container,
 [data-theme="industrial"] .interact-summary {
   min-width: 17rem;
-  height: 2.6rem;
+  height: var(--option-row-h);
   padding: 0 0.75rem 0 0.45rem;
   gap: 0.5rem;
   overflow: hidden;

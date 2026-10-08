@@ -13,15 +13,13 @@
   --font: Palatino, "Palatino Linotype", Georgia, serif;
   --panel-a: 0.94;
   --shadow: 0 0.8rem 1.6rem rgba(8, 4, 0, 0.5);
+  --option-row-h: 3rem;
+  --option-gap: 0.5rem;
 }
 
 [data-theme="fantasy"] body {
   font-family: var(--font);
   color: rgb(var(--text));
-}
-
-[data-theme="fantasy"] #options-list {
-  gap: 0.5rem;
 }
 
 [data-theme="fantasy"] .animated-background {
@@ -94,7 +92,7 @@
 [data-theme="fantasy"] .option-container,
 [data-theme="fantasy"] .interact-summary {
   min-width: 18rem;
-  height: 3rem;
+  height: var(--option-row-h);
   padding: 0 1rem 0 0.65rem;
   gap: 0.6rem;
   overflow: hidden;

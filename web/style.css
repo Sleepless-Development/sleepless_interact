@@ -46,6 +46,7 @@
   --option-row-w: 22rem;
   --option-row-h: 2.8rem;
   --option-gap: 0.45rem;
+  --option-pad: 0.4rem;
   --option-visible: 4;
 }
 
@@ -111,6 +112,10 @@ body.is-leaving #container {
   pointer-events: none;
 }
 
+.hold-ring {
+  display: none;
+}
+
 #interact-key {
   position: relative;
   z-index: 2;
@@ -147,14 +152,24 @@ body.is-leaving #container {
   flex-direction: column;
   gap: var(--option-gap);
   width: var(--option-row-w);
-  padding-block: 0.2rem;
-  scroll-padding-block: 0.2rem;
+  padding-block: var(--option-pad);
+  scroll-padding-block: var(--option-pad);
   max-height: calc(
-    var(--option-visible) * var(--option-row-h) + (var(--option-visible) - 1) * var(--option-gap) + 0.4rem
+    var(--option-visible) * var(--option-row-h)
+    + (var(--option-visible) - 1) * var(--option-gap)
+    + 2 * var(--option-pad)
   );
   overflow-x: hidden;
   overflow-y: auto;
+  overflow-anchor: none;
   scrollbar-width: none;
+}
+
+#options-list.is-revealing .option-container,
+#options-list.is-revealing .option-icon,
+#options-list.is-revealing .option-label,
+#options-list.is-revealing .option-hold {
+  transition: none;
 }
 
 #options-list::-webkit-scrollbar {
@@ -192,6 +207,7 @@ body.is-leaving #container {
   pointer-events: none;
   opacity: 0;
   z-index: 3;
+  transition: opacity var(--dur-hover) var(--ease-out);
 }
 
 .options-scroll-up {
@@ -226,6 +242,9 @@ body.is-leaving #container {
 }
 
 #container.is-compact .interact-summary {
+  position: absolute;
+  left: 0;
+  top: 50%;
   display: flex;
   align-items: center;
   min-width: 0;
@@ -239,6 +258,9 @@ body.is-leaving #container {
   border-radius: 0;
   background: transparent;
   box-shadow: none;
+  opacity: 1;
+  transform: translateY(-50%);
+  visibility: visible;
 }
 
 #container.is-compact .interact-summary .animated-background {
@@ -261,32 +283,21 @@ body.is-leaving #container {
 }
 
 #container.is-compact #options-list {
-  position: absolute;
-  left: 0;
-  top: 50%;
   transform-origin: left center;
-  transform: translate(0, -50%);
+  transform: translateX(0) scale(1);
 }
 
 #container.is-compact:not(.is-open) #options-list {
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
-  transform: translate(-0.45rem, -50%) scale(0.96);
+  transform: translateX(-0.35rem) scale(0.96);
 }
 
 #container.is-compact.is-open .interact-summary {
-  position: absolute;
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
-}
-
-#container.is-compact.is-open #options-list {
-  position: relative;
-  left: auto;
-  top: auto;
-  transform: none;
 }
 
 #container.is-compact.is-ready #options-list,
@@ -299,7 +310,7 @@ body.is-leaving #container {
 
 #container.is-compact.is-ready:not(.is-open) #options-list,
 #container.is-compact.is-ready.is-open .interact-summary {
-  transition-duration: 140ms;
+  transition-duration: var(--dur-out);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -308,13 +319,14 @@ body.is-leaving #container {
     transition-duration: 120ms;
   }
 
+  .options-scroll-hint,
   #container.is-compact.is-ready #options-list,
   #container.is-compact.is-ready .interact-summary {
     transition: opacity 120ms ease, visibility 120ms;
   }
 
   #container.is-compact:not(.is-open) #options-list {
-    transform: translate(0, -50%);
+    transform: translateX(0) scale(1);
   }
 }
 

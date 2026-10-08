@@ -4,6 +4,7 @@ import { bumpIdle, closeMenu, isMenuOpen, tryOpenMenu } from "./menu.js";
 const optionsList = document.getElementById("options-list");
 const optionsWrapper = document.getElementById("options-wrapper");
 const progressElement = document.getElementById("interact-progress");
+const holdRing = document.querySelector(".hold-ring-path");
 const interactButton = document.getElementById("interact-container");
 const container = document.getElementById("container");
 
@@ -112,6 +113,12 @@ function completeHold(option) {
   collapseAfterSelect();
 }
 
+function setHoldRing(offset, duration) {
+  if (!holdRing) return;
+  holdRing.style.transition = duration ? `stroke-dashoffset ${duration}ms linear` : "none";
+  holdRing.style.strokeDashoffset = String(offset);
+}
+
 export function resetHold() {
   if (!isHolding) return;
 
@@ -119,6 +126,7 @@ export function resetHold() {
   clearTimeout(holdTimeout);
   progressElement.style.transition = "none";
   progressElement.style.height = "0";
+  setHoldRing(100, 0);
   interactButton.classList.remove("is-holding");
   bumpIdle();
 
@@ -132,6 +140,9 @@ function startHold(option) {
   interactButton.classList.add("is-holding");
   progressElement.style.transition = `height ${option.holdTime}ms linear`;
   progressElement.style.height = "100%";
+  setHoldRing(100, 0);
+  if (holdRing) void holdRing.getBoundingClientRect();
+  setHoldRing(0, option.holdTime);
 
   holdTimeout = setTimeout(() => {
     completeHold(option);
@@ -156,32 +167,67 @@ function updateScrollHints() {
   optionsWrapper.classList.toggle("has-scroll-down", !!(last && !isFullyVisible(last, optionsList)));
 }
 
-function scrollActiveIntoView() {
-  const options = getOptions();
-  const active = options[currentIndex];
-  if (active) {
-    active.scrollIntoView({ block: "nearest" });
-  }
+function scrollPadding(list) {
+  const style = getComputedStyle(list);
+  const top = Number.parseFloat(style.scrollPaddingTop);
+  const bottom = Number.parseFloat(style.scrollPaddingBottom);
+  return {
+    top: Number.isFinite(top) ? top : 0,
+    bottom: Number.isFinite(bottom) ? bottom : 0,
+  };
+}
+
+function revealDelta(el) {
+  if (!el || el.offsetHeight === 0) return 0;
+  if (container.classList.contains("is-compact") && !container.classList.contains("is-open")) return 0;
+
+  const bounds = optionsList.getBoundingClientRect();
+  const rect = el.getBoundingClientRect();
+  if (bounds.height === 0 || rect.height === 0) return 0;
+
+  const pad = scrollPadding(optionsList);
+  const scale = rect.height / el.offsetHeight;
+  const topLimit = bounds.top + pad.top * scale;
+  const bottomLimit = bounds.bottom - pad.bottom * scale;
+  const topOverflow = (rect.top - topLimit) / scale;
+  const bottomOverflow = (rect.bottom - bottomLimit) / scale;
+
+  if (topOverflow < -1) return topOverflow;
+  if (bottomOverflow > 1) return bottomOverflow;
+  return 0;
+}
+
+function scrollActiveIntoView(active) {
+  const delta = revealDelta(active);
+  if (delta !== 0) optionsList.scrollTop += delta;
   requestAnimationFrame(updateScrollHints);
 }
 
 export function updateHighlight() {
   const options = getOptions();
-  if (options.length > 0) {
-    options.forEach((option) => option.classList.remove("highlighted"));
-    const active = options[currentIndex] || options[0];
-    if (active) active.classList.add("highlighted");
+  const active = options[currentIndex] || options[0];
+  const reveal = active ? revealDelta(active) !== 0 : false;
 
-    if (active?.color) {
-      const c = active.color;
-      applyAccent(`rgb(${c[0]}, ${c[1]}, ${c[2]}, ${c[3] / 255})`);
-    } else {
-      restoreDefaultAccent();
-    }
+  if (reveal) optionsList.classList.add("is-revealing");
+
+  for (let i = 0; i < options.length; i++) {
+    options[i].classList.toggle("highlighted", options[i] === active);
+  }
+
+  if (active?.color) {
+    const c = active.color;
+    applyAccent(`rgb(${c[0]}, ${c[1]}, ${c[2]}, ${c[3] / 255})`);
+  } else if (options.length > 0) {
+    restoreDefaultAccent();
   }
 
   syncSelectedAlignment();
-  scrollActiveIntoView();
+  scrollActiveIntoView(active);
+
+  if (reveal) {
+    void optionsList.offsetHeight;
+    optionsList.classList.remove("is-revealing");
+  }
 }
 
 optionsList.addEventListener("scroll", updateScrollHints);

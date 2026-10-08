@@ -18,7 +18,7 @@ local function setPlayerItems()
     end
 end
 
-local usingOxInventory = utils.hasExport('ox_inventory.Items')
+local usingOxInventory = utils.hasExport('wasabi_inventory.Items') or utils.hasExport('ox_inventory.Items')
 
 if not usingOxInventory then
     setPlayerItems()

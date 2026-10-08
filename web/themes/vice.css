@@ -12,6 +12,7 @@
   --r-md: 0.9rem;
   --font: "DINPRO", "Segoe UI", sans-serif;
   --panel-a: 0.92;
+  --option-gap: 0.4rem;
   --fill: rgba(var(--surface), var(--panel-a));
   --shadow: 0 0.8rem 2rem rgba(40, 0, 40, 0.45);
 }
@@ -20,10 +21,6 @@
   font-family: var(--font);
   color: rgb(var(--text));
   font-synthesis: none;
-}
-
-[data-theme="vice"] #options-list {
-  gap: 0.4rem;
 }
 
 [data-theme="vice"] .animated-background {

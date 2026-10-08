@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <title>Indicator gallery</title>
+    <style>
+        @font-face {
+            font-family: DINPRO;
+            src: url("fonts/dinpro_bold.otf") format("opentype");
+            font-weight: 700;
+            font-display: swap;
+        }
+
+        html,
+        body {
+            margin: 0;
+            background: #111;
+            color: #fff;
+        }
+
+        body {
+            font-family: DINPRO, "Segoe UI", sans-serif;
+        }
+
+        header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            padding: 1.25rem 1.5rem 1rem;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 1.05rem;
+            font-weight: 700;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+        }
+
+        .accent {
+            display: flex;
+            align-items: center;
+            gap: 0.55rem;
+            color: #a8a8a8;
+            font-size: 0.8rem;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        input[type="color"] {
+            width: 2rem;
+            height: 2rem;
+            padding: 0;
+            border: 0.1rem solid rgba(255, 255, 255, 0.16);
+            border-radius: 0.4rem;
+            background: transparent;
+            cursor: pointer;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(12.5rem, 1fr));
+            gap: 0.75rem;
+            padding: 0 1.5rem 2rem;
+        }
+
+        .tile {
+            display: flex;
+            flex-direction: column;
+            background: #000;
+            border: 0.1rem solid rgba(255, 255, 255, 0.16);
+            border-radius: 0.6rem;
+            overflow: hidden;
+        }
+
+        .stage {
+            display: grid;
+            place-items: center;
+            height: 10.5rem;
+            overflow: hidden;
+            background: #111;
+        }
+
+        .frame {
+            width: 10.5rem;
+            height: 10.5rem;
+            overflow: hidden;
+        }
+
+        iframe {
+            width: 256px;
+            height: 256px;
+            border: 0;
+            transform: scale(0.65625);
+            transform-origin: top left;
+            pointer-events: none;
+        }
+
+        button {
+            margin: 0;
+            padding: 0.55rem 0.7rem 0.7rem;
+            border: 0;
+            border-top: 0.1rem solid rgba(255, 255, 255, 0.16);
+            background: transparent;
+            color: #fff;
+            font: inherit;
+            font-size: 0.78rem;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-align: left;
+            text-transform: uppercase;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #fff;
+            color: #000;
+        }
+
+        button.is-copied {
+            background: rgb(49, 164, 252);
+            color: #000;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Indicators</h1>
+        <label class="accent">
+            Accent
+            <input id="accent" type="color" value="#31a4fc" />
+        </label>
+    </header>
+    <div id="grid" class="grid"></div>
+    <script>
+        const ids = [
+            "atom",
+            "bands",
+            "bead",
+            "blades",
+            "bloom",
+            "breathe",
+            "counter",
+            "dashes",
+            "dial",
+            "dots",
+            "duel",
+            "echo",
+            "fangs",
+            "frames",
+            "gyro",
+            "heartbeat",
+            "inner-arc",
+            "inner-arcs",
+            "notch",
+            "orbit",
+            "outer-arc",
+            "outer-arcs",
+            "pie",
+            "ping",
+            "planet",
+            "plus",
+            "pulse",
+            "ring",
+            "ripple",
+            "scythe",
+            "shade",
+            "sonar",
+            "star",
+            "stitch",
+            "sweep",
+            "tail",
+            "trio",
+            "wedge",
+        ];
+
+        const grid = document.getElementById("grid");
+        const accentInput = document.getElementById("accent");
+
+        function accentParam() {
+            const hex = accentInput.value.slice(1);
+            const value = parseInt(hex, 16);
+            return [(value >> 16) & 255, (value >> 8) & 255, value & 255].join(",");
+        }
+
+        function render() {
+            const accent = accentParam();
+            grid.replaceChildren();
+
+            for (let i = 0; i < ids.length; i++) {
+                const id = ids[i];
+                const tile = document.createElement("article");
+                tile.className = "tile";
+
+                const stage = document.createElement("div");
+                stage.className = "stage";
+                const frame = document.createElement("div");
+                frame.className = "frame";
+                const view = document.createElement("iframe");
+                view.title = id;
+                view.src = "indicator.html?style=" + id + "&accent=" + accent + "&preview=1";
+                frame.appendChild(view);
+                stage.appendChild(frame);
+
+                const name = document.createElement("button");
+                name.type = "button";
+                name.textContent = id;
+                name.addEventListener("click", function () {
+                    const area = document.createElement("textarea");
+                    area.value = id;
+                    document.body.appendChild(area);
+                    area.select();
+                    document.execCommand("copy");
+                    area.remove();
+                    name.classList.add("is-copied");
+                    name.textContent = "copied";
+                    setTimeout(function () {
+                        name.classList.remove("is-copied");
+                        name.textContent = id;
+                    }, 700);
+                });
+
+                tile.appendChild(stage);
+                tile.appendChild(name);
+                grid.appendChild(tile);
+            }
+        }
+
+        accentInput.addEventListener("input", render);
+        render();
+    </script>
+</body>
+</html>
