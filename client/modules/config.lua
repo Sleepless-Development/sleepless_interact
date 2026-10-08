@@ -1,9 +1,9 @@
 local config = {}
 
--- Maximum distance the indicator sprite renders.
+-- Maximum distance an indicator renders.
 config.maxInteractDistance = 5.0
 
--- Maximum indicator sprites drawn at once.
+-- Maximum indicators drawn at once.
 config.maxIndicators = 8
 
 -- Only open the prompt when looking at the target.
@@ -82,19 +82,16 @@ config.compactIdleMs = 2500
 -- Default interact key.
 config.defaultInteractKey = 'E'
 
--- Distant indicator. sprite, or an id in web/indicators.
+-- Distant indicator id in web/indicators.
 config.indicator = 'ripple'
 
--- World size of a CSS indicator.
+-- World size of the indicator.
 config.indicatorScale = 0.02
 
--- GTA texture used when the indicator is sprite.
-config.IndicatorSprite = {
-	dict = 'mpcarhud',
-	txt = 'leaderboard_car_colour_icon_singlecolour',
-	rotation = 0.0,
-	color = { 255, 255, 255, 220 },
-	scale = 0.0085,
+-- Main, then accent. Nil uses the theme color. Optional alpha is 0-1 or 0-255.
+config.indicatorColors = {
+	{ 255, 255, 255 },
+	nil,
 }
 
 -- Dot drawn at the center of the screen.

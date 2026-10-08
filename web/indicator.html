@@ -47,8 +47,20 @@
     <script>
         const params = new URLSearchParams(location.search);
         const style = (params.get("style") || "").replace(/[^a-z0-9_-]/gi, "");
-        const accent = params.get("accent");
+        const color1 = params.get("color1");
+        const color2 = params.get("color2") || params.get("accent");
+        const override = params.get("override") === "1";
         const loader = document.querySelector(".loader");
+
+        function cssColor(value, fallback) {
+            if (!value) return fallback;
+            const parts = value.split(",");
+            if (parts.length < 3) return fallback;
+            if (parts.length >= 4) {
+                return "rgba(" + parts[0] + "," + parts[1] + "," + parts[2] + "," + parts[3] + ")";
+            }
+            return "rgb(" + parts[0] + "," + parts[1] + "," + parts[2] + ")";
+        }
 
         if (style) {
             document.getElementById("indicator-style").href = "indicators/" + style + ".css";
@@ -58,11 +70,10 @@
             document.documentElement.style.background = "#111";
         }
 
-        if (loader && style !== "wedge") {
-            loader.style.setProperty("--color-1", "#fff");
-            if (accent) {
-                loader.style.setProperty("--color-2", "rgb(" + accent + ")");
-            }
+        if (loader && (style !== "wedge" || override)) {
+            loader.style.setProperty("--color-1", cssColor(color1, "#fff"));
+            const second = cssColor(color2, "");
+            if (second) loader.style.setProperty("--color-2", second);
         }
     </script>
 </body>

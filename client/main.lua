@@ -47,9 +47,6 @@ local function loadSprite(sprite)
     end
 end
 
-if not indicator.active then
-    loadSprite(config.IndicatorSprite)
-end
 if config.CenterDot and config.CenterDot.enabled ~= false then
     loadSprite(config.CenterDot)
 end
@@ -637,6 +634,7 @@ local activeOptions = {}
 local FADE_OUT_MS = 240
 local INDICATOR_FADE_IN_MS = 200
 local INDICATOR_FADE_OUT_MS = 160
+local INDICATOR_ALPHA = 220
 local promptVisible = false
 local hideUntil = 0
 local lastDrawCoords
@@ -765,10 +763,6 @@ local function drawLoop()
     if drawLoopRunning then return end
     drawLoopRunning = true
 
-    if not indicator.active then
-        lib.requestStreamedTextureDict(config.IndicatorSprite.dict)
-    end
-
     local centerDot = config.CenterDot
     if centerDot and centerDot.enabled ~= false and not centerDot.file then
         lib.requestStreamedTextureDict(centerDot.dict)
@@ -868,33 +862,25 @@ local function drawLoop()
         local indicatorsDrawn = 0
         local now = GetGameTimer()
         local seenIndicators = {}
-        local sprite = config.IndicatorSprite
-        local spriteColor = (sprite and sprite.color) or { 255, 255, 255, 220 }
-        local spriteAlpha = spriteColor[4] or 220
-        local spriteNear = (indicator.active and config.indicatorScale) or (sprite and sprite.scale) or 0.016
-        local spriteFar = spriteNear * 0.72
+        local indicatorNear = config.indicatorScale or 0.02
+        local indicatorFar = indicatorNear * 0.72
         local maxDist = config.maxInteractDistance
-        local indicatorDict = indicator.dict or sprite.dict
-        local indicatorTxt = indicator.txt or sprite.txt
-        local tintR, tintG, tintB = spriteColor[1], spriteColor[2], spriteColor[3]
-        if indicator.active then
-            tintR, tintG, tintB = 255, 255, 255
-        end
 
         local function drawIndicator(st)
+            if not indicator.active then return end
             local alpha = sampleIndicatorAlpha(st, now)
             if alpha <= 0.01 then return end
-            local a = math.floor(spriteAlpha * alpha + 0.5)
+            local a = math.floor(INDICATOR_ALPHA * alpha + 0.5)
             drawSpriteAtCoords(
                 st.coords,
-                indicatorDict,
-                indicatorTxt,
+                indicator.dict,
+                indicator.txt,
                 st.scale,
                 st.scale * aspectRatio,
-                sprite.rotation or 0.0,
-                tintR,
-                tintG,
-                tintB,
+                0.0,
+                255,
+                255,
+                255,
                 a,
                 screenW,
                 screenH
@@ -983,10 +969,10 @@ local function drawLoop()
                     local drawW = duiScale * ((dui.width or 1) / (dui.height or 1)) * (screenH / screenW)
                     drawSpriteAtCoords(coords, dui.instance.dictName, dui.instance.txtName, drawW, drawH, 0.0, 255, 255,
                         255, 255, screenW, screenH)
-                elseif indicatorsDrawn < maxIndicators and data.distance < maxDistSq and screenDistSq < math.huge then
+                elseif indicator.active and indicatorsDrawn < maxIndicators and data.distance < maxDistSq and screenDistSq < math.huge then
                     indicatorsDrawn = indicatorsDrawn + 1
                     local distT = maxDist > 0 and math.min(math.sqrt(data.distance) / maxDist, 1.0) or 0.0
-                    local scale = spriteNear + (spriteFar - spriteNear) * distT
+                    local scale = indicatorNear + (indicatorFar - indicatorNear) * distT
                     local id = item.bone or item.offset or item.entity or item.coordId
                     seenIndicators[id] = true
                     local st = indicatorFade[id]
@@ -1053,10 +1039,6 @@ local function drawLoop()
                 lastClosestItem = nil
             end
         end
-    end
-
-    if not indicator.active then
-        SetStreamedTextureDictAsNoLongerNeeded(config.IndicatorSprite.dict)
     end
 
     if centerDot and centerDot.enabled ~= false and not centerDot.file then
