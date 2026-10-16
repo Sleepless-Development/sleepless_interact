@@ -353,11 +353,12 @@ local function hasStoredBones(entity, globalType, model, netId)
     local bones = store.bones
     if bones[globalType] and next(bones[globalType]) then return true end
     if model and bones.models and bones.models[model] and next(bones.models[model]) then return true end
-    if netId then
-        return bones.entities and bones.entities[netId] and next(bones.entities[netId]) ~= nil
-    end
-    return bones.localEntities and bones.localEntities[entity] and next(bones.localEntities[entity]) ~= nil
+    if netId and bones.entities and bones.entities[netId] and next(bones.entities[netId]) then return true end
+    return bones.localEntities ~= nil
+        and bones.localEntities[entity] ~= nil
+        and next(bones.localEntities[entity]) ~= nil
 end
+
 
 ---@param entity number
 ---@param globalType string
@@ -368,10 +369,10 @@ local function hasStoredOffsets(entity, globalType, model, netId)
     local offsets = store.offsets
     if offsets[globalType] and next(offsets[globalType]) then return true end
     if model and offsets.models and offsets.models[model] and next(offsets.models[model]) then return true end
-    if netId then
-        return offsets.entities and offsets.entities[netId] and next(offsets.entities[netId]) ~= nil
-    end
-    return offsets.localEntities and offsets.localEntities[entity] and next(offsets.localEntities[entity]) ~= nil
+    if netId and offsets.entities and offsets.entities[netId] and next(offsets.entities[netId]) then return true end
+    return offsets.localEntities ~= nil
+        and offsets.localEntities[entity] ~= nil
+        and next(offsets.localEntities[entity]) ~= nil
 end
 
 ---@param entity number
@@ -414,7 +415,7 @@ local function getBoneOptionsForEntity(entity, globalType, model, netId)
         end
     end
 
-    if not netId and store.bones.localEntities and store.bones.localEntities[entity] then
+    if store.bones.localEntities and store.bones.localEntities[entity] then
         for boneId, options in pairs(store.bones.localEntities[entity]) do
             if #options > 0 then
                 boneOptions[boneId] = boneOptions[boneId] or {}
@@ -467,7 +468,7 @@ local function getOffsetOptionsForEntity(entity, globalType, model, netId)
         end
     end
 
-    if not netId and store.offsets.localEntities and store.offsets.localEntities[entity] then
+    if store.offsets.localEntities and store.offsets.localEntities[entity] then
         for offsetStr, options in pairs(store.offsets.localEntities[entity]) do
             if #options > 0 then
                 offsetOptions[offsetStr] = offsetOptions[offsetStr] or {}
