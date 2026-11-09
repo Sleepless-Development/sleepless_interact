@@ -21,3 +21,19 @@ v2 uses a lot of code from ox_target to help ensure feature parity. so a big tha
 ## 💾 Download
 
 [seleepless_interact.zip](https://github.com/Sleepless-Development/sleepless_interact/releases/latest/download/sleepless_interact.zip)
+
+## UI accent color
+
+Set a shared accent in server.cfg before starting the resources:
+
+~~~cfg
+setr sleepless:ui:primary "#31a4fc"
+~~~
+
+To override only this resource:
+
+~~~cfg
+setr sleepless_interact:ui:primary "#e87935"
+~~~
+
+Use a six-digit hex color. The resource convar overrides the shared convar; when neither is set, the existing palette/config remains the fallback. An empty value inherits again. Invalid values fall back to the next valid setting. Restart the affected resource after changing convars. This changes the UI accent, while error, rarity, and explicitly supplied item/waypoint colors keep their meaning. Browser previews support ?uiPrimary=%23e87935.
